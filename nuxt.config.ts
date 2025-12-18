@@ -1,7 +1,9 @@
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
-    '@nuxt/ui'
+    '@nuxt/ui',
+    'nuxt-zod-i18n',
+    '@nuxtjs/i18n'
   ],
   devtools: {
     enabled: true
@@ -14,7 +16,11 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { prerender: true }
   },
-
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.API_BASE_URL
+    }
+  },
   compatibilityDate: '2025-01-15',
 
   eslint: {
