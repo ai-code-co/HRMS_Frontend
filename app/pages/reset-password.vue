@@ -1,5 +1,8 @@
 <template>
     <div class="max-w-md mx-auto px-6 py-12">
+        <client-only>
+            <AnimatedBackground />
+        </client-only>
         <div class="bg-white shadow-md border border-gray-200 rounded-2xl p-8">
             <h1 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <KeyIcon class="h-6 w-6 text-blue-600" />
