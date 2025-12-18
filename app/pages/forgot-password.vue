@@ -15,9 +15,8 @@
 
                 <form @submit.prevent="handleSubmit" class="space-y-5">
                     <div>
-                        <UInput v-model="email" class="w-full" size="xl" label="Email Address"
-                            placeholder="you@example.com" autocomplete="email" :icon="Mail" :aria-invalid="!!errors"
-                            required>
+                        <UInput v-model="email" class="w-full" size="xl" placeholder="you@example.com"
+                            autocomplete="email" :icon="Mail" :aria-invalid="!!errors" required>
                         </UInput>
                         <p v-if="errors.email" class="text-xs text-red-600 mt-1 ml-1">{{ errors.email }}</p>
                     </div>
@@ -25,7 +24,6 @@
                     <UButton class="mt-2 w-full flex justify-center" size="xl" color="secondary" variant="solid"
                         :loading="loading" @click="handleSubmit">{{
                             loading ? 'Sending...' : 'Send Reset Link'
-
                         }}
                     </UButton>
                 </form>
