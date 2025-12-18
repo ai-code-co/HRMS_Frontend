@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { z } from 'zod'
-import { Mail, LoaderCircle } from 'lucide-vue-next'
+import { Mail } from 'lucide-vue-next'
 import AnimatedBackground from '~/components/AnimatedBackground.vue'
 const toast = useToast()
 // import { EnvelopeIcon, AtSymbolIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
