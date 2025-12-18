@@ -1,10 +1,10 @@
 <template>
-    <div class="h-full flex items-center justify-center px-4">
+    <div class="h-full flex items-center justify-center py-20 ">
         <client-only>
             <AnimatedBackground />
         </client-only>
-        <div class="max-w-md mx-auto px-6 py-12">
-            <div class="bg-white/80  shadow-lg border border-gray-200 rounded-2xl p-8 w-100">
+        <div class="max-w-md mx-auto py-12">
+            <div class="bg-white/80  shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-white/50 rounded-2xl p-8 w-full">
                 <h1 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                     <Mail class="h-6 w-6 text-blue-600" />
                     Forgot Password
@@ -53,7 +53,7 @@ const handleSubmit = async () => {
     loading.value = true
     try {
 
-        await useApi('/auth/forgot-password', {
+        await useApi('/auth/forgot-password/', {
             method: 'POST',
             body: { email: email.value },
         })

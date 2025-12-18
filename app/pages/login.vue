@@ -6,7 +6,7 @@
 
     <div class="bg-white/80 border border-white/50 rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
 
-      <div class="relative p-8 md:p-10 min-w-md">
+      <div class="relative p-8 md:p-10 w-full sm:min-w-md">
         <div class="text-center mb-8">
           <div class="flex justify-center">
             <img class="flex justify-center w-13 h-13"
@@ -34,7 +34,7 @@
             <UInput class="w-full" size="xl" type="password" placeholder="••••••••" :icon="Lock"
               v-model="form.password" />
             <div class="flex justify-end pt-1">
-              <a href="#" class="text-xs text-slate-500 hover:text-indigo-600 transition-colors">
+              <a href="/forgot-password" class="text-xs text-slate-500 hover:text-indigo-600 transition-colors">
                 Forgot password?
               </a>
             </div>
