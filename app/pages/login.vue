@@ -77,7 +77,7 @@ async function handleLogin() {
   // if (!validate(form)) return
   isLoading.value = true
   try {
-    const res = await useApi('/auth/login/', {
+    const res = await useApi('/auth/login', {
       method: 'POST',
       body: {
         "username": form.value.email,
