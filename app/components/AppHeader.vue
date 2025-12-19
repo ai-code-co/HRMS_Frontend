@@ -3,16 +3,33 @@ const emit = defineEmits(['menu'])
 </script>
 
 <template>
-  <header
-    class="flex items-center justify-between h-16 px-4 md:px-8 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800"
+  <UHeader
+    :ui="{
+      container: 'max-w-none px-4'
+    }"
   >
-    <div class="flex items-center gap-3">
-      <h1 class="text-lg font-semibold">Attendance Overview</h1>
-    </div>
+    <!-- Left -->
+    <template #left>
+      <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+        Home
+      </h1>
+    </template>
 
-    <div class="flex items-center gap-4">
-      <UButton icon="i-lucide-bell" color="gray" variant="ghost" />
-      <UAvatar src="https://i.pravatar.cc/150?u=nebula" size="sm" />
-    </div>
-  </header>
+    <!-- Right -->
+    <template #right>
+      <div class="flex items-center gap-2">
+        <UButton
+          icon="i-lucide-bell"
+          color="gray"
+          variant="ghost"
+          aria-label="Notifications"
+        />
+        <UAvatar
+          src="https://i.pravatar.cc/150?u=nebula"
+          alt="User Avatar"
+          size="sm"
+        />
+      </div>
+    </template>
+  </UHeader>
 </template>
