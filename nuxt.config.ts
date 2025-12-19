@@ -3,7 +3,8 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     'nuxt-zod-i18n',
-    '@nuxtjs/i18n'
+    '@nuxtjs/i18n',
+    '@nuxtjs/device'
   ],
   devtools: {
     enabled: true

@@ -4,6 +4,6 @@
 
 <template>
   <div>
-    <Calender/>
+    <AttendanceCalender />
   </div>
 </template>
