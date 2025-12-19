@@ -1,5 +1,5 @@
 <template>
     <div>
-        attendance page
+        <AttendanceCalender />
     </div>
 </template>
