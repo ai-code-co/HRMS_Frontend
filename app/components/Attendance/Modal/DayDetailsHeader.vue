@@ -13,15 +13,12 @@
                 </p>
             </div>
         </div>
-        <button @click="$emit('close')" class="p-2 rounded-full transition-colors
-             text-slate-300 hover:text-slate-600 hover:bg-slate-50">
-            <XCircle :size="24" />
-        </button>
+        <UButton @click="$emit('close')" :icon="X" color="neutral" class="cursor-pointer rounded-full" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { Calendar, XCircle } from 'lucide-vue-next'
+import { Calendar, X } from 'lucide-vue-next'
 import type { AttendanceDay } from '~/types/attendance'
 
 defineProps<{
