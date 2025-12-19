@@ -76,15 +76,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import {
-    Menu, Calendar, Plus, ChevronLeft, ChevronRight,
-    Search, Bell, Clock, XCircle
-} from 'lucide-vue-next'
+import { Clock, XCircle } from 'lucide-vue-next'
 
 type ViewType = 'month' | 'week'
 
 interface AttendanceDay {
     day: number
+    date: Date
     dateStr: string
     inTime?: string
     outTime?: string
@@ -93,9 +91,12 @@ interface AttendanceDay {
     status: 'working' | 'off' | 'holiday' | 'weekend'
     isLate: boolean
     isCurrent?: boolean
+    isOutsideMonth?: boolean
 }
 
 const DAILY_TARGET = 9
+const YEAR = 2025
+const MONTH = 11
 
 const sidebarOpen = ref(true)
 const view = ref<ViewType>('month')
@@ -105,22 +106,44 @@ const selectedDay = ref<AttendanceDay | null>(null)
 const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
 const attendanceData = computed<AttendanceDay[]>(() => {
-    const data: AttendanceDay[] = []
+    const result: AttendanceDay[] = []
     let saturdayCount = 0
 
-    for (let i = 1; i <= 31; i++) {
+    const firstDay = new Date(YEAR, MONTH, 1)
+    const lastDay = new Date(YEAR, MONTH + 1, 0)
+
+    const daysInMonth = lastDay.getDate()
+    const startDayIndex = firstDay.getDay()
+
+    for (let i = startDayIndex; i > 0; i--) {
+        const date = new Date(YEAR, MONTH, 1 - i)
+        result.push({
+            day: date.getDate(),
+            date,
+            dateStr: date.toDateString(),
+            totalHours: 0,
+            status: 'off',
+            isLate: false,
+            isOutsideMonth: true
+        })
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(YEAR, MONTH, day)
+        const dow = date.getDay()
+
         let status: AttendanceDay['status'] = 'working'
-        const dow = i % 7
 
         if (dow === 0) status = 'weekend'
         if (dow === 6) {
             saturdayCount++
             status = saturdayCount % 2 ? 'off' : 'working'
         }
-        if (i === 25) status = 'holiday'
 
-        let inTime, outTime, totalFormatted
+        if (day === 25) status = 'holiday'
+
         let totalHours = 0
+        let totalFormatted, inTime, outTime
 
         if (status === 'working') {
             totalHours = 7.5 + Math.random() * 3
@@ -131,23 +154,43 @@ const attendanceData = computed<AttendanceDay[]>(() => {
             outTime = '06:30 PM'
         }
 
-        data.push({
-            day: i,
-            dateStr: `${i} Dec 2025`,
+        result.push({
+            day,
+            date,
+            dateStr: date.toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            }),
             inTime,
             outTime,
             totalHours,
             totalFormatted,
             status,
             isLate: false,
-            isCurrent: i === 18
+            isCurrent: date.toDateString() === new Date().toDateString()
         })
     }
-    return data
+
+    while (result.length % 7 !== 0) {
+        const date = new Date(YEAR, MONTH, daysInMonth + (result.length % 7))
+        result.push({
+            day: date.getDate(),
+            date,
+            dateStr: date.toDateString(),
+            totalHours: 0,
+            status: 'off',
+            isLate: false,
+            isOutsideMonth: true
+        })
+    }
+
+    return result
 })
 
+
 const weeks = computed(() => {
-    const w = []
+    const w: AttendanceDay[][] = []
     for (let i = 0; i < attendanceData.value.length; i += 7) {
         w.push(attendanceData.value.slice(i, i + 7))
     }
@@ -160,9 +203,10 @@ const displayedData = computed(() =>
         : weeks.value[currentWeekIndex.value] || []
 )
 
+
 function resetToToday() {
     view.value = 'month'
-    currentWeekIndex.value = 2
+    currentWeekIndex.value = Math.floor(attendanceData.value.findIndex(d => d.isCurrent) / 7)
 }
 
 function prevWeek() {
