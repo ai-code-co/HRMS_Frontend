@@ -27,11 +27,10 @@ useSeoMeta({
 
 <template>
   <UApp>
-    <UHeader title="HRMS">
-    </UHeader>
-
     <UMain>
-      <NuxtPage />
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
     </UMain>
   </UApp>
 </template>
