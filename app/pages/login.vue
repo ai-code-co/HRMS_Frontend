@@ -65,7 +65,7 @@ import { Mail, Lock } from 'lucide-vue-next'
 import AnimatedBackground from '~/components/AnimatedBackground.vue'
 
 const router = useRouter()
-const { setAuth } = useAuth()
+const { setAuth, initAuth } = useAuth()
 const toast = useToast()
 const isLoading = ref(false)
 const form = ref({
@@ -84,7 +84,8 @@ async function handleLogin() {
         "password": form.value.password
       }
     })
-    setAuth(res.access, res.user)
+    await setAuth(res.access, res.user)
+    await initAuth();
     toast.add({
       title: 'Logged in successfully!',
     })

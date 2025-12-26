@@ -1,49 +1,29 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { colorMap } from '~/utils/colorMap'
-
-interface LeaveRequest {
-    id: string
-    type: string
-    startDate: string
-    endDate: string
-    duration: string
-    status: 'approved' | 'pending' | 'rejected'
-    reason: string
-    appliedDate: string
-}
-
-interface LeaveBalance {
-    type: string
-    total: number
-    used: number
-    color: keyof typeof colorMap
-    icon: string
-}
+import { useLeaveStore } from '~/stores/leaves'
 
 const isApplyModalOpen = ref(false)
 const activeFilter = ref('All')
 
-const balances: LeaveBalance[] = [
-    { type: 'Annual Leave', total: 24, used: 8, color: 'indigo', icon: 'i-lucide-plane' },
-    { type: 'Sick Leave', total: 12, used: 2, color: 'rose', icon: 'i-lucide-heart' },
-    { type: 'Casual Leave', total: 10, used: 4, color: 'amber', icon: 'i-lucide-umbrella' },
-    { type: 'Study Leave', total: 5, used: 0, color: 'emerald', icon: 'i-lucide-file-text' }
-]
+const leaveStore = useLeaveStore()
+const { loading } = storeToRefs(leaveStore)
 
-const requests: LeaveRequest[] = [
-    { id: '1', type: 'Annual Leave', startDate: 'Dec 20, 2025', endDate: 'Dec 25, 2025', duration: '5 Days', status: 'approved', reason: 'Family vacation', appliedDate: 'Nov 12, 2025' },
-    { id: '2', type: 'Sick Leave', startDate: 'Nov 05, 2025', endDate: 'Nov 06, 2025', duration: '2 Days', status: 'approved', reason: 'Fever and flu', appliedDate: 'Nov 05, 2025' },
-    { id: '3', type: 'Casual Leave', startDate: 'Jan 12, 2026', endDate: 'Jan 12, 2026', duration: '1 Day', status: 'pending', reason: 'Personal errands', appliedDate: 'Dec 01, 2025' },
-    { id: '4', type: 'Annual Leave', startDate: 'Feb 10, 2026', endDate: 'Feb 15, 2026', duration: '6 Days', status: 'rejected', reason: 'Project crunch period', appliedDate: 'Dec 05, 2025' }
-]
+onMounted(() => {
+    leaveStore.fetchLeaves()
+    leaveStore.fetchLeaveBalances()
+})
+const balances = computed(() => leaveStore.uiBalances)
+const requests = computed(() => leaveStore.uiRequests)
 
 const filteredRequests = computed(() =>
     activeFilter.value === 'All'
-        ? requests
-        : requests.filter(r => r.status === activeFilter.value.toLowerCase())
+        ? requests.value
+        : requests.value.filter(r => r.status === activeFilter.value.toLowerCase())
 )
 </script>
+
 
 <template>
     <div class="min-h-screen bg-[#F8FAFC] text-slate-900">
@@ -55,7 +35,6 @@ const filteredRequests = computed(() =>
                 <p class="text-sm text-slate-400 mb-6">
                     Manage your annual and special leave allocations
                 </p>
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div v-for="b in balances" :key="b.type"
                         class="bg-white border border-slate-100 rounded-4xl p-6 shadow-sm">
@@ -96,7 +75,7 @@ const filteredRequests = computed(() =>
                     <div class="flex gap-2 bg-white border border-slate-100 rounded-xl p-1
                    overflow-x-auto no-scrollbar">
                         <button v-for="f in ['All', 'Approved', 'Pending', 'Rejected']" :key="f"
-                            class="px-4 py-1.5 text-[10px] font-bold rounded-lg whitespace-nowrap" :class="activeFilter === f
+                            class="px-4 py-1.5 text-[10px] font-bold rounded-lg whitespace-nowrap cursor-pointer" :class="activeFilter === f
                                 ? 'bg-slate-900 text-white'
                                 : 'text-slate-500 hover:bg-slate-50'" @click="activeFilter = f">
                             {{ f }}
