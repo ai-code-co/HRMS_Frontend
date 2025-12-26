@@ -13,13 +13,19 @@ const items = [
   [{
     label: 'Logout',
     icon: 'i-lucide-log-out',
-    to: '/login'
+    to: '/login',
+    onSelect: async () => {
+      console.log('Logging out...')
+      const auth = useAuth()
+      await auth.logout()
+      navigateTo('/login')
+    }
   }]
 ]
 </script>
 
 <template>
-  <UHeader   :ui="{
+  <UHeader :ui="{
     container: 'max-w-none px-4',
     toggle: 'hidden md:flex'
   }">

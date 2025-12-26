@@ -16,10 +16,12 @@
     "@nuxt/ui": "^4.2.1",
     "@nuxtjs/device": "^4.0.0",
     "@nuxtjs/i18n": "10.2.1",
+    "@pinia/nuxt": "^0.11.3",
     "@vueuse/motion": "^3.0.3",
     "lucide-vue-next": "^0.561.0",
     "nuxt": "^4.2.2",
-    "nuxt-zod-i18n": "1.12.1"
+    "nuxt-zod-i18n": "1.12.1",
+    "pinia": "^3.0.4"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.10.0",

@@ -21,7 +21,7 @@ export const useAuth = () => {
         try {
             const { user: fetchedUser } = await useApi<{ user: any }>('/auth/me', {
                 method: 'GET',
-                server: true,
+                // server: true,
             })
             user.value = fetchedUser
         } catch (err) {
@@ -45,10 +45,10 @@ export const useAuth = () => {
 
     const logout = async () => {
         try {
-            await useApi('/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            })
+            // await useApi('/auth/logout', {
+            //     method: 'POST',
+            //     credentials: 'include',
+            // })
         } catch (err) {
             console.error('Logout failed:', err)
         } finally {

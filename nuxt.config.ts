@@ -4,7 +4,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     'nuxt-zod-i18n',
     '@nuxtjs/i18n',
-    '@nuxtjs/device'
+    '@nuxtjs/device',
+    '@pinia/nuxt'
   ],
   devtools: {
     enabled: true
