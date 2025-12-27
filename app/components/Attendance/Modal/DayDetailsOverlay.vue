@@ -1,32 +1,34 @@
 <template>
-    <UDrawer v-if="device.isMobile" v-model:open="modelOpen" side="bottom" :overlay="true"
-        :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }">
-        <template #header>
-            <AttendanceModalDayDetailsHeader :day="day" @close="close" class="w-full" />
-        </template>
+    <template v-if="record">
+        <UDrawer v-if="device.isMobile" v-model:open="modelOpen" side="bottom" :overlay="true"
+            :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }">
+            <template #header>
+                <AttendanceModalDayDetailsHeader :day="record" @close="close" class="w-full" />
+            </template>
 
-        <template #body>
-            <AttendanceModalDayDetailsContent :day="day" />
-        </template>
-    </UDrawer>
-    <UModal v-else v-model:open="modelOpen" :overlay="true" :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }">
-        <template #header>
-            <AttendanceModalDayDetailsHeader :day="day" @close="close" class="w-full" />
-        </template>
+            <template #body>
+                <AttendanceModalDayDetailsContent :day="record" />
+            </template>
+        </UDrawer>
 
-        <template #body>
-            <AttendanceModalDayDetailsContent :day="day" class="w-full" />
-        </template>
-    </UModal>
+        <UModal v-else v-model:open="modelOpen" :overlay="true" :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }">
+            <template #header>
+                <AttendanceModalDayDetailsHeader :day="record" @close="close" class="w-full" />
+            </template>
+
+            <template #body>
+                <AttendanceModalDayDetailsContent :day="record" class="w-full" />
+            </template>
+        </UModal>
+    </template>
 </template>
 
 <script setup lang="ts">
-import type { AttendanceDay } from '~/types/attendance'
 import { computed } from 'vue'
 
 const props = defineProps<{
     open: boolean
-    day: AttendanceDay | null
+    record: any | null
 }>()
 
 const emit = defineEmits<{

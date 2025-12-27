@@ -6,24 +6,27 @@
             </div>
             <div>
                 <h3 class="text-sm font-bold text-slate-800">
-                    {{ day?.dateStr }}
+                    {{ day?.full_date ? format(parseISO(day.full_date), 'eee, MMM dd, yyyy') : '' }}
                 </h3>
                 <p class="text-[10px] text-slate-400 font-bold uppercase">
                     Session Overview
                 </p>
             </div>
         </div>
-        <UButton @click="$emit('close')" :icon="X" color="neutral" class="cursor-pointer rounded-full" />
+        <UButton @click="$emit('close')" icon="i-lucide-x" color="neutral" variant="ghost"
+            class="cursor-pointer rounded-full" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { Calendar, X } from 'lucide-vue-next'
-import type { AttendanceDay } from '~/types/attendance'
+import { Calendar } from 'lucide-vue-next'
+import { format, parseISO } from 'date-fns'
 
-defineProps<{
-    day: AttendanceDay | null
-}>()
-
+const props = defineProps<{ day: any }>()
 defineEmits(['close'])
+
+const formattedDate = computed(() => {
+    if (!props.day?.full_date) return '---'
+    return format(parseISO(props.day.full_date), 'eee, MMM dd, yyyy')
+})
 </script>

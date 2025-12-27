@@ -5,13 +5,14 @@ import UpdatePassword from "~/components/Profile/settings/UpdatePassword.vue"
 
 
 export interface TabConfig {
+    id: number,
     name: string
     component: any
 }
 
 export const tabs: TabConfig[] = [
-    { name: 'Personal Details', component: PersonalDetails },
-    { name: 'Bank Details', component: BankDetails },
-    { name: 'Update Password', component: UpdatePassword },
-    { name: 'Profile Picture', component: ProfilePicture },
+    { id: 1, name: 'Personal Details', component: PersonalDetails },
+    { id: 2, name: 'Bank Details', component: BankDetails },
+    { id: 3, name: 'Update Password', component: UpdatePassword },
+    { id: 4, name: 'Profile Picture', component: ProfilePicture },
 ]

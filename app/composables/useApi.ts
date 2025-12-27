@@ -3,6 +3,7 @@ import { ofetch } from 'ofetch'
 export interface ApiOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
     body?: Record<string, any> | FormData
+    params?: Record<string, any>
     headers?: Record<string, string>
     token?: string
     server?: boolean
@@ -34,6 +35,7 @@ export default async function useApi<T = any>(
             baseURL,
             method: options.method ?? 'GET',
             headers,
+            query: options.params,
             body: options.body,
             credentials: 'include',
             retry: 2,
@@ -48,6 +50,7 @@ export default async function useApi<T = any>(
                 baseURL,
                 method: options.method ?? 'GET',
                 headers,
+                query: options.params,
                 body: options.body,
                 retry: 0,
                 credentials: 'include',

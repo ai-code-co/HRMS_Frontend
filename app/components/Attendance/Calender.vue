@@ -19,14 +19,16 @@
             <div class="flex items-center gap-2 md:gap-4">
                 <div class="flex items-center bg-slate-100 rounded-lg p-1">
                     <button @click="view = 'week'"
-                        class="px-3 md:px-4 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all cursor-pointer" :class="view === 'week'
+                        class="px-3 md:px-4 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all cursor-pointer"
+                        :class="view === 'week'
                             ? 'bg-white shadow-sm text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700'
                             ">
                         Week
                     </button>
                     <button @click="view = 'month'"
-                        class="px-3 md:px-4 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all cursor-pointer" :class="view === 'month'
+                        class="px-3 md:px-4 py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all cursor-pointer"
+                        :class="view === 'month'
                             ? 'bg-white shadow-sm text-indigo-600'
                             : 'text-slate-500 hover:text-slate-700'
                             ">
@@ -80,7 +82,7 @@
                     </div>
                 </main>
             </div>
-            <AttendanceModalDayDetailsOverlay v-model:open="isOpen" :day="selectedDay" @close="close" />
+            <AttendanceModalDayDetailsOverlay v-model:open="isOpen" :record="selectedDay" @close="close" />
         </div>
     </div>
 </template>

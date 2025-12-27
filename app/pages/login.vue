@@ -40,8 +40,8 @@
             </div>
           </div>
 
-          <UButton class="mt-2 w-full flex justify-center" size="xl" color="secondary" variant="solid"
-            trailing-icon="i-lucide-arrow-right" @click="handleLogin">Sign Up
+          <UButton class="mt-2 w-full flex justify-center" size="xl" color="secondary" variant="solid" :loading="isLoading"
+            trailing-icon="i-lucide-arrow-right" @click="handleLogin">Log In
           </UButton>
         </div>
 
