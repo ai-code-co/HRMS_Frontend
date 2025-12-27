@@ -1,51 +1,86 @@
 import { defineStore } from 'pinia'
-import { leaveMeta } from '~/config/leaveMeta'
-import type { LeaveBalanceResponse, LeaveListResponse, LeaveRequestAPI } from '~/types/leaves'
+import type {
+    LeaveRequestAPI,
+    LeaveListResponse,
+    LeaveBalanceResponse,
+    LeaveStatus
+} from '~/types/leave'
 
-export const useLeaveStore = defineStore('leave', {
+export const useLeaveStore = defineStore('leaves', {
     state: () => ({
         requests: [] as LeaveRequestAPI[],
-        balancesRaw: {} as LeaveBalanceResponse['data'],
+        balancesRaw: {} as Record<string, any>,
         loading: false,
     }),
 
     getters: {
-        uiRequests: (state) =>
-            state.requests.map(r => ({
+        // Transform API Record into UI Array
+        uiBalances: (state) => {
+            const config: Record<string, { icon: string; color: string }> = {
+                'Annual Leave': { icon: 'i-lucide-calendar', color: 'indigo' },
+                'Sick Leave': { icon: 'i-lucide-thermometer', color: 'rose' },
+                'Casual Leave': { icon: 'i-lucide-coffee', color: 'amber' },
+                'Maternity Leave': { icon: 'i-lucide-baby', color: 'emerald' },
+            }
+
+            return Object.entries(state.balancesRaw).map(([type, data]) => ({
+                type,
+                total: data.allocated + (data.carried_forward || 0),
+                used: data.used,
+                available: data.available,
+                icon: config[type]?.icon || 'i-lucide-info',
+                color: config[type]?.color || 'blue'
+            }))
+        },
+
+        // Transform API list into UI display format
+        uiRequests: (state) => {
+            return state.requests.map(r => ({
                 id: r.id,
                 type: r.leave_type,
-                startDate: new Date(r.from_date).toLocaleDateString(),
-                endDate: new Date(r.to_date).toLocaleDateString(),
+                startDate: r.from_date,
+                endDate: r.to_date,
                 duration: `${r.no_of_days} Days`,
-                status: r.status.toLowerCase(),
-                reason: r.reason,
+                status: r.status.toLowerCase() as LeaveStatus,
                 appliedDate: new Date(r.created_at).toLocaleDateString(),
-            })),
-        uiBalances: (state) =>
-            Object.entries(state.balancesRaw)
-                .map(([type, data]) => ({
-                    type,
-                    total: data.allocated,
-                    used: data.used,
-                    color: leaveMeta[type]?.color ?? 'indigo',
-                    icon: leaveMeta[type]?.icon ?? 'i-lucide-file',
-                })),
+                reason: r.reason
+            }))
+        }
     },
 
     actions: {
         async fetchLeaves() {
+            try {
+                const res = await useApi<LeaveListResponse>('/leaves/')
+                this.requests = res.results
+            } catch (err) {
+                console.error('Fetch leaves failed', err)
+            }
+        },
+
+        async fetchLeaveBalances() {
+            try {
+                const res = await useApi<LeaveBalanceResponse>('/leaves/balances/')
+                if (res.error === 0) {
+                    this.balancesRaw = res.data
+                }
+            } catch (err) {
+                console.error('Fetch balances failed', err)
+            }
+        },
+
+        async applyLeave(payload: any) {
             this.loading = true
             try {
-                const res = await useApi<LeaveListResponse>('/api/leaves/')
-                this.requests = res.results
+                await useApi('/leaves/apply/', {
+                    method: 'POST',
+                    body: payload
+                })
+                await this.fetchLeaves()
+                await this.fetchLeaveBalances()
             } finally {
                 this.loading = false
             }
-        },
-        async fetchLeaveBalances() {
-            const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/')
-            this.balancesRaw = res.data
-            console.log(this.balancesRaw, 'balances')
-        },
-    },
+        }
+    }
 })

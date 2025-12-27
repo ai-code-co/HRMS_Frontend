@@ -48,11 +48,6 @@ export const useEmployeeStore = defineStore('employee', {
                     { credentials: 'include' }
                 )
 
-                // if (error.value) {
-                //     throw error.value
-                // }
-                console.log(data, 'data')
-
                 this.employee = data ?? null
             } catch (err: any) {
                 this.error = err?.message || 'Failed to load employee'
