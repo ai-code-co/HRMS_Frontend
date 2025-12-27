@@ -1,45 +1,91 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-defineProps<{
-    policy: string
-}>()
-const showPasswords = ref({ current: false, new: false, confirm: false })
+import { ref, reactive } from 'vue'
+import { z } from 'zod'
+import { Eye, EyeOff } from 'lucide-vue-next'
+import type { FormSubmitEvent } from '#ui/types'
+
+defineProps<{ policy: string }>()
+
+const show = reactive({
+    current: false,
+    new: false,
+    confirm: false,
+})
+
+const state = reactive({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+})
+
+const loading = ref(false)
+
+const schema = z.object({
+    current_password: z.string().min(8, 'Minimum 8 characters'),
+    new_password: z.string().min(8, 'Minimum 8 characters'),
+    confirm_password: z.string().min(8, 'Confirm password is required'),
+}).refine(data => data.new_password === data.confirm_password, {
+    message: 'Passwords do not match',
+    path: ['confirm_password'],
+})
+
+type Schema = z.output<typeof schema>
+
+const onSubmit = async (event: FormSubmitEvent<Schema>) => {
+    loading.value = true
+    try {
+        await useApi('/api/auth/change-password/', {
+            method: 'POST',
+            body: {
+                current_password: event.data.current_password,
+                new_password: event.data.new_password,
+            },
+        })
+        Object.assign(state, { current_password: '', new_password: '', confirm_password: '' })
+    } finally {
+        loading.value = false
+    }
+}
 </script>
 
 <template>
-    <div class="space-y-6 max-w-xl">
-        <div class="relative">
-            <input :type="showPasswords.current ? 'text' : 'password'" placeholder="Current Password"
-                class="inputStyles" />
-            <button type="button" @click="showPasswords.current = !showPasswords.current"
-                class="absolute right-5 top-1/2 -translate-y-1/2">
-                {{ showPasswords.current ? 'Hide' : 'Show' }}
-            </button>
-        </div>
-        <div class="relative">
-            <input :type="showPasswords.new ? 'text' : 'password'" placeholder="New Password" class="inputStyles" />
-            <button type="button" @click="showPasswords.new = !showPasswords.new"
-                class="absolute right-5 top-1/2 -translate-y-1/2">
-                {{ showPasswords.new ? 'Hide' : 'Show' }}
-            </button>
-        </div>
-        <div class="relative">
-            <input :type="showPasswords.confirm ? 'text' : 'password'" placeholder="Confirm New Password"
-                class="inputStyles" />
-            <button type="button" @click="showPasswords.confirm = !showPasswords.confirm"
-                class="absolute right-5 top-1/2 -translate-y-1/2">
-                {{ showPasswords.confirm ? 'Hide' : 'Show' }}
-            </button>
-        </div>
+    <UForm :schema="schema" :state="state" @submit="onSubmit" class="max-w-xl space-y-4">
 
-        <div
-            class="flex items-center gap-3 px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-500">
-            {{ props.policy }}
-        </div>
+        <UFormField label="Current Password" name="current_password">
+            <UInput v-model="state.current_password" :type="show.current ? 'text' : 'password'"
+                autocomplete="current-password" class="w-full">
+                <template #trailing>
+                    <component :is="show.current ? EyeOff : Eye"
+                        class="size-5 cursor-pointer text-neutral-400 hover:text-neutral-700 pointer-events-auto transition-colors"
+                        @click="show.current = !show.current" />
+                </template>
+            </UInput>
+        </UFormField>
 
-        <div class="flex gap-3">
-            <button class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">Update Password</button>
-            <button class="flex-1 py-3 bg-slate-50 text-slate-500 rounded-xl">Cancel</button>
-        </div>
-    </div>
+        <UFormField label="New Password" name="new_password">
+            <UInput v-model="state.new_password" :type="show.new ? 'text' : 'password'" autocomplete="new-password"
+                class="w-full">
+                <template #trailing>
+                    <component :is="show.new ? EyeOff : Eye"
+                        class="size-5 cursor-pointer text-neutral-400 hover:text-neutral-700 pointer-events-auto transition-colors"
+                        @click="show.new = !show.new" />
+                </template>
+            </UInput>
+        </UFormField>
+
+        <UFormField label="Confirm Password" name="confirm_password">
+            <UInput v-model="state.confirm_password" :type="show.confirm ? 'text' : 'password'"
+                autocomplete="new-password" class="w-full">
+                <template #trailing>
+                    <component :is="show.confirm ? EyeOff : Eye"
+                        class="size-5 cursor-pointer text-neutral-400 hover:text-neutral-700 pointer-events-auto transition-colors"
+                        @click="show.confirm = !show.confirm" />
+                </template>
+            </UInput>
+        </UFormField>
+
+        <UButton type="submit" size="lg" :loading="loading" block class="font-bold">
+            Update Password
+        </UButton>
+    </UForm>
 </template>

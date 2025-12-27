@@ -19,11 +19,11 @@ export const useAuth = () => {
     const initAuth = async () => {
         if (!token.value) return
         try {
-            const { user: fetchedUser } = await useApi<{ user: any }>('/auth/me', {
+            const fetchedUser = await useApi<{ user: any }>('/auth/me/', {
                 method: 'GET',
                 // server: true,
             })
-            user.value = fetchedUser
+            user.value = fetchedUser;
         } catch (err) {
             console.error('Failed to fetch user data:', err)
             clearAuth()

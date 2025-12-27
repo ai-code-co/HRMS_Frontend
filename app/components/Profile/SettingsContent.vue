@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { tabs } from './settings/tabConfig'
-const props = defineProps<{ activeTab: string, profileData: any }>()
-// Compute active component dynamically
+import type { TabConfig } from '~/utils/tabConfig'
+
+const props = defineProps<{
+    tabs: TabConfig[]
+    activeTab: number
+}>()
+
 const activeComponent = computed(() => {
-    const tab = tabs.find(t => t.name === props.activeTab)
-    return tab?.component || null
+    return props.tabs.find(tab => tab.id === props.activeTab)?.component || null
 })
 </script>
 
 <template>
-    <component :is="activeComponent" :data="profileData[props.activeTab.toLowerCase().replace(' ', '')]"
-        :profileData="profileData" />
+    <component :is="activeComponent" policy="Password must be 8+ characters" />
 </template>

@@ -45,7 +45,6 @@ export const useLeaveStore = defineStore('leave', {
         async fetchLeaveBalances() {
             const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/')
             this.balancesRaw = res.data
-            console.log(this.balancesRaw, 'balances')
         },
     },
 })
