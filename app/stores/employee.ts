@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
-import type { Employee } from '~/types/employee'
+import type { Employee, EmployeeListResponse } from '../types/employee'
 
 export const useEmployeeStore = defineStore('employee', {
     state: () => ({
         employee: null as Employee | null,
+        employeesList: [] as Employee[],
         loading: false,
         error: null as string | null,
     }),
@@ -21,6 +22,17 @@ export const useEmployeeStore = defineStore('employee', {
 
         managerName: (state) =>
             state.employee?.department_detail?.manager_name ?? '',
+
+        employeeOptions: (state) => {
+            return state.employeesList.map(emp => ({
+                id: emp.id,
+                label: `${emp.full_name} (${emp.employee_id})`,
+                value: emp.id,
+                // Extra data for custom display if needed
+                avatar: emp.photo,
+                designation: emp.designation_name
+            }));
+        },
 
         isActiveEmployee: (state) => state.employee?.is_active ?? false,
     },
@@ -58,5 +70,19 @@ export const useEmployeeStore = defineStore('employee', {
             if (!this.employee) return
             this.employee = { ...this.employee, ...partial }
         },
+        async fetchEmployees() {
+            this.loading = true;
+            try {
+                const data = await useApi<EmployeeListResponse>('/api/employees/', {
+                    credentials: 'include'
+                });
+                this.employeesList = data.results || [];
+            } catch (err: any) {
+                console.error('Failed to fetch employees list', err);
+                this.employeesList = [];
+            } finally {
+                this.loading = false;
+            }
+        }
     },
 })

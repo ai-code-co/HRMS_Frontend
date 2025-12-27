@@ -35,7 +35,7 @@ export default async function useApi<T = any>(
             method: options.method ?? 'GET',
             headers,
             body: options.body,
-            credentials: 'include',
+            // credentials: 'include',
             retry: 2,
         })
     } catch (err: any) {
@@ -50,7 +50,7 @@ export default async function useApi<T = any>(
                 headers,
                 body: options.body,
                 retry: 0,
-                credentials: 'include',
+                // credentials: 'include',
             })
         }
         throw err

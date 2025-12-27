@@ -19,7 +19,7 @@ export const useAuth = () => {
     const initAuth = async () => {
         if (!token.value) return
         try {
-            const { user: fetchedUser } = await useApi<{ user: any }>('/auth/me', {
+            const { user: fetchedUser } = await useApi<{ user: any }>('/auth/me/', {
                 method: 'GET',
                 // server: true,
             })
