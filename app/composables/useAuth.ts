@@ -4,15 +4,22 @@ export const useAuth = () => {
         path: '/',
         sameSite: 'lax',
     }) as Ref<string | null>
+    const refreshTokenCookie = useCookie<string | null>('refresh_token', {
+        maxAge: 60 * 60 * 24 * 30,
+        path: '/',
+        sameSite: 'lax',
+        httpOnly: false,
+    })
     const user = useState<any | null>('user', () => null)
 
-    const setAuth = (newToken: string, userData: any) => {
-        token.value = newToken
-        user.value = userData
+    const setAuth = (access: string, refresh: string) => {
+        token.value = access
+        refreshTokenCookie.value = refresh
     }
 
     const clearAuth = () => {
         token.value = null
+        refreshTokenCookie.value = null
         user.value = null
     }
 
@@ -33,6 +40,7 @@ export const useAuth = () => {
         try {
             const { accessToken } = await useApi('/auth/refresh-token', {
                 method: 'POST',
+                body: { refresh: refreshTokenCookie.value },
                 credentials: 'include',
             })
             token.value = accessToken
