@@ -37,7 +37,7 @@ export default async function useApi<T = any>(
             headers,
             query: options.params,
             body: options.body,
-            credentials: 'include',
+            // credentials: 'include',
             retry: 2,
         })
     } catch (err: any) {
@@ -53,7 +53,7 @@ export default async function useApi<T = any>(
                 query: options.params,
                 body: options.body,
                 retry: 0,
-                credentials: 'include',
+                // credentials: 'include',
             })
         }
         throw err
