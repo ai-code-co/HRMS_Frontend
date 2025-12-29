@@ -76,3 +76,8 @@ export interface Employee {
     created_at: string
     updated_at: string
 }
+
+export interface EmployeeListResponse {
+    count: number;
+    results: Employee[];
+}

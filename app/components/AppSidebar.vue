@@ -32,7 +32,8 @@ const links = [
   { label: 'Attendance', icon: 'i-lucide-calendar', to: '/attendance' },
   { label: 'My Inventory', icon: 'i-lucide-monitor', to: '/inventory' },
   { label: 'Leaves', icon: 'i-lucide-file-text', to: '/leaves' },
-  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }
+  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
+  { label: 'Inventory', icon: 'i-lucide-wrench', to: '/adminInventory' },
 ]
 
 const isHovered = ref(false)

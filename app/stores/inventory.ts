@@ -1,0 +1,203 @@
+import { defineStore } from 'pinia';
+import type {
+    InventoryApiResponse,
+    DeviceListApiResponse,
+    DeviceDetailApiObject,
+    InventoryItem,
+    DeviceCategory,
+    InventoryDashboardData,
+    DeviceApiObject
+} from '../types/inventory';
+import { de } from '@nuxt/ui/runtime/locale/index.js';
+
+// Helper function: Maps API strings to Lucide Icon names
+// This replaces the function inside your old composable
+function getIconName(name: string): string {
+    const n = name.toLowerCase();
+    if (n.includes('mobile') || n.includes('phone')) return 'Smartphone';
+    if (n.includes('laptop')) return 'Laptop';
+    if (n.includes('mouse')) return 'MousePointer2';
+    if (n.includes('keyboard')) return 'Keyboard';
+    if (n.includes('charger') || n.includes('power')) return 'Zap';
+    if (n.includes('monitor') || n.includes('screen') || n.includes('display')) return 'Monitor';
+    if (n.includes('camera') || n.includes('webcam')) return 'Camera';
+    if (n.includes('ac') || n.includes('conditioner')) return 'AirVent';
+    if (n.includes('light')) return 'Lightbulb';
+    if (n.includes('wifi') || n.includes('modem')) return 'Wifi';
+    if (n.includes('headphone') || n.includes('audio')) return 'Headphones';
+    return 'CircleDashed';
+}
+
+export const useInventoryStore = defineStore('inventory', {
+    state: () => ({
+        // Dashboard
+        dashboardData: null as InventoryDashboardData | null,
+        loadingDashboard: false,
+
+        // List View
+        rawDevices: [] as DeviceApiObject[],
+        loadingDevices: false,
+
+        // Detail View
+        currentDeviceDetail: null as DeviceDetailApiObject | null,
+        loadingDetail: false,
+
+        error: null as string | null,
+    }),
+
+    getters: {
+        totalDevices: (state) => state.dashboardData?.total_devices ?? 0,
+
+        // This replaces the 'categories' computed property from your composable
+        categories: (state): DeviceCategory[] => {
+            if (!state.dashboardData?.device_types) return [];
+
+            return state.dashboardData.device_types.map((dt) => ({
+                id: dt.id.toString(),
+                name: dt.name,
+                total: dt.total,
+                working: dt.working,
+                unassigned: dt.unassigned,
+                // Uses the helper function defined at the bottom
+                icon: getIconName(dt.name)
+            }));
+        },
+
+        // This transforms raw API data into the UI list format
+        inventoryItems: (state): InventoryItem[] => {
+            return state.rawDevices.map((device) => ({
+                id: device.id.toString(),
+                name: device.model_name || device.device_type_name,
+                type: device.id,
+                purchaseDate: device.purchase_date || '-',
+                warrantyExpire: device.warranty_expiry || '-',
+                price: '-',
+                serialNumber: device.serial_number,
+                internalSerial: device.serial_number,
+                status: (device.status as 'working' | 'repair' | 'unassigned') || 'unassigned',
+                assignedTo: device.employee_name || undefined
+            }));
+        },
+
+        // Transforms detailed API data into the UI Detail format
+        selectedDetailItem: (state): InventoryItem | null => {
+            if (!state.currentDeviceDetail) return null;
+            const d = state.currentDeviceDetail;
+            return {
+                id: d.id.toString(),
+                name: d.model_name || d.device_type_detail?.name || 'Unknown Device',
+                type: d.device_type_detail?.id,
+                purchaseDate: d.purchase_date || '',
+                warrantyExpire: d.warranty_expiry || '',
+                price: d.purchase_price ? `$${d.purchase_price}` : '-',
+                serialNumber: d.serial_number,
+                internalSerial: d.serial_number,
+                status: (d.status as 'working' | 'repair' | 'unassigned') || 'unassigned',
+                assignedTo: d.employee_detail?.full_name || undefined
+            };
+        }
+    },
+
+    actions: {
+        async fetchDashboardSummary() {
+            if (this.loadingDashboard) return;
+            this.loadingDashboard = true;
+            try {
+                const response = await useApi<InventoryApiResponse>('/api/inventory/dashboard/summary/', { credentials: 'include' });
+                if (response.error === 0 && response.data) {
+                    this.dashboardData = response.data;
+                }
+            } catch (err: any) {
+                this.error = err?.message || 'Failed to fetch dashboard';
+            } finally {
+                this.loadingDashboard = false;
+            }
+        },
+
+        async fetchDevicesByType(typeId: string | number) {
+            this.loadingDevices = true;
+            this.rawDevices = [];
+            this.currentDeviceDetail = null;
+            try {
+                const response = await useApi<DeviceListApiResponse>(`/api/inventory/device-types/${typeId}/devices/`, { credentials: 'include' });
+                if (response.error === 0 && Array.isArray(response.data)) {
+                    this.rawDevices = response.data;
+                }
+            } catch (err: any) {
+                this.error = err?.message || 'Failed to fetch devices';
+            } finally {
+                this.loadingDevices = false;
+            }
+        },
+
+        async fetchDeviceDetail(deviceId: string | number) {
+            this.loadingDetail = true;
+            try {
+                const response = await useApi<DeviceDetailApiObject>(`/api/inventory/devices/${deviceId}/`, { credentials: 'include' });
+                this.currentDeviceDetail = response;
+            } catch (err: any) {
+                this.error = err?.message || 'Failed to fetch device details';
+                this.currentDeviceDetail = null;
+            } finally {
+                this.loadingDetail = false;
+            }
+        },
+
+        async updateDevice(id: string | number, payload: Partial<any>) {
+            this.error = null;
+            try {
+
+                const apiPayload = {
+                    device_type: payload.device_type,
+                    brand: payload.brand,
+                    condition : payload.condition,
+                    employee: payload.employee,
+                    notes: payload.notes,
+                    is_active: payload.is_active,
+                    model_name: payload.name,
+                    serial_number: payload.serial_number,
+                    status: payload.status,
+                    purchase_price: payload.purchase_price,
+                    purchase_date: payload.purchase_date || null,
+                    warranty_expiry: payload.warranty_expiry || null,
+                };
+
+                // Remove undefined/null keys to avoid sending empty patches if not intended
+                Object.keys(apiPayload).forEach(key => apiPayload[key] === undefined && delete apiPayload[key]);
+
+                const updatedDevice = await useApi<DeviceDetailApiObject>(`/api/inventory/devices/${id}/`, {
+                    method: 'PUT',
+                    body: apiPayload,
+                    credentials: 'include'
+                });
+
+                console.log(updatedDevice,"result");
+                
+                // 2. Update Local State (Detail View)
+                this.currentDeviceDetail = updatedDevice;
+
+                // 3. Update Local State (List View)
+                // Find the item in rawDevices and update it to reflect changes in sidebar immediately
+                const index = this.rawDevices.findIndex(d => d.id.toString() === id.toString());
+                if (index !== -1) {
+                    // Merge existing with updates. Note: rawDevices has simpler type than detail
+                    this.rawDevices[index] = {
+                        ...this.rawDevices[index],
+                        serial_number: updatedDevice.serial_number,
+                        model_name: updatedDevice.model_name,
+                        status: updatedDevice.status,
+                        // Update other fields that appear in the list view
+                    };
+                }
+
+                // Optional: You might want to refresh dashboard summary if status changed
+                // await this.fetchDashboardSummary();
+
+                return updatedDevice;
+            } catch (err: any) {
+                this.error = err?.message || 'Failed to update device';
+                throw err; // Re-throw so component knows it failed
+            }
+        },
+    },
+});
