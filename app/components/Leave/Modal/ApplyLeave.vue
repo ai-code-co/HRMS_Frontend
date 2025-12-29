@@ -1,74 +1,76 @@
 <template>
-    <UModal v-model:open="modelOpen" :ui="{ width: 'sm:max-w-4xl', rounded: 'rounded-2xl' }">
+    <UModal v-model:open="modelOpen" :overlay="true" :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }" size="2xl">
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <h3 class="text-lg font-semibold text-slate-800">Apply Leave</h3>
-                <UButton icon="i-heroicons-x-mark" variant="ghost" color="gray" @click="close" />
+                <UButton icon="i-heroicons-x-mark" variant="ghost" class="rounded-full cursor-pointer"  @click="close" />
             </div>
         </template>
 
         <template #body>
-            <UForm :schema="leaveSchema" :state="state" @submit="onSubmit"
-                class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="space-y-2 flex gap-2 flex-col">
-                    <div class="flex gap-2">
-                        <p class="text-sm font-medium text-slate-500 w-16">From</p>
-                        <UPopover>
-                            <UButton color="secondary" variant="outline" icon="i-lucide-calendar" block
-                                class="justify-start">
-                                {{ state.from_date ? df.format(state.from_date.toDate(getLocalTimeZone())) : 'Select adate' }}
-                            </UButton>
-                            <template #content>
-                                <UCalendar v-model="state.from_date" class="p-2" />
-                            </template>
-                        </UPopover>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <p class="text-sm font-medium text-slate-500 w-16">To</p>
-                        <UPopover>
-                            <UButton color="secondary" variant="outline" icon="i-lucide-calendar" block
-                                class="justify-start">
-                                {{ state.to_date ? df.format(state.to_date.toDate(getLocalTimeZone())) : 'Select a date'
-                                }}
-                            </UButton>
-                            <template #content>
-                                <UCalendar v-model="state.to_date" class="p-2" />
-                            </template>
-                        </UPopover>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    <UFormGroup label="Leave Type" name="leave_type">
-                        <USelectMenu v-model="state.leave_type" :options="Object.keys(leaveStore.balancesRaw)" size="xl"
-                            placeholder="Select leave type" />
-                    </UFormGroup>
-
-                    <UFormGroup label="Duration" name="no_of_days">
-                        <UInput :model-value="calculatedDays" readonly size="xl" icon="i-heroicons-calendar-days" />
-                        <div class="flex gap-2 mt-3">
-                            <UButton size="sm" :variant="state.is_first_half ? 'solid' : 'outline'"
-                                :color="state.is_first_half ? 'primary' : 'gray'"
-                                @click="state.is_first_half = !state.is_first_half">
-                                First Half
-                            </UButton>
-                            <UButton size="sm" :variant="state.is_second_half ? 'solid' : 'outline'"
-                                :color="state.is_second_half ? 'primary' : 'gray'"
-                                @click="state.is_second_half = !state.is_second_half">
-                                Second Half
-                            </UButton>
+            <UForm :schema="leaveSchema" :state="state" @submit="onSubmit" class="w-full">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-2 flex gap-2 flex-col">
+                        <div class="">
+                            <p class="text-sm font-medium">From</p>
+                            <UPopover>
+                                <UButton color="secondary" variant="outline" icon="i-lucide-calendar" block
+                                    class="justify-start">
+                                    {{ state.from_date ? df.format(state.from_date.toDate(getLocalTimeZone()))
+                                        : 'Selecta date' }}
+                                </UButton>
+                                <template #content>
+                                    <UCalendar v-model="state.from_date" class="p-2" />
+                                </template>
+                            </UPopover>
                         </div>
-                    </UFormGroup>
 
-                    <UFormGroup label="Reason" name="reason">
-                        <UTextarea v-model="state.reason" :rows="4" size="xl" placeholder="Brief reason for leave" />
-                    </UFormGroup>
+                        <UFormField label="Leave Type" name="leave_type">
+                            <USelectMenu v-model="state.leave_type" :options="Object.keys(leaveStore.balancesRaw)"
+                                size="xl" placeholder="Select leave type" color="secondary" variant="outline" />
+                        </UFormField>
 
-                    <UButton type="submit" block size="xl" :loading="leaveStore.loading">
-                        Submit Application
-                    </UButton>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="">
+                            <p class="text-sm font-medium">To</p>
+                            <UPopover>
+                                <UButton color="secondary" variant="outline" icon="i-lucide-calendar" block
+                                    class="justify-start">
+                                    {{ state.to_date ? df.format(state.to_date.toDate(getLocalTimeZone()))
+                                        : 'Select a date'
+                                    }}
+                                </UButton>
+                                <template #content>
+                                    <UCalendar v-model="state.to_date" class="p-2" />
+                                </template>
+                            </UPopover>
+                        </div>
+
+
+                        <UFormField label="No of Days" name="no_of_days">
+                            <UInput :model-value="calculatedDays" readonly size="xl" icon="i-heroicons-calendar-days"
+                                color="secondary" variant="outline" />
+                            <div class="flex gap-2 mt-3">
+                                <UButton size="sm" @click="state.is_first_half = !state.is_first_half">
+                                    First Half
+                                </UButton>
+                                <UButton size="sm" @click="state.is_second_half = !state.is_second_half">
+                                    Second Half
+                                </UButton>
+                            </div>
+                        </UFormField>
+                    </div>
                 </div>
+
+                <UFormField label="Reason" name="reason" class="w-full mb-3">
+                    <UTextarea v-model="state.reason" :rows="4" size="xl" placeholder="Brief reason for leave"
+                        class="w-full" color="secondary" variant="outline" />
+                </UFormField>
+                <UButton type="submit" block size="xl" :loading="leaveStore.loading">
+                    Apply Leave
+                </UButton>
             </UForm>
         </template>
     </UModal>

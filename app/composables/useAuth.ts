@@ -38,10 +38,10 @@ export const useAuth = () => {
     }
     const refreshToken = async () => {
         try {
-            const { accessToken } = await useApi('/auth/refresh-token', {
+            const { accessToken } = await useApi('/auth/refresh-token/', {
                 method: 'POST',
                 body: { refresh: refreshTokenCookie.value },
-                credentials: 'include',
+                // credentials: 'include',
             })
             token.value = accessToken
             return accessToken

@@ -8,8 +8,15 @@
                         <span class="text-[10px] font-bold uppercase">Clock In</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <p class="text-xl font-bold text-slate-800">{{ displayInTime }}</p>
-                        <AlertTriangle v-if="day.admin_alert" :size="14" class="text-rose-500" />
+                        <template v-if="isEditing">
+                            <UInputTime v-model="inTime" />
+                        </template>
+
+                        <template v-else>
+                            <p class="text-xl font-bold text-slate-800">
+                                {{ displayInTime }}
+                            </p>
+                        </template>
                     </div>
                 </div>
 
@@ -18,7 +25,16 @@
                         <ArrowRight :size="14" />
                         <span class="text-[10px] font-bold uppercase">Clock Out</span>
                     </div>
-                    <p class="text-xl font-bold text-slate-800">{{ displayOutTime }}</p>
+                    <template v-if="isEditing">
+                        <UInputTime v-model="outTime" />
+                    </template>
+
+                    <template v-else>
+                        <p class="text-xl font-bold text-slate-800">
+                            {{ displayOutTime }}
+                        </p>
+                    </template>
+                    <!-- <p class="text-xl font-bold text-slate-800">{{ displayOutTime }}</p> -->
                 </div>
             </div>
 
@@ -57,17 +73,48 @@
             </div>
         </template>
 
-        <UButton color="secondary" size="lg" block> Edit Session </UButton>
+        <UButton color="secondary" size="lg" block class="cursor-pointer" @click="isEditing = !isEditing">
+            {{ isEditing ? 'Update Session' : 'Edit Session' }}
+        </UButton>
     </div>
 </template>
 
 <script setup lang="ts">
 import { Clock, AlertTriangle, ArrowRight, Calendar } from 'lucide-vue-next'
 import { format, parseISO, isValid } from 'date-fns'
+import { Time } from '@internationalized/date'
+
+const value = shallowRef(new Time(12, 30, 0))
 
 const props = defineProps<{
     day: any | null
 }>()
+const isEditing = ref(false)
+const inTime = shallowRef<Time | null>(null)
+const outTime = shallowRef<Time | null>(null)
+
+watch(
+    () => isEditing.value,
+    (enabled) => {
+        if (!enabled || !props.day) return
+
+        inTime.value = toTime(
+            props.day.office_in_time || props.day.home_in_time
+        )
+
+        outTime.value = toTime(
+            props.day.office_out_time || props.day.home_out_time
+        )
+    },
+    { immediate: true }
+)
+
+function toTime(iso?: string): Time | null {
+    if (!iso) return null
+    const d = parseISO(iso)
+    if (!isValid(d)) return null
+    return new Time(d.getHours(), d.getMinutes(), 0)
+}
 
 const displayInTime = computed(() => {
     const timeStr = props.day?.office_in_time || props.day?.home_in_time

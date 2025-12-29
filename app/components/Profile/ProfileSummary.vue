@@ -19,8 +19,28 @@ const name = computed(() => props.user?.name ?? '-')
 const role = computed(() => props.user?.role ?? '-')
 const empId = computed(() => props.user?.empId ?? '-')
 const isActive = computed(() => props.user?.isActive ?? false)
-</script>
 
+const profileImageUploadRef = ref<HTMLInputElement | null>(null)
+
+const profileImagePreviewUrl = ref<string | null>(null)
+
+const triggerPicker = () => {
+    profileImageUploadRef.value?.click()
+}
+
+const handleFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    const file = target.files?.[0]
+
+    if (file) {
+        if (!file.type.startsWith('image/')) return
+        if (profileImagePreviewUrl.value) {
+            URL.revokeObjectURL(profileImagePreviewUrl.value)
+        }
+        profileImagePreviewUrl.value = URL.createObjectURL(file)
+    }
+}
+</script>
 
 <template>
     <section
@@ -28,13 +48,16 @@ const isActive = computed(() => props.user?.isActive ?? false)
         <div class="relative group shrink-0">
             <div
                 class="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-slate-50 shadow-inner group-hover:scale-[1.02] transition-transform duration-500">
-                <UAvatar :src="profileImage" :alt="name" size="2xl" class="w-full h-full" :ui="{ rounded: 'rounded-full' }" />
+                <UAvatar :src="profileImagePreviewUrl || profileImage" :alt="name" size="2xl" class="w-full h-full" :ui="{
+                    root: 'w-full h-full',
+                    image: 'object-cover'
+                }" />
             </div>
-
-            <div
-                class="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-slate-100 text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors z-10">
-                <Camera :size="18" />
-            </div>
+            <button type="button" @click="triggerPicker" aria-label="Upload profile picture"
+                class="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-slate-100 text-slate-400 hover:text-primary-600 cursor-pointer transition-colors z-10 flex items-center justify-center">
+                <UIcon :name="Camera" class="w-5 h-5" />
+            </button>
+            <input ref="profileImageUploadRef" type="file" accept="image/*" class="hidden" @change="handleFileChange" />
         </div>
 
         <div class="flex-1 space-y-4 w-full">

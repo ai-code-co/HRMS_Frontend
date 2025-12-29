@@ -40,8 +40,8 @@
             </div>
           </div>
 
-          <UButton class="mt-2 w-full flex justify-center" size="xl" color="secondary" variant="solid"
-            :loading="isLoading" trailing-icon="i-lucide-arrow-right" @click="handleLogin">Log In
+          <UButton class="mt-2 w-full flex justify-center" size="xl" color="secondary" variant="solid" :loading="isLoading"
+            trailing-icon="i-lucide-arrow-right" @click="handleLogin">Log In
           </UButton>
         </div>
 
@@ -84,12 +84,12 @@ async function handleLogin() {
         "password": form.value.password
       }
     })
-    await setAuth(res.access, res.refresh)
+    await setAuth(res.access, res.user)
     await initAuth();
-    router.push('/')
     toast.add({
       title: 'Logged in successfully!',
     })
+    router.push('/')
   } catch (error: any) {
     toast.add({
       title: error?.data?.error || 'Login failed',

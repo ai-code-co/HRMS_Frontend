@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { useEmployeeStore } from '~/stores/employee'
+import type { SelectMenuItem } from '@nuxt/ui'
 const schema = z.object({
     first_name: z.string().min(1, 'First name required'),
     last_name: z.string().min(1, 'Last name required'),
@@ -14,11 +15,11 @@ const schema = z.object({
     emergency_phone: z.string().optional(),
 })
 
-const marital_statusOptions = [
+const marital_statusOptions = ref<SelectMenuItem[]>([
     { label: 'Single', value: 'single' },
     { label: 'Married', value: 'married' },
     { label: 'Divorced', value: 'divorced' }
-]
+])
 
 type Schema = z.output<typeof schema>
 
@@ -54,10 +55,10 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 </script>
 
 <template>
-    <UForm :schema="schema" :state="state" class="space-y-10" @submit="onSubmit">
-        <section class="space-y-6">
+    <UForm :schema="schema" :state="state" class="space-y-8" @submit="onSubmit">
+        <section class="space-y-3">
             <h4 class="font-bold text-lg">Basic Information</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <UFormField name="first_name" label="First Name">
                     <UInput v-model="state.first_name" class="w-full" />
                 </UFormField>
@@ -75,15 +76,14 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
                 </UFormField>
 
                 <UFormField name="marital_status" label="Marital Status">
-                    <USelectMenu v-model="state.marital_status" :options="marital_statusOptions"
-                        placeholder="Select status" class="w-full" arrow />
-
+                    <USelectMenu v-model="state.marital_status" :items="marital_statusOptions"
+                        placeholder="Select status" class="w-full" arrow value-key="value" />
                 </UFormField>
             </div>
         </section>
-        <section class="space-y-6">
+        <section class="space-y-3">
             <h4 class="font-bold text-lg">Address Details</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <UFormField name="address_line1" label="Current Address">
                     <UTextarea v-model="state.address_line1" :rows="3" class="w-full" />
                 </UFormField>
