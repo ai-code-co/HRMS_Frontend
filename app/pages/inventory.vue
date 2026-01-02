@@ -1,7 +1,4 @@
 <script setup lang="ts">
-// import { format } from 'date-fns' // Ensure you have this or use native JS Date
-
-// --- Types ---
 type InventoryItem = {
     id: string
     name: string
@@ -24,7 +21,6 @@ type InventoryItem = {
     }[]
 }
 
-// --- Dummy Data ---
 const inventory = ref<InventoryItem[]>([
     {
         id: '985',
@@ -79,12 +75,10 @@ const inventory = ref<InventoryItem[]>([
     }
 ])
 
-// --- State ---
 const searchQuery = ref('')
 const selectedItemId = ref<string | null>(inventory.value[0].id)
 const isMobileDetailOpen = ref(false)
 
-// --- Computed ---
 const filteredInventory = computed(() => {
     if (!searchQuery.value) return inventory.value
     const q = searchQuery.value.toLowerCase()
@@ -98,11 +92,9 @@ const selectedItem = computed(() =>
     inventory.value.find(i => i.id === selectedItemId.value)
 )
 
-// --- Actions ---
 const selectItem = (id: string) => {
     selectedItemId.value = id
 
-    // Check if mobile (using window width check safely)
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
         isMobileDetailOpen.value = true
     }
@@ -130,7 +122,6 @@ const getCategoryIcon = (cat: string) => {
 <template>
     <div class="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-8">
 
-        <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -163,7 +154,6 @@ const getCategoryIcon = (cat: string) => {
                             ? 'ring-2 ring-primary-500 dark:ring-primary-400 bg-white dark:bg-gray-900'
                             : 'hover:border-primary-200 dark:hover:border-primary-800'
                     ]" @click="selectItem(item.id)">
-                    <!-- Active Indicator Strip -->
                     <div v-if="selectedItemId === item.id" class="absolute left-0 top-0 bottom-0 w-1 bg-primary-500">
                     </div>
 
@@ -190,13 +180,10 @@ const getCategoryIcon = (cat: string) => {
                     </div>
                 </UCard>
             </div>
-
-            <!-- Right Column: Detail View (Desktop) -->
             <div class="hidden lg:block lg:col-span-8 h-full">
                 <transition name="fade" mode="out-in">
                     <div v-if="selectedItem" :key="selectedItem.id" class="h-full">
                         <UCard class="h-full flex flex-col overflow-hidden" :ui="{ body: 'p-0 h-full flex flex-col' }">
-                            <!-- Reusable Detail Content Component -->
                             <InventoryDetailView :item="selectedItem" />
                         </UCard>
                     </div>

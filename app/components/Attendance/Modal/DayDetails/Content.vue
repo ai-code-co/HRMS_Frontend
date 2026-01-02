@@ -34,7 +34,6 @@
                             {{ displayOutTime }}
                         </p>
                     </template>
-                    <!-- <p class="text-xl font-bold text-slate-800">{{ displayOutTime }}</p> -->
                 </div>
             </div>
 
@@ -72,19 +71,33 @@
                 </p>
             </div>
         </template>
+        <div class="flex gap-3 mt-6">
+            <UModal v-model:open="isTimeSheetUploadModalOpen" title="Upload Timesheet"
+                :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }" :overlay="true">
+                <UButton color="info" variant="subtle" size="lg" block class="cursor-pointer">
+                    Upload Timesheet
+                </UButton>
+                <template #header>
+                    <AttendanceModalUploadTimesheetHeader :day="day" @close="closeTimeSheetUploadModal" />
+                </template>
+                <template #body>
+                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimeSheetUploadModal"/>
+                </template>
+            </UModal>
 
-        <UButton color="secondary" size="lg" block class="cursor-pointer" @click="isEditing = !isEditing">
-            {{ isEditing ? 'Update Session' : 'Edit Session' }}
-        </UButton>
+            <UButton color="secondary" size="lg" block class="cursor-pointer" @click="isEditing = !isEditing">
+                {{ isEditing ? 'Update Session' : 'Edit Session' }}
+            </UButton>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { Clock, AlertTriangle, ArrowRight, Calendar } from 'lucide-vue-next'
+import { Clock, ArrowRight, Calendar } from 'lucide-vue-next'
 import { format, parseISO, isValid } from 'date-fns'
 import { Time } from '@internationalized/date'
-
-const value = shallowRef(new Time(12, 30, 0))
+import AttendanceModalUploadTimesheetHeader from '~/components/Attendance/Modal/UploadTimesheet/Header.vue'
+import AttendanceModalUploadTimesheetContent from '~/components/Attendance/Modal/UploadTimesheet/Content.vue'
 
 const props = defineProps<{
     day: any | null
@@ -92,6 +105,8 @@ const props = defineProps<{
 const isEditing = ref(false)
 const inTime = shallowRef<Time | null>(null)
 const outTime = shallowRef<Time | null>(null)
+
+const isTimeSheetUploadModalOpen = ref(false)
 
 watch(
     () => isEditing.value,
@@ -129,4 +144,8 @@ const displayOutTime = computed(() => {
     const date = parseISO(timeStr)
     return isValid(date) ? format(date, 'hh:mm a') : '--:--'
 })
+
+const closeTimeSheetUploadModal = () => {
+    isTimeSheetUploadModalOpen.value = false
+}
 </script>

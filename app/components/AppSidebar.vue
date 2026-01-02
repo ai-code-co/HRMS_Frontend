@@ -34,6 +34,8 @@ const links = [
   { label: 'Leaves', icon: 'i-lucide-file-text', to: '/leaves' },
   { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
   { label: 'Inventory', icon: 'i-lucide-wrench', to: '/adminInventory' },
+  // { label: 'Employees', icon: 'i-lucide-users', to: '/employees' },
+  { label: 'Holidays', icon: 'i-lucide-sun', to: '/holidays' },
 ]
 
 const isHovered = ref(false)

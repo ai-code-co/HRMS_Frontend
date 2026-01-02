@@ -92,7 +92,7 @@ const getStatusColor = (status: string) => {
                     </div>
                 </div>
 
-                <UDivider />
+                <!-- <UDivider /> -->
 
                 <!-- 2. Danger Zone (Unassign) -->
                 <div

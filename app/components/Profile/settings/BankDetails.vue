@@ -34,8 +34,19 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         })
 
         employeeStore.updateEmployee(updated)
-    } catch (error) {
-        console.error('Update failed', error)
+        const toast = useToast()
+        toast.add({
+            title: 'Success',
+            description: 'Bank details updated successfully',
+            color: 'green'
+        })
+    } catch (error: any) {
+        const toast = useToast()
+        toast.add({
+            title: 'Error',
+            description: error?.data?.error || error?.message || 'Failed to update bank details',
+            color: 'red'
+        })
     } finally {
         loading.value = false
     }

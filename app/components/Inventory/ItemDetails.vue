@@ -73,18 +73,18 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
   submitting.value = true;
   try {
-    // Call Store Action
-    console.log(event.data, "data");
-
     await store.updateDevice(props.item.id, event.data);
 
     const toast = useToast();
     toast.add({ title: 'Success', description: 'Device details updated successfully', color: 'green' });
     isEditMode.value = false;
-  } catch (error) {
-    console.error('Update failed', error);
+  } catch (error: any) {
     const toast = useToast();
-    toast.add({ title: 'Error', description: 'Failed to update device', color: 'red' });
+    toast.add({ 
+      title: 'Error', 
+      description: error?.message || 'Failed to update device', 
+      color: 'red' 
+    });
   } finally {
     submitting.value = false;
   }
@@ -92,8 +92,13 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
 
 const handleDelete = () => {
-  // Add delete logic here
-  console.log('Delete requested for', props.item?.id);
+  // TODO: Implement delete functionality
+  const toast = useToast()
+  toast.add({
+    title: 'Delete',
+    description: 'Delete functionality coming soon',
+    color: 'amber'
+  })
 };
 
 const handleAssignmentSuccess = async () => {

@@ -26,8 +26,7 @@ const trendColor = computed(() =>
 </script>
 
 <template>
-    <div v-motion :initial="{ y: 20, opacity: 0 }" :enter="{ y: 0, opacity: 1 }"
-        class="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group">
+    <div class="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group">
         <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
             :class="colorStyles[color]">
             <component :is="icon" :size="20" />

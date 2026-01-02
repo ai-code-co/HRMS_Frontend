@@ -8,8 +8,10 @@ import { tabs } from '~/utils/tabConfig'
 
 const employeeStore = useEmployeeStore()
 const { employee, loading } = storeToRefs(employeeStore)
-onMounted(() => {
-    if (!employee.value) employeeStore.fetchEmployee()
+await useAsyncData('employee', async () => {
+    if (!employee.value) {
+        await employeeStore.fetchEmployee()
+    }
 })
 
 const user = computed(() => {

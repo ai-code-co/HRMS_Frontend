@@ -32,19 +32,27 @@ export const useAuth = () => {
             })
             user.value = fetchedUser;
         } catch (err) {
-            console.error('Failed to fetch user data:', err)
             clearAuth()
         }
     }
     const refreshToken = async () => {
         try {
-            const { accessToken } = await useApi('/auth/refresh-token/', {
-                method: 'POST',
-                body: { refresh: refreshTokenCookie.value },
-                // credentials: 'include',
-            })
-            token.value = accessToken
-            return accessToken
+            const config = useRuntimeConfig()
+            const cookieRefreshToken = useCookie<string | null>('refresh_token')
+            const token = useCookie<string | null>('token')
+
+            const { access } = await $fetch<{ access: string }>(
+                '/auth/refresh-token/',
+                {
+                    baseURL: config.public.apiBase,
+                    method: 'POST',
+                    body: { refresh: cookieRefreshToken.value },
+                    retry: 0,
+                }
+            )
+
+            token.value = access
+            return access
         } catch (err) {
             logout()
             throw err
@@ -58,7 +66,7 @@ export const useAuth = () => {
             //     credentials: 'include',
             // })
         } catch (err) {
-            console.error('Logout failed:', err)
+            // Silently fail on logout
         } finally {
             clearAuth()
         }

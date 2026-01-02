@@ -8,10 +8,7 @@ import type {
     InventoryDashboardData,
     DeviceApiObject
 } from '../types/inventory';
-import { de } from '@nuxt/ui/runtime/locale/index.js';
 
-// Helper function: Maps API strings to Lucide Icon names
-// This replaces the function inside your old composable
 function getIconName(name: string): string {
     const n = name.toLowerCase();
     if (n.includes('mobile') || n.includes('phone')) return 'Smartphone';
@@ -30,15 +27,10 @@ function getIconName(name: string): string {
 
 export const useInventoryStore = defineStore('inventory', {
     state: () => ({
-        // Dashboard
         dashboardData: null as InventoryDashboardData | null,
         loadingDashboard: false,
-
-        // List View
         rawDevices: [] as DeviceApiObject[],
         loadingDevices: false,
-
-        // Detail View
         currentDeviceDetail: null as DeviceDetailApiObject | null,
         loadingDetail: false,
 
@@ -47,8 +39,6 @@ export const useInventoryStore = defineStore('inventory', {
 
     getters: {
         totalDevices: (state) => state.dashboardData?.total_devices ?? 0,
-
-        // This replaces the 'categories' computed property from your composable
         categories: (state): DeviceCategory[] => {
             if (!state.dashboardData?.device_types) return [];
 
@@ -63,7 +53,6 @@ export const useInventoryStore = defineStore('inventory', {
             }));
         },
 
-        // This transforms raw API data into the UI list format
         inventoryItems: (state): InventoryItem[] => {
             return state.rawDevices.map((device) => ({
                 id: device.id.toString(),
@@ -79,7 +68,6 @@ export const useInventoryStore = defineStore('inventory', {
             }));
         },
 
-        // Transforms detailed API data into the UI Detail format
         selectedDetailItem: (state): InventoryItem | null => {
             if (!state.currentDeviceDetail) return null;
             const d = state.currentDeviceDetail;
@@ -150,7 +138,7 @@ export const useInventoryStore = defineStore('inventory', {
                 const apiPayload = {
                     device_type: payload.device_type,
                     brand: payload.brand,
-                    condition : payload.condition,
+                    condition: payload.condition,
                     employee: payload.employee,
                     notes: payload.notes,
                     is_active: payload.is_active,
@@ -162,7 +150,6 @@ export const useInventoryStore = defineStore('inventory', {
                     warranty_expiry: payload.warranty_expiry || null,
                 };
 
-                // Remove undefined/null keys to avoid sending empty patches if not intended
                 Object.keys(apiPayload).forEach(key => apiPayload[key] === undefined && delete apiPayload[key]);
 
                 const updatedDevice = await useApi<DeviceDetailApiObject>(`/api/inventory/devices/${id}/`, {
@@ -171,32 +158,21 @@ export const useInventoryStore = defineStore('inventory', {
                     credentials: 'include'
                 });
 
-                console.log(updatedDevice,"result");
-                
-                // 2. Update Local State (Detail View)
                 this.currentDeviceDetail = updatedDevice;
-
-                // 3. Update Local State (List View)
-                // Find the item in rawDevices and update it to reflect changes in sidebar immediately
                 const index = this.rawDevices.findIndex(d => d.id.toString() === id.toString());
                 if (index !== -1) {
-                    // Merge existing with updates. Note: rawDevices has simpler type than detail
                     this.rawDevices[index] = {
                         ...this.rawDevices[index],
                         serial_number: updatedDevice.serial_number,
                         model_name: updatedDevice.model_name,
                         status: updatedDevice.status,
-                        // Update other fields that appear in the list view
                     };
                 }
-
-                // Optional: You might want to refresh dashboard summary if status changed
-                // await this.fetchDashboardSummary();
 
                 return updatedDevice;
             } catch (err: any) {
                 this.error = err?.message || 'Failed to update device';
-                throw err; // Re-throw so component knows it failed
+                throw err;
             }
         },
     },
