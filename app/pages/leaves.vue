@@ -6,13 +6,14 @@
                     <h2 class="text-2xl font-bold">Leave Overview</h2>
                     <p class="text-sm text-slate-400">Manage your allocations</p>
                 </div>
-                <UButton icon="i-lucide-plus" size="lg" class="hidden sm:flex rounded-xl"
+                <UButton icon="i-lucide-plus" size="lg" class="hidden sm:flex rounded-lg cursor-pointer"
                     @click="isApplyModalOpen = true">
                     Apply Leave
                 </UButton>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div v-for="b in balances" :key="b.type" class="bg-white border p-6 rounded-[2rem] shadow-sm">
+                <div v-for="b in balances" :key="b.type"
+                    class="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm">
                     <div class="flex flex-col gap-4">
                         <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100"
                             :class="`text-${b.color}-600 bg-${b.color}-50`">
@@ -31,12 +32,14 @@
             <section class="space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold">Application History</h3>
-                    <div class="flex gap-1 bg-white p-1 rounded-xl border border-slate-200">
-                        <button v-for="f in ['All', 'Approved', 'Pending', 'Rejected']" @click="activeFilter = f"
-                            :class="activeFilter === f ? 'bg-slate-900 text-white' : 'text-slate-500'"
-                            class="px-4 py-1.5 text-[10px] font-bold rounded-lg transition-colors">
+                    <div class="flex items-center gap-1.5 bg-slate-100/60 p-1 rounded-xl w-fit border border-slate-200">
+                        <UButton v-for="f in ['All', 'Approved', 'Pending', 'Rejected']" :key="f" size="xs"
+                            variant="ghost" :class="[
+                                'px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',
+                                activeFilter === f ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'
+                            ]" @click="activeFilter = f">
                             {{ f }}
-                        </button>
+                        </UButton>
                     </div>
                 </div>
 
@@ -46,7 +49,7 @@
 
                 <div v-else class="space-y-3">
                     <div v-for="r in filteredRequests" :key="r.id"
-                        class="bg-white border p-5 rounded-[1.5rem] flex justify-between items-center">
+                        class="bg-white border border-slate-200 p-5 rounded-[1.5rem] flex justify-between items-center">
                         <div>
                             <p class="font-bold text-sm">{{ r.type }}</p>
                             <p class="text-xs text-slate-400">{{ r.startDate }} — {{ r.endDate }}</p>
@@ -62,8 +65,7 @@
                 </div>
             </section>
         </main>
-
-        <LeaveModalApplyLeave v-model:open="isApplyModalOpen" class="w-full"/>
+        <LeaveModalApplyLeave v-model:open="isApplyModalOpen" class="w-full" />
     </div>
 </template>
 
@@ -74,10 +76,11 @@ import { storeToRefs } from 'pinia'
 const leaveStore = useLeaveStore()
 const { loading } = storeToRefs(leaveStore)
 const isApplyModalOpen = ref(false)
-
-onMounted(() => {
-    leaveStore.fetchLeaves()
-    leaveStore.fetchLeaveBalances()
+await useAsyncData('leave-data', async () => {
+    await Promise.all([
+        leaveStore.fetchLeaves(),
+        leaveStore.fetchLeaveBalances()
+    ])
 })
 
 const balances = computed(() => leaveStore.uiBalances)

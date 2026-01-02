@@ -5,16 +5,12 @@ import {
 } from 'lucide-vue-next';
 import type { DashboardData, UserRole } from '~/types/dashboard';
 
-// --- State & Props ---
-// In a real app, this might come from a store or API
 const currentRole = ref<UserRole>('user');
 
-// --- Toggle Role for Demo ---
 const toggleRole = () => {
     currentRole.value = currentRole.value === 'user' ? 'admin' : 'user';
 }
 
-// --- Data Mocking ---
 const adminData: DashboardData = {
     stats: [
         { label: "Total Employees", value: "1,248", trend: "+12", icon: Users, color: "indigo" },
@@ -68,17 +64,13 @@ const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day:
 </script>
 
 <template>
-    <!-- Main Layout Wrapper -->
     <div class="flex-1 h-full overflow-y-auto custom-scrollbar p-4 md:p-8 max-w-[1600px] mx-auto w-full bg-[#F8FAFC]">
 
-        <div v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 500 } }"
-            class="space-y-8 pb-20">
-            <!-- Welcome Section -->
+        <div class="space-y-8 pb-20">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-3">
                         <p class="text-[11px] font-black text-indigo-600 uppercase tracking-[0.3em] mb-1">Overview</p>
-                        <!-- Demo Toggle -->
                         <button @click="toggleRole"
                             class="text-[9px] bg-slate-200 px-2 py-0.5 rounded text-slate-500 hover:bg-slate-300 transition">
                             Switch to {{ currentRole === 'user' ? 'Admin' : 'User' }} View
@@ -104,28 +96,16 @@ const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day:
                 <DashboardStatCard v-for="(stat, index) in currentData.stats" :key="index" v-bind="stat"
                     :class="`delay-${index * 100}`" />
             </div>
-
-            <!-- Main Content Grid -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-                <!-- Left/Main Column -->
                 <div class="xl:col-span-2 space-y-8">
-                    <!-- Activity Graph -->
                     <DashboardActivityChart :role="currentRole" />
-
-                    <!-- Recent Events / Approvals -->
                     <DashboardEventsList :title="currentRole === 'admin' ? 'Pending Approvals' : 'Upcoming Holidays'"
                         :items="currentData.events" :action-label="currentRole === 'admin' ? 'Review' : 'Details'" />
                 </div>
-
-                <!-- Right Column / Sidebar Insights -->
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-8">
-                    <!-- Distribution Card -->
                     <DashboardDistributionChart :title="currentRole === 'admin' ? 'Team Distribution' : 'Leave Balance'"
                         :total="currentRole === 'admin' ? '1.2k' : '12'"
                         :sub="currentRole === 'admin' ? 'Total Staff' : 'Days Left'" :data="currentData.distribution" />
-
-                    <!-- Achievement / Highlight Card -->
                     <DashboardHighlightCard v-bind="currentData.highlight" />
                 </div>
             </div>
@@ -134,7 +114,6 @@ const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day:
 </template>
 
 <style scoped>
-/* Custom Scrollbar Utility */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;

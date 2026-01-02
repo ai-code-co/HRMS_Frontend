@@ -8,8 +8,15 @@
                         <span class="text-[10px] font-bold uppercase">Clock In</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <p class="text-xl font-bold text-slate-800">{{ displayInTime }}</p>
-                        <AlertTriangle v-if="day.admin_alert" :size="14" class="text-rose-500" />
+                        <template v-if="isEditing">
+                            <UInputTime v-model="inTime" />
+                        </template>
+
+                        <template v-else>
+                            <p class="text-xl font-bold text-slate-800">
+                                {{ displayInTime }}
+                            </p>
+                        </template>
                     </div>
                 </div>
 
@@ -18,7 +25,15 @@
                         <ArrowRight :size="14" />
                         <span class="text-[10px] font-bold uppercase">Clock Out</span>
                     </div>
-                    <p class="text-xl font-bold text-slate-800">{{ displayOutTime }}</p>
+                    <template v-if="isEditing">
+                        <UInputTime v-model="outTime" />
+                    </template>
+
+                    <template v-else>
+                        <p class="text-xl font-bold text-slate-800">
+                            {{ displayOutTime }}
+                        </p>
+                    </template>
                 </div>
             </div>
 
@@ -56,18 +71,65 @@
                 </p>
             </div>
         </template>
+        <div class="flex gap-3 mt-6">
+            <UModal v-model:open="isTimeSheetUploadModalOpen" title="Upload Timesheet"
+                :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }" :overlay="true">
+                <UButton color="info" variant="subtle" size="lg" block class="cursor-pointer">
+                    Upload Timesheet
+                </UButton>
+                <template #header>
+                    <AttendanceModalUploadTimesheetHeader :day="day" @close="closeTimeSheetUploadModal" />
+                </template>
+                <template #body>
+                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimeSheetUploadModal"/>
+                </template>
+            </UModal>
 
-        <UButton color="secondary" size="lg" block> Edit Session </UButton>
+            <UButton color="secondary" size="lg" block class="cursor-pointer" @click="isEditing = !isEditing">
+                {{ isEditing ? 'Update Session' : 'Edit Session' }}
+            </UButton>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { Clock, AlertTriangle, ArrowRight, Calendar } from 'lucide-vue-next'
+import { Clock, ArrowRight, Calendar } from 'lucide-vue-next'
 import { format, parseISO, isValid } from 'date-fns'
+import { Time } from '@internationalized/date'
+import AttendanceModalUploadTimesheetHeader from '~/components/Attendance/Modal/UploadTimesheet/Header.vue'
+import AttendanceModalUploadTimesheetContent from '~/components/Attendance/Modal/UploadTimesheet/Content.vue'
 
 const props = defineProps<{
     day: any | null
 }>()
+const isEditing = ref(false)
+const inTime = shallowRef<Time | null>(null)
+const outTime = shallowRef<Time | null>(null)
+
+const isTimeSheetUploadModalOpen = ref(false)
+
+watch(
+    () => isEditing.value,
+    (enabled) => {
+        if (!enabled || !props.day) return
+
+        inTime.value = toTime(
+            props.day.office_in_time || props.day.home_in_time
+        )
+
+        outTime.value = toTime(
+            props.day.office_out_time || props.day.home_out_time
+        )
+    },
+    { immediate: true }
+)
+
+function toTime(iso?: string): Time | null {
+    if (!iso) return null
+    const d = parseISO(iso)
+    if (!isValid(d)) return null
+    return new Time(d.getHours(), d.getMinutes(), 0)
+}
 
 const displayInTime = computed(() => {
     const timeStr = props.day?.office_in_time || props.day?.home_in_time
@@ -82,4 +144,8 @@ const displayOutTime = computed(() => {
     const date = parseISO(timeStr)
     return isValid(date) ? format(date, 'hh:mm a') : '--:--'
 })
+
+const closeTimeSheetUploadModal = () => {
+    isTimeSheetUploadModalOpen.value = false
+}
 </script>

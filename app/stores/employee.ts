@@ -28,7 +28,6 @@ export const useEmployeeStore = defineStore('employee', {
                 id: emp.id,
                 label: `${emp.full_name} (${emp.employee_id})`,
                 value: emp.id,
-                // Extra data for custom display if needed
                 avatar: emp.photo,
                 designation: emp.designation_name
             }));
@@ -67,14 +66,21 @@ export const useEmployeeStore = defineStore('employee', {
         },
         async fetchEmployees() {
             this.loading = true;
+            this.error = null;
             try {
                 const data = await useApi<EmployeeListResponse>('/api/employees/', {
                     credentials: 'include'
                 });
                 this.employeesList = data.results || [];
             } catch (err: any) {
-                console.error('Failed to fetch employees list', err);
+                this.error = err?.message || 'Failed to fetch employees list';
                 this.employeesList = [];
+                const toast = useToast();
+                toast.add({
+                    title: 'Error',
+                    description: this.error || 'Failed to fetch employees list',
+                    color: 'error'
+                });
             } finally {
                 this.loading = false;
             }

@@ -14,5 +14,5 @@ export const tabs: TabConfig[] = [
     { id: 1, name: 'Personal Details', component: PersonalDetails },
     { id: 2, name: 'Bank Details', component: BankDetails },
     { id: 3, name: 'Update Password', component: UpdatePassword },
-    { id: 4, name: 'Profile Picture', component: ProfilePicture },
+    // { id: 4, name: 'Profile Picture', component: ProfilePicture },
 ]

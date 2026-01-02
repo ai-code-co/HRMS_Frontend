@@ -16,7 +16,7 @@ const days = ['18', '19', '20', '21', '22', '23', '24'];
                 </h3>
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Last 7 Days</p>
             </div>
-            <UBadge color="indigo" variant="subtle" size="md" :ui="{ rounded: 'rounded-full' }">
+            <UBadge color="primary" variant="soft" size="md" :ui="{ rounded: 'rounded-full' }">
                 Daily Average: 8.5h
             </UBadge>
         </div>
@@ -24,9 +24,7 @@ const days = ['18', '19', '20', '21', '22', '23', '24'];
         <div class="h-64 flex items-end justify-between gap-4 px-2">
             <div v-for="(h, i) in dataPoints" :key="i" class="flex-1 flex flex-col items-center gap-3 group">
                 <div class="relative w-full h-full flex items-end">
-                    <div v-motion :initial="{ height: '0%' }"
-                        :enter="{ height: `${h}%`, transition: { delay: i * 100, type: 'spring', stiffness: 100 } }"
-                        class="w-full rounded-t-xl transition-all duration-300"
+                    <div class="w-full rounded-t-xl transition-all duration-300"
                         :class="i === 6 ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-100'"></div>
                 </div>
                 <span class="text-[10px] font-bold text-slate-400">Oct {{ days[i] }}</span>

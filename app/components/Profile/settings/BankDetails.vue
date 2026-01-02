@@ -24,7 +24,6 @@ const state = reactive({
 })
 
 const loading = ref(false)
-const formRef = ref()
 
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     loading.value = true
@@ -35,8 +34,19 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         })
 
         employeeStore.updateEmployee(updated)
-    } catch (error) {
-        console.error('Update failed', error)
+        const toast = useToast()
+        toast.add({
+            title: 'Success',
+            description: 'Bank details updated successfully',
+            color: 'green'
+        })
+    } catch (error: any) {
+        const toast = useToast()
+        toast.add({
+            title: 'Error',
+            description: error?.data?.error || error?.message || 'Failed to update bank details',
+            color: 'red'
+        })
     } finally {
         loading.value = false
     }
@@ -44,7 +54,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 </script>
 
 <template>
-    <UForm ref="formRef" :schema="bankSchema" :state="state" class="space-y-6" @submit="onSubmit">
+    <UForm :schema="bankSchema" :state="state" class="space-y-6" @submit="onSubmit">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <UFormField label="Account Holder Name" name="account_holder_name">
                 <UInput v-model="state.account_holder_name" placeholder="John Doe" class="w-full" />
