@@ -1,5 +1,5 @@
 <template>
-  <UHeader :ui="{
+  <UHeader toggle-side="left" :ui="{
     container: 'max-w-none px-4',
     toggle: 'hidden md:flex'
   }">

@@ -6,6 +6,7 @@ import type { FormSubmitEvent } from '#ui/types'
 
 defineProps<{ policy: string }>()
 
+const toast = useToast();
 const show = reactive({
     current: false,
     new: false,
@@ -34,15 +35,30 @@ type Schema = z.output<typeof schema>
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     loading.value = true
     try {
-        await useApi('/api/auth/change-password/', {
+        await useApi('/auth/change-password/', {
             method: 'POST',
             body: {
-                current_password: event.data.current_password,
+                old_password: event.data.current_password,
                 new_password: event.data.new_password,
+                confirm_password: event.data.confirm_password,
+
             },
         })
+        toast.add({
+            title: 'Password Updated',
+            description: 'Your password has been successfully updated.',
+            color: 'success'
+        });
         Object.assign(state, { current_password: '', new_password: '', confirm_password: '' })
-    } finally {
+    } catch (error) {
+        toast.add({
+            title: 'Error',
+            description: 'There was an error updating your password. Please try again.',
+            color: 'error'
+        });
+        throw error
+    }
+    finally {
         loading.value = false
     }
 }

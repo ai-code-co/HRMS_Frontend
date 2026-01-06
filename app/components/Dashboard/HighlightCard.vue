@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
     <section
-        class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-100 overflow-hidden relative group h-full flex flex-col justify-between">
+        class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-8 text-white shadow-xl shadow-indigo-100 overflow-hidden relative group h-full flex flex-col justify-between">
         <div
             class="absolute -right-4 -bottom-4 opacity-10 transform group-hover:scale-125 transition-transform duration-700">
             <Award :size="140" />

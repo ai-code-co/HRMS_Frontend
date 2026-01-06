@@ -54,7 +54,7 @@ const handleAssignSubmit = async () => {
         toast.add({
             title: 'Assigned',
             description: `Device assigned to ${selectedEmployee.value.label}`,
-            color: 'green'
+            color: 'success'
         });
 
         // Refresh details in parent

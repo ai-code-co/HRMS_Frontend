@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { ArrowLeft, Calendar, ChevronRight } from 'lucide-vue-next';
+import { ArrowLeft, ChevronRight } from 'lucide-vue-next';
 import { useInventoryStore } from '../stores/inventory';
 import type { InventoryItem } from '../types/inventory';
 
@@ -12,7 +12,6 @@ import CommentSection from '../components/Inventory/CommentSection.vue';
 import DocumentSection from '../components/Inventory/DocumentSection.vue';
 import AddTypeModal from '../components/Inventory/AddTypeModal.vue';
 
-// --- STORE INTEGRATION ---
 const store = useInventoryStore();
 const {
     categories,
@@ -27,13 +26,11 @@ const {
 const route = useRoute();
 const router = useRouter();
 
-// --- STATE ---
 const view = ref<'dashboard' | 'list'>('dashboard');
 const selectedCategoryId = ref<string | null>(null);
 const selectedItemId = ref<string | undefined>(undefined);
 const isAddModalOpen = ref(false);
 
-// Track mobile navigation state
 const isMobileDetailOpen = ref(false);
 
 const comments = ref([
@@ -69,9 +66,7 @@ const restoreStateFromUrl = async (categoryId: string, deviceId?: string) => {
     }
 };
 
-// --- WATCHER FOR BROWSER BACK/FORWARD BUTTONS ---
 watch(() => route.query, async (newQuery, oldQuery) => {
-    // If we went back to dashboard (no category)
     if (!newQuery.category) {
         view.value = 'dashboard';
         selectedCategoryId.value = null;
@@ -80,33 +75,23 @@ watch(() => route.query, async (newQuery, oldQuery) => {
         return;
     }
 
-    // If category changed or we just arrived at a category
     if (newQuery.category !== oldQuery?.category) {
         await restoreStateFromUrl(newQuery.category as string, newQuery.device as string);
         return;
     }
 
-    // If only device changed (e.g. clicked different item or went back from item to list)
     if (newQuery.device !== oldQuery?.device) {
         if (newQuery.device) {
             selectedItemId.value = newQuery.device as string;
             isMobileDetailOpen.value = true;
             await store.fetchDeviceDetail(newQuery.device as string);
         } else {
-            // Device param removed (Back to list on mobile)
             isMobileDetailOpen.value = false;
-            // On desktop we usually keep the last selected or select first, 
-            // but for mobile sync, we ensure detail view is closed
         }
     }
 });
 
-// --- ACTIONS ---
-
-// 1. Select Category
 const handleSelectCategory = (id: string) => {
-    // Push to router, let the Watcher or logic handle the rest
-    // This adds ?category=123 to URL
     router.push({ query: { ...route.query, category: id, device: undefined } });
 };
 
@@ -129,12 +114,10 @@ const handleBack = () => {
     <div class="flex h-screen bg-[#F8FAFC] font-sans text-slate-900">
         <div class="flex-1 flex flex-col relative">
 
-            <!-- Back Button Header -->
             <div v-if="view === 'list'" class="h-16 px-4 md:px-6 flex items-center shrink-0 z-10">
                 <button @click="handleBack"
                     class="px-3 py-2 bg-slate-100 hover:bg-slate-200 w-fit rounded-xl text-[11px] font-bold text-slate-500 transition-all flex items-center gap-1">
 
-                    <!-- Icon changes based on state -->
                     <ArrowLeft v-if="isMobileDetailOpen" :size="14" />
                     <ChevronRight v-else :size="14" class="rotate-180" />
 
