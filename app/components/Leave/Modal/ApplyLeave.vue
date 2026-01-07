@@ -26,7 +26,7 @@
                         </div>
 
                         <UFormField label="Leave Type" name="leave_type">
-                            <USelectMenu v-model="state.leave_type" :items="Object.keys(leaveStore.balancesRaw)"
+                            <USelectMenu v-model="state.leave_type" :items="Object.keys(leaveStore.balances)"
                                 size="xl" placeholder="Select leave type" color="secondary" variant="outline"
                                 class="w-full" />
                         </UFormField>
