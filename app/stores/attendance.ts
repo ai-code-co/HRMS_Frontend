@@ -14,7 +14,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
     const weekOptions = { weekStartsOn: 1 as const }
 
-    // This calculates what days to SHOW in the grid
     const calendarInterval = computed(() => {
         const date = currentDate.value
         if (viewMode.value === 'month') {
