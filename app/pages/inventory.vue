@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col bg-[#F8FAFC]">
+    <!-- <div class="flex flex-col bg-[#F8FAFC]">
         <header class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
@@ -110,13 +110,17 @@
                 </div>
             </section>
         </main>
-    </div>
+    </div> -->
 </template>
 
 <script setup lang="ts">
 import { useInventoryStore } from '~/stores/myInventory'
 
 const store = useInventoryStore()
+
+await useAsyncData('inventory', () => {
+    return store.fetchInventory()
+})
 
 const getIcon = (category: string) => {
     switch (category.toLowerCase()) {

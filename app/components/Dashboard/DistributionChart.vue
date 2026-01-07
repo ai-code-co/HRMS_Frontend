@@ -22,14 +22,10 @@ const legendColorMap: Record<string, string> = {
         <div class="relative w-48 h-48 mx-auto mb-10">
             <svg class="w-full h-full transform -rotate-90">
                 <circle cx="50%" cy="50%" r="70" stroke="#f1f5f9" stroke-width="20" fill="transparent" />
-                <circle v-motion :initial="{ strokeDashoffset: 440 }"
-                    :enter="{ strokeDashoffset: 120, transition: { duration: 1000, type: 'spring' } }" cx="50%" cy="50%"
-                    r="70" stroke="#4f46e5" stroke-width="20" stroke-dasharray="440" stroke-linecap="round"
-                    fill="transparent" />
-                <circle v-motion :initial="{ strokeDashoffset: 440 }"
-                    :enter="{ strokeDashoffset: 380, transition: { duration: 1000, delay: 200, type: 'spring' } }"
-                    cx="50%" cy="50%" r="70" stroke="#10b981" stroke-width="20" stroke-dasharray="440"
-                    stroke-linecap="round" fill="transparent" />
+                <circle cx="50%" cy="50%" r="70" stroke="#4f46e5" stroke-width="20" stroke-dasharray="440"
+                    stroke-dashoffset="120" stroke-linecap="round" fill="transparent" class="chart-segment" />
+                <circle cx="50%" cy="50%" r="70" stroke="#10b981" stroke-width="20" stroke-dasharray="440"
+                    stroke-dashoffset="380" stroke-linecap="round" fill="transparent" class="chart-segment delay-200" />
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center">
                 <span class="text-3xl font-black text-slate-800">{{ total }}</span>
@@ -48,3 +44,19 @@ const legendColorMap: Record<string, string> = {
         </div>
     </section>
 </template>
+
+<style scoped>
+.chart-segment {
+    transition: stroke-dashoffset 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.delay-200 {
+    transition-delay: 200ms;
+}
+
+@starting-style {
+    .chart-segment {
+        stroke-dashoffset: 440;
+    }
+}
+</style>

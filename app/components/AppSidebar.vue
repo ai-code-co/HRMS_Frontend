@@ -68,7 +68,6 @@ const isExpanded = computed(() => isMobileOpen.value || isHovered.value)
 </script>
 
 <template>
-  <!-- Backdrop -->
   <Transition name="fade">
     <div v-if="isMobileOpen" class="fixed inset-0 bg-black/40 z-90 lg:hidden backdrop-blur-sm touch-none"
       @click="closeMobile" />
@@ -77,15 +76,14 @@ const isExpanded = computed(() => isMobileOpen.value || isHovered.value)
   <aside
     class="fixed lg:relative z-100 flex flex-col h-dvh lg:h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-[width] duration-300 ease-in-out overflow-hidden shadow-xl lg:shadow-none"
     :class="[
-      isMobileOpen ? 'w-full' : 'w-16'
+      isMobileOpen ? 'w-full' : isHovered ? 'w-56' : 'w-16 lg:w-16'
     ]" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <div class="flex items-center gap-3 py-5 px-4 shrink-0 overflow-hidden">
-      <button
-        class="w-11 h-11 flex items-center justify-center shrink-0 rounded-xl bg-primary-600 text-white shadow-md active:scale-95 transition-transform"
+      <UButton variant="solid" size="lg" class="cursor-pointer"
         @click.stop="isMobileOpen = !isMobileOpen">
-        <UIcon :name="isMobileOpen ? 'i-lucide-x' : 'i-lucide-menu'" class="w-6 h-6 transition-transform duration-300"
+        <UIcon :name="isMobileOpen ? 'i-lucide-x' : 'i-lucide-menu'" size="sm"
           :class="{ 'rotate-90': isMobileOpen }" />
-      </button>
+      </UButton>
 
       <span class="text-xl font-bold tracking-tight whitespace-nowrap transition-all duration-300" :class="[
         isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'

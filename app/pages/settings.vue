@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { useSettingsStore } from '~/stores/settings'
 // import Profile from '~/components/settings/Profile.vue'
-import Permissions from '~/components/settings/Permissions.vue'
+import Permissions from '~/components/Settings/Permissions.vue'
 // import Appearance from '~/components/settings/Appearance.vue'
 // import Security from '~/components/settings/Security.vue'
 // import Notifications from '~/components/settings/Notifications.vue'

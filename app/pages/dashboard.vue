@@ -41,7 +41,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-8">
                     <DashboardDistributionChart :title="currentRole === 'admin' ? 'Team Distribution' : 'Leave Balance'"
                         :total="currentRole === 'admin' ? '1.2k' : dashboardStore.raw_data?.leave_chart?.total_left"
-                        :sub="currentRole === 'admin' ? 'Total Staff' : 'Days Left'"
+                        :sub="currentRole === 'admin' ? 'Total Staff' : 'leaves Left'"
                         :data="dashboardStore.distribution" />
 
                     <DashboardHighlightCard v-if="dashboardStore.highlight" v-bind="dashboardStore.highlight" />

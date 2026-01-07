@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import {
     startOfMonth, endOfMonth, startOfWeek, endOfWeek,
     eachDayOfInterval, format, isSameMonth, isSameDay,
-    addMonths, subMonths, addWeeks, subWeeks
+    addMonths, subMonths, addWeeks, subWeeks, getMonth, getYear
 } from 'date-fns'
 
 export const useAttendanceStore = defineStore('attendance', () => {
@@ -13,26 +13,32 @@ export const useAttendanceStore = defineStore('attendance', () => {
     const loading = ref(false)
 
     const weekOptions = { weekStartsOn: 1 as const }
+
+    // This calculates what days to SHOW in the grid
     const calendarInterval = computed(() => {
         const date = currentDate.value
-        let start, end
-
         if (viewMode.value === 'month') {
-            start = startOfWeek(startOfMonth(date), weekOptions)
-            end = endOfWeek(endOfMonth(date), weekOptions)
+            const start = startOfWeek(startOfMonth(date), weekOptions)
+            const end = endOfWeek(endOfMonth(date), weekOptions)
+            return { start, end }
         } else {
-            start = startOfWeek(date, weekOptions)
-            end = endOfWeek(date, weekOptions)
+            const start = startOfWeek(date, weekOptions)
+            const end = endOfWeek(date, weekOptions)
+            return { start, end }
         }
-
-        return { start, end }
     })
 
-    const monthLabel = computed(() => format(currentDate.value, 'MMM yyyy'))
+    const headerLabel = computed(() => {
+        if (viewMode.value === 'month') {
+            return format(currentDate.value, 'MMMM yyyy')
+        } else {
+            const { start, end } = calendarInterval.value
+            return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`
+        }
+    })
 
     const calendarDays = computed(() => {
         const { start, end } = calendarInterval.value
-
         return eachDayOfInterval({ start, end }).map(date => {
             const dateKey = format(date, 'yyyy-MM-dd')
             return {
@@ -48,34 +54,43 @@ export const useAttendanceStore = defineStore('attendance', () => {
     async function fetchAttendance() {
         loading.value = true
         try {
-            const startDateStr = format(calendarInterval.value.start, 'yyyy-MM-dd')
-            const endDateStr = format(calendarInterval.value.end, 'yyyy-MM-dd')
+            let endpoint = ''
+            let params: Record<string, any> = {}
 
-            const response = await useApi('/api/attendance/my-attendance/', {
-                params: {
-                    'start_date': startDateStr,
-                    'end_date': endDateStr
+            if (viewMode.value === 'month') {
+                endpoint = '/api/attendance/monthly/'
+                params = {
+                    month: getMonth(currentDate.value) + 1,
+                    year: getYear(currentDate.value)
                 }
-            })
+            } else {
+                endpoint = '/api/attendance/weekly/'
+                params = {
+                    week_start: format(startOfWeek(currentDate.value, weekOptions), 'yyyy-MM-dd')
+                }
+            }
+
+            const response = await useApi(endpoint, { params })
 
             const newRecords: Record<string, any> = {}
-            if (response?.results?.data) {
-                response.results.data.forEach((item: any) => {
-                    newRecords[item.full_date] = item
-                })
-            }
+            console.log('API Response:', response)
+            const data = response?.data?.attendance || response.data || []
+
+            data.forEach((item: any) => {
+                const key = item.full_date || item.date
+                if (key) newRecords[key] = item
+            })
 
             attendanceRecords.value = newRecords
         } catch (error: any) {
-            const toast = useToast()
-            toast.add({
-                title: 'Error',
-                description: error?.message || 'Failed to fetch attendance records',
-                color: 'error'
-            })
+            console.error('Fetch error:', error)
         } finally {
             loading.value = false
         }
+    }
+    function setViewMode(mode: 'month' | 'week') {
+        viewMode.value = mode
+        fetchAttendance()
     }
 
     function next() {
@@ -97,8 +112,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
         viewMode,
         calendarDays,
         loading,
-        monthLabel,
+        headerLabel,
         fetchAttendance,
+        setViewMode,
         next,
         prev
     }
