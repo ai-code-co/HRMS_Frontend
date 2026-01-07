@@ -8,7 +8,7 @@ const days = ['18', '19', '20', '21', '22', '23', '24'];
 </script>
 
 <template>
-    <section class="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+    <section class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
         <div class="flex items-center justify-between mb-10">
             <div>
                 <h3 class="text-lg font-black text-slate-800 tracking-tight">

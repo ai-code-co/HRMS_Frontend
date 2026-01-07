@@ -44,7 +44,7 @@
                             Total Duration
                         </p>
                         <p class="text-2xl font-black text-slate-800">
-                            {{ day.total_time }}
+                            {{day.total_time }} Hrs
                         </p>
                     </div>
 
@@ -81,7 +81,7 @@
                     <AttendanceModalUploadTimesheetHeader :day="day" @close="closeTimeSheetUploadModal" />
                 </template>
                 <template #body>
-                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimeSheetUploadModal"/>
+                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimeSheetUploadModal" />
                 </template>
             </UModal>
 
@@ -114,11 +114,11 @@ watch(
         if (!enabled || !props.day) return
 
         inTime.value = toTime(
-            props.day.office_in_time || props.day.home_in_time
+            props.day.in_time || props.day.home_in_time
         )
 
         outTime.value = toTime(
-            props.day.office_out_time || props.day.home_out_time
+            props.day.out_time || props.day.home_out_time
         )
     },
     { immediate: true }
@@ -132,14 +132,14 @@ function toTime(iso?: string): Time | null {
 }
 
 const displayInTime = computed(() => {
-    const timeStr = props.day?.office_in_time || props.day?.home_in_time
+    const timeStr = props.day?.in_time || props.day?.home_in_time
     if (!timeStr) return '--:--'
     const date = parseISO(timeStr)
     return isValid(date) ? format(date, 'hh:mm a') : '--:--'
 })
 
 const displayOutTime = computed(() => {
-    const timeStr = props.day?.office_out_time || props.day?.home_out_time
+    const timeStr = props.day?.out_time || props.day?.home_out_time
     if (!timeStr) return '--:--'
     const date = parseISO(timeStr)
     return isValid(date) ? format(date, 'hh:mm a') : '--:--'

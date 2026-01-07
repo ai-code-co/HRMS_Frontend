@@ -38,7 +38,6 @@ import { z } from 'zod'
 import { Mail } from 'lucide-vue-next'
 import AnimatedBackground from '~/components/AnimatedBackground.vue'
 const toast = useToast()
-// import { EnvelopeIcon, AtSymbolIcon, ArrowPathIcon } from '@heroicons/vue/24/solid'
 
 const email = ref('')
 const loading = ref(false)

@@ -109,6 +109,37 @@ export const useLeaveStore = defineStore('leaves', {
             } finally {
                 this.loading = false
             }
+        },
+
+        async updateLeave(id: number, status: any) {
+            this.loading = true
+            this.error = null
+            const payload = { status }
+            try {
+                await useApi(`/api/leaves/${id}/`, {
+                    method: 'PATCH',
+                    body: payload
+                })
+                await this.fetchLeaves()
+                await this.fetchLeaveBalances()
+                const toast = useToast()
+                toast.add({
+                    title: 'Success',
+                    description: 'Leave request updated successfully',
+                    color: 'success'
+                })
+            } catch (err: any) {
+                this.error = err?.message || 'Failed to update leave request'
+                const toast = useToast()
+                toast.add({
+                    title: 'Error',
+                    description: this.error || 'Failed to update leave request',
+                    color: 'error'
+                })
+                throw err
+            } finally {
+                this.loading = false
+            }
         }
     }
 })

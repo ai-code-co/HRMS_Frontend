@@ -17,7 +17,7 @@
                                 <UButton color="secondary" variant="outline" icon="i-lucide-calendar" block
                                     class="justify-start">
                                     {{ state.from_date ? df.format(state.from_date.toDate(getLocalTimeZone()))
-                                        : 'Selecta date' }}
+                                        : 'Select date' }}
                                 </UButton>
                                 <template #content>
                                     <UCalendar v-model="state.from_date" class="p-2" />
@@ -30,16 +30,23 @@
                                 size="xl" placeholder="Select leave type" color="secondary" variant="outline"
                                 class="w-full" />
                         </UFormField>
+
                         <UFormField v-if="state.leave_type === 'rh'" label="Select Restricted Holiday"
                             name="holiday_id">
-                            <USelectMenu v-model="rh" :items="['dusshera', 'Eid']" size="xl"
-                                placeholder="Which holiday?" color="primary" class="w-full">
-                                <!-- <template #label>
-                                    {{ selectedRHName || 'Select Holiday' }}
-                                </template> -->
+                            <USelectMenu v-model="rh" :items="rhOptions" size="xl" placeholder="Which holiday?"
+                                color="primary" class="w-full">
+                                <template #option="{ option }">
+                                    <div class="flex flex-col">
+                                        <span :class="{ 'text-gray-400 opacity-50': option.disabled }">
+                                            {{ option.label }}
+                                        </span>
+                                        <span v-if="option.disabled" class="text-[10px] text-red-500 font-medium">
+                                            (Cannot select: Future Holiday)
+                                        </span>
+                                    </div>
+                                </template>
                             </USelectMenu>
                         </UFormField>
-
                     </div>
 
                     <div class="space-y-3">
@@ -62,16 +69,19 @@
                             <UInput :model-value="calculatedDays" readonly size="xl" icon="i-heroicons-calendar-days"
                                 color="secondary" variant="outline" />
                             <div class="flex gap-2 mt-3">
-                                <UButton size="sm" @click="state.is_first_half = !state.is_first_half">
+                                <UButton size="sm" :variant="state.is_first_half ? 'solid' : 'outline'"
+                                    @click="toggleHalf('first')">
                                     First Half
                                 </UButton>
-                                <UButton size="sm" @click="state.is_second_half = !state.is_second_half">
+                                <UButton size="sm" :variant="state.is_second_half ? 'solid' : 'outline'"
+                                    @click="toggleHalf('second')">
                                     Second Half
                                 </UButton>
                             </div>
                         </UFormField>
                     </div>
                 </div>
+
                 <UFormField label="Supporting Document"
                     :description="uploadedFileName ? `Attached: ${uploadedFileName}` : 'Select an image to upload'"
                     class="my-3">
@@ -86,14 +96,13 @@
                             </template>
                         </UInput>
                     </div>
-                    <p v-if="isUploading" class="text-xs text-primary mt-1 animate-pulse">
-                        Uploading to server...
-                    </p>
                 </UFormField>
+
                 <UFormField label="Reason" name="reason" class="w-full mb-3">
                     <UTextarea v-model="state.reason" :rows="4" size="xl" placeholder="Brief reason for leave"
                         class="w-full" color="secondary" variant="outline" />
                 </UFormField>
+
                 <UButton type="submit" block size="xl" :loading="leaveStore.loading">
                     Apply Leave
                 </UButton>
@@ -103,21 +112,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { format } from 'date-fns'
+import { ref, computed, watch, onMounted } from 'vue'
+import { format, isAfter, startOfDay } from 'date-fns'
 import { leaveSchema } from '~/schemas/Leaves/apply/schema'
 import type { FormSubmitEvent } from '#ui/types'
 import { CalendarDate, DateFormatter, getLocalTimeZone } from '@internationalized/date'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits(['update:open', 'close'])
-const rh = ref<any>('');
+const rh = ref<any>(null);
+const rhOptions = ref<any[]>([]);
 const isUploading = ref(false)
 const uploadedFileName = ref('')
 
 const leaveStore = useLeaveStore()
 const toast = useToast()
-
 const df = new DateFormatter('en-US', { dateStyle: 'medium' })
 
 const today = () => {
@@ -135,6 +144,30 @@ const state = ref({
     doc_link: undefined as string | undefined,
 })
 
+const fetchRhLeaves = async () => {
+    try {
+        const res = await useApi('/api/leaves/rh-balance/')
+        const now = startOfDay(new Date())
+
+        rhOptions.value = res.data.holidays?.map((h: any) => {
+            const holidayDate = new Date(h.date)
+            const isDisabled = isAfter(holidayDate, now)
+
+            return {
+                value: h.id,
+                label: h.name,
+                disabled: isDisabled
+            }
+        }) || []
+    } catch (err) {
+        console.error("Failed to load RH list")
+    }
+}
+
+onMounted(() => {
+    fetchRhLeaves()
+})
+
 const modelOpen = computed({
     get: () => props.open,
     set: (value: boolean) => emit('update:open', value)
@@ -145,56 +178,50 @@ const close = () => {
     emit('close')
 }
 
-watch(() => props.open, (open) => {
-    if (open) {
-        state.value = {
-            leave_type: '',
-            from_date: today(),
-            to_date: today(),
-            reason: '',
-            is_first_half: false,
-            is_second_half: false,
-            doc_link: undefined,
-        }
-    }
-})
-
 const calculatedDays = computed(() => {
     if (!state.value.from_date || !state.value.to_date) return 0
-
     const start = state.value.from_date.toDate(getLocalTimeZone())
     const end = state.value.to_date.toDate(getLocalTimeZone())
-
     const diff = end.getTime() - start.getTime()
     let days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1
-
     if (state.value.is_first_half) days -= 0.5
     if (state.value.is_second_half) days -= 0.5
-
     return days > 0 ? days : 0
 })
 
-const handleFileUpload = async (event: Event) => {
+const handleFileUpload = async (event: any) => {
     const file = event.target.files?.[0]
     if (!file) return
     isUploading.value = true
     uploadedFileName.value = file.name
     const formData = new FormData()
     formData.append('image', file)
-
     try {
         const response = await useApi<{ public_id: string }>('/auth/upload-image/', {
             method: 'POST',
             body: formData,
         })
-
         state.value.doc_link = response.public_id;
-        toast.add({ title: 'File uploaded successfully', color: 'success', icon: 'i-heroicons-check-circle' })
+        toast.add({ title: 'File uploaded', color: 'success' })
     } catch (err) {
         uploadedFileName.value = ''
-        toast.add({ title: 'Upload failed', color: 'error', icon: 'i-heroicons-exclamation-triangle' })
+        toast.add({ title: 'Upload failed', color: 'error' })
     } finally {
         isUploading.value = false
+    }
+}
+
+const toggleHalf = (type: 'first' | 'second') => {
+    if (type === 'first') {
+        state.value.is_first_half = !state.value.is_first_half;
+        if (state.value.is_first_half) {
+            state.value.is_second_half = false;
+        }
+    } else {
+        state.value.is_second_half = !state.value.is_second_half;
+        if (state.value.is_second_half) {
+            state.value.is_first_half = false;
+        }
     }
 }
 
@@ -208,11 +235,14 @@ async function onSubmit(event: FormSubmitEvent<any>) {
             day_status: 'Full Day',
             action: 'apply_leave',
         }
+        if (state.value.leave_type === 'rh' && rh.value) {
+            payload.leave_type = 'Restricted Holiday'
+            payload.rh_id = rh.value.value;
+        }
         await leaveStore.applyLeave(payload)
-        toast.add({ title: 'Success', description: 'Leave application submitted', color: 'success' })
         modelOpen.value = false
     } catch (err: any) {
-        toast.add({ title: 'Error', description: err?.data?.message || 'Submission failed', color: 'error' })
+        console.error('Error applying leave:', err)
     }
 }
 </script>

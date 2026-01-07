@@ -46,6 +46,11 @@
                 <div v-if="loading" class="space-y-3">
                     <USkeleton v-for="i in 3" :key="i" class="h-20 w-full rounded-2xl" />
                 </div>
+                <div v-else-if="filteredRequests.length === 0"
+                    class="flex flex-col items-center justify-center py-12 text-center text-slate-400">
+                    <UIcon name="i-lucide-inbox" class="text-3xl mb-2" />
+                    <p class="text-sm font-medium">No {{ activeFilter.toLowerCase() }} Leaves found</p>
+                </div>
 
                 <div v-else class="space-y-3">
                     <div v-for="r in filteredRequests" :key="r.id"
@@ -54,12 +59,18 @@
                             <p class="font-bold text-sm">{{ r.type }}</p>
                             <p class="text-xs text-slate-400">{{ r.startDate }} — {{ r.endDate }}</p>
                         </div>
-                        <div :class="{
-                            'bg-emerald-50 text-emerald-600': r.status === 'approved',
-                            'bg-amber-50 text-amber-600': r.status === 'pending',
-                            'bg-rose-50 text-rose-600': r.status === 'rejected'
-                        }" class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase">
-                            {{ r.status }}
+                        <div class="flex gap-2">
+                            <div :class="{
+                                'bg-emerald-50 text-emerald-600': r.status === 'approved',
+                                'bg-amber-50 text-amber-600': r.status === 'pending',
+                                'bg-rose-50 text-rose-600': r.status === 'rejected' || r.status === 'cancelled',
+                            }" class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase">
+                                {{ r.status }}
+                            </div>
+                            <UButton v-if="r.status === 'pending'" @click="cancelLeave(r.id)"
+                                class="cursor-pointer rounded-full" color="error">
+                                <UIcon name="i-lucide-x" />
+                            </UButton>
                         </div>
                     </div>
                 </div>
@@ -92,4 +103,9 @@ const filteredRequests = computed(() =>
         ? requests.value
         : requests.value.filter(r => r.status === activeFilter.value.toLowerCase())
 )
+
+const cancelLeave = async (id: number,) => {
+    const status = 'Cancelled'
+    await leaveStore.updateLeave(id, status)
+}
 </script>

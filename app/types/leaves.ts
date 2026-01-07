@@ -1,4 +1,4 @@
-export type LeaveStatus = 'approved' | 'pending' | 'rejected'
+export type LeaveStatus = 'approved' | 'pending' | 'rejected' | 'cancelled'
 
 export interface LeaveRequestAPI {
     id: number

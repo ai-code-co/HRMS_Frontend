@@ -1,7 +1,7 @@
-import BankDetails from "~/components/Profile/settings/BankDetails.vue"
-import PersonalDetails from "~/components/Profile/settings/PersonalDetails.vue"
-import ProfilePicture from "~/components/Profile/settings/ProfilePicture.vue"
-import UpdatePassword from "~/components/Profile/settings/UpdatePassword.vue"
+import BankDetails from "~/components/Profile/Settings/BankDetails.vue"
+import PersonalDetails from "~/components/Profile/Settings/PersonalDetails.vue"
+import ProfilePicture from "~/components/Profile/Settings/ProfilePicture.vue"
+import UpdatePassword from "~/components/Profile/Settings/UpdatePassword.vue"
 
 
 export interface TabConfig {

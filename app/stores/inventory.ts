@@ -48,7 +48,6 @@ export const useInventoryStore = defineStore('inventory', {
                 total: dt.total,
                 working: dt.working,
                 unassigned: dt.unassigned,
-                // Uses the helper function defined at the bottom
                 icon: getIconName(dt.name)
             }));
         },
