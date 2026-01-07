@@ -1,28 +1,23 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
-export const useInventoryStore = defineStore('myInventory', () => {
-  const items = ref<any[]>([])
-  const searchQuery = ref('')
-  const selectedId = ref<string | null>(null)
+export interface InventoryDevice {
+  id: string
+  name: string
+  category: string
+  assetId: string
+  serialNumber: string
+  status: string
+  model: string
+  image: string
+  auditStatus: string
+  auditBy: string
+  history: any[]
+}
+
+export const useInventoryStore = defineStore('inventory', () => {
+  const items = ref<InventoryDevice[]>([])
   const isLoading = ref(false)
-
-  const filteredItems = computed(() => {
-    if (!searchQuery.value) return items.value
-    const query = searchQuery.value.toLowerCase()
-    return items.value.filter(item =>
-      item.name.toLowerCase().includes(query) ||
-      item.assetId.toLowerCase().includes(query)
-    )
-  })
-
-  const selectedItem = computed(() => {
-    if (!items.value.length) return null
-    if (selectedId.value) {
-      return items.value.find(i => i.id === selectedId.value) || items.value[0]
-    }
-    return items.value[0]
-  })
 
   async function fetchInventory() {
     isLoading.value = true
@@ -44,10 +39,6 @@ export const useInventoryStore = defineStore('myInventory', () => {
         auditBy: 'System Audit',
         history: []
       }))
-
-      if (items.value.length > 0 && !selectedId.value) {
-        selectedId.value = items.value[0].id
-      }
     } catch (err) {
       console.error('Fetch error:', err)
     } finally {
@@ -55,18 +46,9 @@ export const useInventoryStore = defineStore('myInventory', () => {
     }
   }
 
-  function selectItem(id: string) {
-    selectedId.value = id
-  }
-
   return {
     items,
-    searchQuery,
-    selectedId,
     isLoading,
-    filteredItems,
-    selectedItem,
-    fetchInventory,
-    selectItem
+    fetchInventory
   }
 })

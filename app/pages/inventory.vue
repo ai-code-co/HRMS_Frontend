@@ -3,7 +3,7 @@
         <p class="text-slate-400 font-bold animate-pulse">Loading Inventory...</p>
     </div>
 
-    <div v-else-if="store.selectedItem" class="flex flex-col bg-[#F8FAFC]">
+    <div v-else-if="selectedItem" class="flex flex-col bg-[#F8FAFC]">
         <header class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
@@ -13,21 +13,21 @@
             </div>
 
             <div class="w-full sm:w-80">
-                <UInput v-model="store.searchQuery" icon="i-lucide-search" placeholder="Search devices..." size="xl"
+                <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search devices..." size="xl"
                     class="w-full" />
             </div>
         </header>
 
         <main class="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden px-4">
             <aside class="w-full lg:w-96 space-y-4 overflow-y-auto shrink-0 custom-scrollbar sidebar-height">
-                <button v-for="item in store.filteredItems" :key="item.id" @click="store.selectItem(item.id)" :class="[
+                <button v-for="item in filteredItems" :key="item.id" @click="selectItem(item.id)" :class="[
                     'w-full text-left p-6 bg-white rounded-3xl border-2 transition-all duration-300 relative group overflow-hidden cursor-pointer',
-                    store.selectedId === item.id ? 'border-primary-500 shadow-xl shadow-primary-100/50' : 'border-slate-50 hover:border-primary-100 shadow-sm'
+                    selectedId === item.id ? 'border-primary-500 shadow-xl shadow-primary-100/50' : 'border-slate-50 hover:border-primary-100 shadow-sm'
                 ]">
                     <div class="flex items-start gap-5">
                         <div :class="[
                             'p-4 rounded-2xl transition-colors',
-                            store.selectedId === item.id ? 'bg-slate-50 text-primary-600' : 'bg-slate-50 text-slate-400 group-hover:text-primary-400'
+                            selectedId === item.id ? 'bg-slate-50 text-primary-600' : 'bg-slate-50 text-slate-400 group-hover:text-primary-400'
                         ]">
                             <UIcon :name="getIcon(item.category)" class="w-5 h-5" />
                         </div>
@@ -51,41 +51,41 @@
                 class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col mb-4 overflow-y-auto">
                 <div class="flex-1 p-2 md:p-8">
                     <Transition name="fade-slide" mode="out-in">
-                        <div :key="store.selectedItem.id" class="space-y-12">
+                        <div :key="selectedItem.id" class="space-y-12">
                             <div class="flex items-start justify-between">
                                 <div>
                                     <h2 class="text-3xl font-black text-slate-800 tracking-tight mb-2">{{
-                                        store.selectedItem.name }}</h2>
+                                        selectedItem.name }}</h2>
                                     <div class="flex items-center gap-3">
-                                        <span class="text-xs font-bold text-slate-400">{{ store.selectedItem.category
+                                        <span class="text-xs font-bold text-slate-400">{{ selectedItem.category
                                             }}</span>
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                                        <UBadge variant="soft" color="neutral" size="xs">ID: {{ store.selectedItem.id }}
+                                        <UBadge variant="soft" color="neutral" size="xs">ID: {{ selectedItem.id }}
                                         </UBadge>
                                     </div>
                                 </div>
-                                <UBadge :color="store.selectedItem.status === 'Good' ? 'success' : 'error'"
+                                <UBadge :color="selectedItem.status === 'Good' ? 'success' : 'error'"
                                     variant="subtle" class="font-black">
-                                    {{ store.selectedItem.status }}
+                                    {{ selectedItem.status }}
                                 </UBadge>
                             </div>
 
                             <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
                                 <div
                                     class="aspect-video rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                    <img :src="store.selectedItem.image"
+                                    <img :src="selectedItem.image"
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <MyInventoryMetadataCard label="SERIAL NUMBER"
-                                        :value="store.selectedItem.serialNumber" />
+                                        :value="selectedItem.serialNumber" />
                                     <MyInventoryMetadataCard label="INTERNAL ASSET ID"
-                                        :value="store.selectedItem.assetId" />
-                                    <MyInventoryMetadataCard label="MODEL" :value="store.selectedItem.model" />
+                                        :value="selectedItem.assetId" />
+                                    <MyInventoryMetadataCard label="MODEL" :value="selectedItem.model" />
                                     <MyInventoryMetadataCard label="AUDIT STATUS"
-                                        :value="store.selectedItem.auditStatus"
-                                        :sub-value="`by ${store.selectedItem.auditBy}`" :highlight="true" />
+                                        :value="selectedItem.auditStatus"
+                                        :sub-value="`by ${selectedItem.auditBy}`" :highlight="true" />
                                 </div>
                             </div>
                         </div>
@@ -100,6 +100,40 @@
 import { useInventoryStore } from '~/stores/myInventory'
 
 const store = useInventoryStore()
+
+// UI state - managed in component
+const searchQuery = ref('')
+const selectedId = ref<string | null>(null)
+
+// Computed properties for filtering and selection
+const filteredItems = computed(() => {
+    if (!searchQuery.value) return store.items
+    const query = searchQuery.value.toLowerCase()
+    return store.items.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.assetId.toLowerCase().includes(query)
+    )
+})
+
+const selectedItem = computed(() => {
+    if (!store.items.length) return null
+    if (selectedId.value) {
+        return store.items.find(i => i.id === selectedId.value) || store.items[0]
+    }
+    return store.items[0]
+})
+
+// Selection handler
+function selectItem(id: string) {
+    selectedId.value = id
+}
+
+// Auto-select first item when data loads
+watch(() => store.items.length, (newLength) => {
+    if (newLength > 0 && !selectedId.value) {
+        selectedId.value = store.items[0].id
+    }
+}, { immediate: true })
 
 await useAsyncData('inventory-fetch', () => store.fetchInventory())
 
