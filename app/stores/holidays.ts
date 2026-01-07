@@ -51,8 +51,8 @@ export const useHolidayStore = defineStore('holidays', () => {
             const toast = useToast()
             toast.add({
                 title: 'Error',
-                description: error.value,
-                color: 'red'
+                description: error.value || '',
+                color: 'error'
             })
         } finally {
             isLoading.value = false

@@ -46,7 +46,6 @@
                 </button>
             </aside>
 
-            <!-- Details -->
             <section
                 class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col mb-4 overflow-y-auto">
                 <div class="flex-1 p-2 md:p-8">
@@ -64,8 +63,8 @@
                                         </UBadge>
                                     </div>
                                 </div>
-                                <UBadge :color="selectedItem.status === 'Good' ? 'success' : 'error'"
-                                    variant="subtle" class="font-black">
+                                <UBadge :color="selectedItem.status === 'Good' ? 'success' : 'error'" variant="subtle"
+                                    class="font-black">
                                     {{ selectedItem.status }}
                                 </UBadge>
                             </div>
@@ -78,13 +77,10 @@
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <MyInventoryMetadataCard label="SERIAL NUMBER"
-                                        :value="selectedItem.serialNumber" />
-                                    <MyInventoryMetadataCard label="INTERNAL ASSET ID"
-                                        :value="selectedItem.assetId" />
+                                    <MyInventoryMetadataCard label="SERIAL NUMBER" :value="selectedItem.serialNumber" />
+                                    <MyInventoryMetadataCard label="INTERNAL ASSET ID" :value="selectedItem.assetId" />
                                     <MyInventoryMetadataCard label="MODEL" :value="selectedItem.model" />
-                                    <MyInventoryMetadataCard label="AUDIT STATUS"
-                                        :value="selectedItem.auditStatus"
+                                    <MyInventoryMetadataCard label="AUDIT STATUS" :value="selectedItem.auditStatus"
                                         :sub-value="`by ${selectedItem.auditBy}`" :highlight="true" />
                                 </div>
                             </div>
@@ -97,15 +93,15 @@
 </template>
 
 <script setup lang="ts">
-import { useInventoryStore } from '~/stores/myInventory'
+import { useMyInventoryStore } from '~/stores/myInventory'
 
-const store = useInventoryStore()
+const store = useMyInventoryStore()
 
-// UI state - managed in component
 const searchQuery = ref('')
 const selectedId = ref<string | null>(null)
 
-// Computed properties for filtering and selection
+await useAsyncData('inventory-fetch', () => store.fetchInventory())
+
 const filteredItems = computed(() => {
     if (!searchQuery.value) return store.items
     const query = searchQuery.value.toLowerCase()
@@ -123,7 +119,6 @@ const selectedItem = computed(() => {
     return store.items[0]
 })
 
-// Selection handler
 function selectItem(id: string) {
     selectedId.value = id
 }
@@ -135,7 +130,6 @@ watch(() => store.items.length, (newLength) => {
     }
 }, { immediate: true })
 
-await useAsyncData('inventory-fetch', () => store.fetchInventory())
 
 const getIcon = (category: string) => {
     const cat = category?.toLowerCase() || ''

@@ -15,7 +15,7 @@ export interface InventoryDevice {
   history: any[]
 }
 
-export const useInventoryStore = defineStore('inventory', () => {
+export const useMyInventoryStore = defineStore('myInventory', () => {
   const items = ref<InventoryDevice[]>([])
   const isLoading = ref(false)
 
