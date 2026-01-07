@@ -1,65 +1,68 @@
 import { defineStore } from 'pinia'
-import {
-    UserCheck, CalendarDays, Briefcase, Award
-} from 'lucide-vue-next'
+
+interface Overview {
+    monthly_attendance_pct: string
+    attendance_trend: string
+    leave_balance: string
+    tasks_completed: number
+    tasks_trend: string
+    employee_score: number
+}
+
+interface Holiday {
+    name: string
+    type: string
+    date: string
+}
+
+interface LeaveBreakdownItem {
+    label: string
+    value: number
+}
+
+interface LeaveChart {
+    breakdown: LeaveBreakdownItem[]
+}
+
+interface PerformanceWidget {
+    title: string
+    message: string
+}
+
+interface DashboardData {
+    overview: Overview
+    upcoming_holidays: Holiday[]
+    leave_chart: LeaveChart
+    performance_widget: PerformanceWidget
+}
 
 export const useDashboardStore = defineStore('dashboard', {
     state: () => ({
-        raw_data: null as any,
+        dashboardData: null as DashboardData | null,
         loading: false,
         error: null as string | null
     }),
 
     getters: {
-        stats: (state) => {
-            if (!state.raw_data) return []
-            const ov = state.raw_data.overview
-            return [
-                { label: "Monthly Attendance", value: ov.monthly_attendance_pct, trend: ov.attendance_trend, icon: UserCheck, color: "indigo" },
-                { label: "Leave Balance", value: ov.leave_balance, icon: CalendarDays, color: "emerald" },
-                { label: "Tasks Completed", value: ov.tasks_completed.toString(), trend: ov.tasks_trend, icon: Briefcase, color: "amber" },
-                { label: "Employee Score", value: ov.employee_score.toString(), icon: Award, color: "purple" }
-            ]
-        },
-        events: (state) => {
-            if (!state.raw_data) return []
-            return state.raw_data.upcoming_holidays.map((h: any) => ({
-                title: h.name,
-                sub: `${h.type} • ${h.date}`,
-                icon: CalendarDays,
-                color: "indigo"
-            }))
-        },
-        distribution: (state) => {
-            if (!state.raw_data) return []
-            const colors = ['bg-indigo-600', 'bg-emerald-500', 'bg-amber-400', 'bg-slate-200']
-            return state.raw_data.leave_chart.breakdown.map((item: any, index: number) => ({
-                label: item.label,
-                value: item.value.toString(),
-                color: colors[index] || 'bg-slate-200'
-            }))
-        },
-        highlight: (state) => {
-            if (!state.raw_data) return null
-            const perf = state.raw_data.performance_widget
-            return {
-                title: perf.title,
-                description: perf.message,
-                action: 'View Stats'
-            }
-        }
+        overview: (state) => state.dashboardData?.overview ?? null,
+        upcomingHolidays: (state) => state.dashboardData?.upcoming_holidays ?? [],
+        leaveBreakdown: (state) => state.dashboardData?.leave_chart.breakdown ?? [],
+        performanceWidget: (state) => state.dashboardData?.performance_widget ?? null
     },
 
     actions: {
         async fetchSummary() {
             this.loading = true
+            this.error = null
             try {
                 const response = await useApi('/api/dashboard/summary/')
                 if (response.error === 0) {
-                    this.raw_data = response.data
+                    this.dashboardData = response.data
+                } else {
+                    this.error = 'Failed to fetch dashboard data'
                 }
             } catch (err: any) {
-                this.error = err.message
+                this.error = err.message || 'An error occurred'
             } finally {
                 this.loading = false
             }

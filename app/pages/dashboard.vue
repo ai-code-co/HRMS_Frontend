@@ -16,7 +16,7 @@
                     <p class="text-sm font-medium text-slate-400 mt-1">
                         {{ currentRole === 'admin'
                             ? "Here's what's happening in Nebula today."
-                            : dashboardStore.raw_data?.performance_widget?.message }}
+                            : dashboardStore.performanceWidget?.message }}
                     </p>
                 </div>
                 <div class="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
@@ -26,25 +26,25 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <DashboardStatCard v-for="(stat, index) in dashboardStore.stats" :key="index" v-bind="stat" />
+                <DashboardStatCard v-for="(stat, index) in stats" :key="index" v-bind="stat" />
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <div class="xl:col-span-2 space-y-8">
                     <DashboardActivityChart :role="currentRole"
-                        :data="dashboardStore.raw_data?.productivity?.graph_data" />
+                        :data="dashboardStore.dashboardData?.productivity?.graph_data" />
 
                     <DashboardEventsList :title="currentRole === 'admin' ? 'Pending Approvals' : 'Upcoming Holidays'"
-                        :items="dashboardStore.events" :action-label="currentRole === 'admin' ? 'Review' : 'Details'" />
+                        :items="events" :action-label="currentRole === 'admin' ? 'Review' : 'Details'" />
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-8">
                     <DashboardDistributionChart :title="currentRole === 'admin' ? 'Team Distribution' : 'Leave Balance'"
-                        :total="currentRole === 'admin' ? '1.2k' : dashboardStore.raw_data?.leave_chart?.total_left"
+                        :total="currentRole === 'admin' ? '1.2k' : dashboardStore.dashboardData?.leave_chart?.total_left"
                         :sub="currentRole === 'admin' ? 'Total Staff' : 'leaves Left'"
-                        :data="dashboardStore.distribution" />
+                        :data="distribution" />
 
-                    <DashboardHighlightCard v-if="dashboardStore.highlight" v-bind="dashboardStore.highlight" />
+                    <DashboardHighlightCard v-if="highlight" v-bind="highlight" />
                 </div>
             </div>
         </div>
@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { CalendarDays } from 'lucide-vue-next';
+import { CalendarDays, UserCheck, Briefcase, Award } from 'lucide-vue-next';
 import { useDashboardStore } from '~/stores/dashboard';
 
 const dashboardStore = useDashboardStore();
@@ -67,9 +67,73 @@ const toggleRole = () => {
 }
 
 const displayDate = computed(() => {
-    return dashboardStore.raw_data?.user?.date ||
+    return dashboardStore.dashboardData?.user?.date ||
         new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 });
 
-const userName = computed(() => dashboardStore.raw_data?.user?.first_name || 'User');
+const userName = computed(() => dashboardStore.dashboardData?.user?.first_name || 'User');
+
+// UI-specific data transformations
+const stats = computed(() => {
+    const overview = dashboardStore.overview;
+    if (!overview) return [];
+
+    return [
+        {
+            label: "Monthly Attendance",
+            value: overview.monthly_attendance_pct,
+            trend: overview.attendance_trend,
+            icon: UserCheck,
+            color: "indigo"
+        },
+        {
+            label: "Leave Balance",
+            value: overview.leave_balance,
+            icon: CalendarDays,
+            color: "emerald"
+        },
+        {
+            label: "Tasks Completed",
+            value: overview.tasks_completed.toString(),
+            trend: overview.tasks_trend,
+            icon: Briefcase,
+            color: "amber"
+        },
+        {
+            label: "Employee Score",
+            value: overview.employee_score.toString(),
+            icon: Award,
+            color: "purple"
+        }
+    ];
+});
+
+const events = computed(() => {
+    return dashboardStore.upcomingHolidays.map(holiday => ({
+        title: holiday.name,
+        sub: `${holiday.type} • ${holiday.date}`,
+        icon: CalendarDays,
+        color: "indigo"
+    }));
+});
+
+const distribution = computed(() => {
+    const colors = ['bg-indigo-600', 'bg-emerald-500', 'bg-amber-400', 'bg-slate-200'];
+    return dashboardStore.leaveBreakdown.map((item, index) => ({
+        label: item.label,
+        value: item.value.toString(),
+        color: colors[index] || 'bg-slate-200'
+    }));
+});
+
+const highlight = computed(() => {
+    const widget = dashboardStore.performanceWidget;
+    if (!widget) return null;
+
+    return {
+        title: widget.title,
+        description: widget.message,
+        action: 'View Stats'
+    };
+});
 </script>
