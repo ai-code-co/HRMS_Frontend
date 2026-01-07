@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { getIconForHoliday, formatDayName, formatShortDate } from '~/utils/holidays'
 
 export type HolidayType = 'Public' | 'Restricted'
 export type HolidayStatus = 'Upcoming' | 'Passed'
@@ -15,31 +16,10 @@ export interface Holiday {
 }
 
 export const useHolidayStore = defineStore('holidays', () => {
-    const filter = ref<'all' | 'public' | 'restricted'>('all')
-    const searchQuery = ref('')
     const holidays = ref<Holiday[]>([])
     const isLoading = ref(false)
     const error = ref<string | null>(null)
 
-    const getIcon = (name: string): string => {
-        const n = name.toLowerCase()
-        if (n.includes('year')) return 'i-lucide-music'
-        if (n.includes('republic') || n.includes('independence')) return 'i-lucide-sparkles'
-        if (n.includes('christmas')) return 'i-lucide-calendar'
-        if (n.includes('gandhi') || n.includes('foundation')) return 'i-lucide-heart'
-        return 'i-lucide-map-pin'
-    }
-
-    const getDayName = (dateStr: string) => {
-        return new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date(dateStr))
-    }
-
-    const formatShortDate = (dateStr: string) => {
-        const d = new Date(dateStr)
-        const month = d.toLocaleString('default', { month: 'short' })
-        const day = d.getDate().toString().padStart(2, '0')
-        return `${month} ${day}`
-    }
     const fetchHolidays = async () => {
         isLoading.value = true
         error.value = null
@@ -60,9 +40,9 @@ export const useHolidayStore = defineStore('holidays', () => {
                     name: item.name,
                     date: formatShortDate(item.date),
                     fullDate: item.date,
-                    day: getDayName(item.date),
+                    day: formatDayName(item.date),
                     type: item.holiday_type?.toLowerCase() === 'restricted' ? 'Restricted' : 'Public',
-                    icon: getIcon(item.name),
+                    icon: getIconForHoliday(item.name),
                     status: status
                 }
             })
@@ -78,25 +58,15 @@ export const useHolidayStore = defineStore('holidays', () => {
             isLoading.value = false
         }
     }
-    const filteredHolidays = computed(() =>
-        holidays.value.filter(h => {
-            const matchesFilter = filter.value === 'all' || h.type.toLowerCase() === filter.value
-            const matchesSearch = h.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-            return matchesFilter && matchesSearch
-        })
-    )
 
     const nextHoliday = computed(() => {
         return holidays.value.find(h => h.status === 'Upcoming')
     })
 
     return {
-        filter,
-        searchQuery,
         holidays,
         isLoading,
         error,
-        filteredHolidays,
         nextHoliday,
         fetchHolidays
     }

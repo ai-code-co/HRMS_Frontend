@@ -4,11 +4,25 @@ import HolidayCard from '~/components/Holidays/HolidayCard.vue';
 import NextHoliday from '~/components/Holidays/NextHoliday.vue';
 
 const holidayStore = useHolidayStore()
-const { filter, searchQuery, filteredHolidays, nextHoliday } = storeToRefs(holidayStore)
+const { holidays, nextHoliday } = storeToRefs(holidayStore)
+
 const { data, status, error } = await useAsyncData('holidays', () => {
     return holidayStore.fetchHolidays()
 })
+
+// UI state - managed in component
+const filter = ref<'all' | 'public' | 'restricted'>('all')
+const searchQuery = ref('')
 const filterOptions = ['all', 'public', 'restricted'] as const
+
+// Filtering logic - managed in component
+const filteredHolidays = computed(() =>
+    holidays.value.filter(h => {
+        const matchesFilter = filter.value === 'all' || h.type.toLowerCase() === filter.value
+        const matchesSearch = h.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        return matchesFilter && matchesSearch
+    })
+)
 </script>
 
 <template>
