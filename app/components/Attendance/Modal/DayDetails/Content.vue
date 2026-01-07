@@ -81,12 +81,12 @@
                     <AttendanceModalUploadTimesheetHeader :day="day" @close="closeTimeSheetUploadModal" />
                 </template>
                 <template #body>
-                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimeSheetUploadModal" />
+                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimeSheetUploadModal" @update-success="handleTimeSheetSuccess" />
                 </template>
             </UModal>
 
-            <UButton color="secondary" size="lg" block class="cursor-pointer" @click="isEditing = !isEditing">
-                {{ isEditing ? 'Update Session' : 'Edit Session' }}
+            <UButton color="secondary" size="lg" block class="cursor-pointer" @click="isEditing ? handleUpdateSession() : isEditing = !isEditing" :disabled="isSubmitting">
+                {{ isSubmitting ? 'Updating...' : isEditing ? 'Update Session' : 'Edit Session' }}
             </UButton>
         </div>
     </div>
@@ -102,11 +102,20 @@ import AttendanceModalUploadTimesheetContent from '~/components/Attendance/Modal
 const props = defineProps<{
     day: any | null
 }>()
+
+const emit = defineEmits<{
+    (e: 'update-success'): void
+}>()
+
 const isEditing = ref(false)
 const inTime = shallowRef<Time | null>(null)
 const outTime = shallowRef<Time | null>(null)
+const isSubmitting = ref(false)
 
 const isTimeSheetUploadModalOpen = ref(false)
+
+const attendanceStore = useAttendanceStore()
+const toast = useToast()
 
 watch(
     () => isEditing.value,
@@ -145,7 +154,58 @@ const displayOutTime = computed(() => {
     return isValid(date) ? format(date, 'hh:mm a') : '--:--'
 })
 
+function formatTimeForApi(time: Time | null): string {
+    if (!time) return ''
+    const hour = time.hour
+    const minute = String(time.minute).padStart(2, '0')
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour % 12 || 12
+    return `${String(displayHour).padStart(2, '0')}:${minute} ${ampm}`
+}
+
+async function handleUpdateSession() {
+    if (!inTime.value || !outTime.value) {
+        toast.add({ title: 'Error', description: 'Please select both clock in and clock out times', color: 'error' })
+        return
+    }
+
+    isSubmitting.value = true
+    try {
+        const formattedInTime = formatTimeForApi(inTime.value)
+        const formattedOutTime = formatTimeForApi(outTime.value)
+
+        await attendanceStore.updateAttendance(
+            props.day.full_date || props.day.date,
+            formattedInTime,
+            formattedOutTime,
+            props.day.is_working_from_home || false
+        )
+
+        isEditing.value = false
+        toast.add({ title: 'Success', description: 'Attendance updated successfully', color: 'success' })
+        
+        // Emit event to notify parent to refresh
+        emit('update-success')
+    } catch (error: any) {
+        console.error('Failed to update attendance:', error)
+        toast.add({ 
+            title: 'Error', 
+            description: error?.message || 'Failed to update attendance', 
+            color: 'error' 
+        })
+    } finally {
+        isSubmitting.value = false
+    }
+}
+
 const closeTimeSheetUploadModal = () => {
     isTimeSheetUploadModalOpen.value = false
+}
+
+const handleTimeSheetSuccess = () => {
+    // Close the timesheet modal
+    isTimeSheetUploadModalOpen.value = false
+    // Emit event to parent to refresh attendance data
+    emit('update-success')
 }
 </script>

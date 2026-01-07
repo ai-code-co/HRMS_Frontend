@@ -107,6 +107,87 @@ export const useAttendanceStore = defineStore('attendance', () => {
         fetchAttendance()
     }
 
+    async function updateAttendance(
+        date: string,
+        inTime: string,
+        outTime: string,
+        isWorkingFromHome: boolean = false
+    ) {
+        try {
+            const payload = {
+                date,
+                in_time: inTime,
+                out_time: outTime,
+                is_working_from_home: isWorkingFromHome
+            }
+
+            const response = await useApi('/api/attendance/manual-update/', {
+                method: 'POST',
+                body: payload
+            })
+
+            if (response?.data) {
+                const key = response.data.full_date || date
+                attendanceRecords.value[key] = {
+                    ...attendanceRecords.value[key],
+                    ...response.data
+                }
+            }
+
+            return response
+        } catch (error: any) {
+            console.error('Update attendance error:', error)
+            throw error
+        }
+    }
+
+    async function submitTimesheet(
+        date: string,
+        totalTime: string,
+        comments: string,
+        isWorkingFromHome: boolean,
+        homeInTime?: string,
+        homeOutTime?: string,
+        screenshotPublicId?: string
+    ) {
+        try {
+            const formData = new FormData()
+            formData.append('date', date)
+            formData.append('total_time', totalTime)
+            formData.append('comments', comments)
+            formData.append('is_working_from_home', String(isWorkingFromHome))
+            
+            if (homeInTime) {
+                formData.append('home_in_time', homeInTime)
+            }
+            if (homeOutTime) {
+                formData.append('home_out_time', homeOutTime)
+            }
+            if (screenshotPublicId) {
+                formData.append('tracker_screenshot', screenshotPublicId)
+            }
+
+            const response = await useApi('/api/attendance/submit-timesheet/', {
+                method: 'POST',
+                body: formData
+            })
+
+            // Update the attendanceRecords with the response data if available
+            if (response?.data) {
+                const key = response.data.date || date
+                attendanceRecords.value[key] = {
+                    ...attendanceRecords.value[key],
+                    ...response.data
+                }
+            }
+
+            return response
+        } catch (error: any) {
+            console.error('Submit timesheet error:', error)
+            throw error
+        }
+    }
+
     return {
         currentDate,
         viewMode,
@@ -116,6 +197,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
         fetchAttendance,
         setViewMode,
         next,
-        prev
+        prev,
+        updateAttendance,
+        submitTimesheet
     }
 })
