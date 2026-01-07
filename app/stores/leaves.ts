@@ -9,41 +9,16 @@ import type {
 export const useLeaveStore = defineStore('leaves', {
     state: () => ({
         requests: [] as LeaveRequestAPI[],
-        balancesRaw: {} as Record<string, any>,
+        balances: {} as Record<string, any>,
         loading: false,
         error: null as string | null,
     }),
 
     getters: {
-        uiBalances: (state) => {
-            const config: Record<string, { icon: string; color: string }> = {
-                'Annual Leave': { icon: 'i-lucide-calendar', color: 'indigo' },
-                'Sick Leave': { icon: 'i-lucide-thermometer', color: 'rose' },
-                'Casual Leave': { icon: 'i-lucide-coffee', color: 'amber' },
-                'Maternity Leave': { icon: 'i-lucide-baby', color: 'emerald' },
-            }
-
-            return Object.entries(state.balancesRaw).map(([type, data]) => ({
-                type,
-                total: data.allocated + (data.carried_forward || 0),
-                used: data.used,
-                available: data.available,
-                icon: config[type]?.icon || 'i-lucide-info',
-                color: config[type]?.color || 'blue'
-            }))
-        },
-        uiRequests: (state) => {
-            return state.requests.map(r => ({
-                id: r.id,
-                type: r.leave_type,
-                startDate: r.from_date,
-                endDate: r.to_date,
-                duration: `${r.no_of_days} Days`,
-                status: r.status.toLowerCase() as LeaveStatus,
-                appliedDate: new Date(r.created_at).toLocaleDateString(),
-                reason: r.reason
-            }))
-        }
+        // Simple computed properties for data access
+        leaveRequests: (state) => state.requests,
+        leaveBalances: (state) => state.balances,
+        isLoading: (state) => state.loading,
     },
 
     actions: {
@@ -68,7 +43,7 @@ export const useLeaveStore = defineStore('leaves', {
             try {
                 const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/')
                 if (res.error === 0) {
-                    this.balancesRaw = res.data
+                    this.balances = res.data
                 }
             } catch (err: any) {
                 this.error = err?.message || 'Failed to fetch leave balances'

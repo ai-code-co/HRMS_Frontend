@@ -1,5 +1,9 @@
 <template>
-    <!-- <div class="flex flex-col bg-[#F8FAFC]">
+    <div v-if="store.isLoading && !store.items.length" class="p-12 text-center">
+        <p class="text-slate-400 font-bold animate-pulse">Loading Inventory...</p>
+    </div>
+
+    <div v-else-if="selectedItem" class="flex flex-col bg-[#F8FAFC]">
         <header class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
@@ -9,22 +13,21 @@
             </div>
 
             <div class="w-full sm:w-80">
-                <UInput v-model="store.searchQuery" icon="i-lucide-search" placeholder="Search devices..." size="xl"
-                    class="w-full">
-                </UInput>
+                <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search devices..." size="xl"
+                    class="w-full" />
             </div>
         </header>
 
-        <main class="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden">
-            <aside class="w-full lg:w-96 space-y-4 overflow-y-auto shrink-0">
-                <button v-for="item in store.filteredItems" :key="item.id" @click="store.selectItem(item.id)" :class="[
-                    'w-full text-left p-6 bg-white rounded-3xl border-2 transition-all duration-300 relative group overflow-hidden',
-                    store.selectedItem.id === item.id ? 'border-primary-500 shadow-xl shadow-primary-100/50' : 'border-slate-50 hover:border-primary-100 shadow-sm'
+        <main class="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden px-4">
+            <aside class="w-full lg:w-96 space-y-4 overflow-y-auto shrink-0 custom-scrollbar sidebar-height">
+                <button v-for="item in filteredItems" :key="item.id" @click="selectItem(item.id)" :class="[
+                    'w-full text-left p-6 bg-white rounded-3xl border-2 transition-all duration-300 relative group overflow-hidden cursor-pointer',
+                    selectedId === item.id ? 'border-primary-500 shadow-xl shadow-primary-100/50' : 'border-slate-50 hover:border-primary-100 shadow-sm'
                 ]">
                     <div class="flex items-start gap-5">
                         <div :class="[
                             'p-4 rounded-2xl transition-colors',
-                            store.selectedItem.id === item.id ? 'bg-slate-50 text-primary-600' : 'bg-slate-50 text-slate-400 group-hover:text-primary-400'
+                            selectedId === item.id ? 'bg-slate-50 text-primary-600' : 'bg-slate-50 text-slate-400 group-hover:text-primary-400'
                         ]">
                             <UIcon :name="getIcon(item.category)" class="w-5 h-5" />
                         </div>
@@ -43,96 +46,104 @@
                 </button>
             </aside>
 
-            <section class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col">
+            <section
+                class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col mb-4 overflow-y-auto">
                 <div class="flex-1 p-2 md:p-8">
                     <Transition name="fade-slide" mode="out-in">
-                        <div :key="store.selectedItem.id" class="space-y-12">
+                        <div :key="selectedItem.id" class="space-y-12">
                             <div class="flex items-start justify-between">
                                 <div>
                                     <h2 class="text-3xl font-black text-slate-800 tracking-tight mb-2">{{
-                                        store.selectedItem.name }}</h2>
+                                        selectedItem.name }}</h2>
                                     <div class="flex items-center gap-3">
-                                        <span class="text-xs font-bold text-slate-400">{{ store.selectedItem.category
-                                        }}</span>
+                                        <span class="text-xs font-bold text-slate-400">{{ selectedItem.category
+                                            }}</span>
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                                        <UBadge variant="soft" color="neutral" size="xs">ID: {{ store.selectedItem.id }}
+                                        <UBadge variant="soft" color="neutral" size="xs">ID: {{ selectedItem.id }}
                                         </UBadge>
                                     </div>
                                 </div>
-                                <UBadge :color="store.selectedItem.status === 'Good' ? 'success' : 'error'"
-                                    variant="subtle" class="font-black">
-                                    {{ store.selectedItem.status }}
+                                <UBadge :color="selectedItem.status === 'Good' ? 'success' : 'error'" variant="subtle"
+                                    class="font-black">
+                                    {{ selectedItem.status }}
                                 </UBadge>
                             </div>
 
                             <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
                                 <div
-                                    class="aspect-[4/3] rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                    <img :src="store.selectedItem.image"
-                                        class="max-w-3xl max-h-3xl object-cover group-hover:scale-105 transition-transform duration-700" />
+                                    class="aspect-video rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group">
+                                    <img :src="selectedItem.image"
+                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <MyInventoryMetadataCard label="SERIAL NUMBER"
-                                        :value="store.selectedItem.serialNumber" />
-                                    <MyInventoryMetadataCard label="INTERNAL ASSET ID"
-                                        :value="store.selectedItem.assetId" />
-                                    <MyInventoryMetadataCard label="MODEL" :value="store.selectedItem.model" />
-                                    <MyInventoryMetadataCard label="AUDIT STATUS"
-                                        :value="store.selectedItem.auditStatus"
-                                        :sub-value="`by ${store.selectedItem.auditBy}`"
-                                        :highlight="store.selectedItem.auditStatus.includes('Verified')" />
+                                    <MyInventoryMetadataCard label="SERIAL NUMBER" :value="selectedItem.serialNumber" />
+                                    <MyInventoryMetadataCard label="INTERNAL ASSET ID" :value="selectedItem.assetId" />
+                                    <MyInventoryMetadataCard label="MODEL" :value="selectedItem.model" />
+                                    <MyInventoryMetadataCard label="AUDIT STATUS" :value="selectedItem.auditStatus"
+                                        :sub-value="`by ${selectedItem.auditBy}`" :highlight="true" />
                                 </div>
                             </div>
-
-                            <div
-                                class="bg-rose-50/50 border border-rose-100 rounded-2xl p-2 flex flex-col md:flex-row items-center justify-between gap-4">
-                                <div class="flex items-center gap-5">
-                                    <div class="p-4 bg-white text-rose-500 rounded-2xl shadow-sm">
-                                        <UIcon name="i-lucide-alert-triangle" class="w-6 h-6" />
-                                    </div>
-                                    <div class="text-center md:text-left">
-                                        <h4 class="text-base font-black text-rose-700">Request Return</h4>
-                                        <p class="text-xs font-bold text-rose-500/70 mt-1 uppercase">
-                                            Start the
-                                            process to return this device.</p>
-                                    </div>
-                                </div>
-                                <UButton color="error" variant="solid" size="md" icon="i-lucide-trash-2"
-                                    class="font-black uppercase cursor-pointer">
-                                    Unassign
-                                </UButton>
-                            </div>
-
-                            <MyInventoryHistoryTimeline :history="store.selectedItem.history" />
                         </div>
                     </Transition>
                 </div>
             </section>
         </main>
-    </div> -->
+    </div>
 </template>
 
 <script setup lang="ts">
-import { useInventoryStore } from '~/stores/myInventory'
+import { useMyInventoryStore } from '~/stores/myInventory'
 
-const store = useInventoryStore()
+const store = useMyInventoryStore()
 
-await useAsyncData('inventory', () => {
-    return store.fetchInventory()
+const searchQuery = ref('')
+const selectedId = ref<string | null>(null)
+
+await useAsyncData('inventory-fetch', () => store.fetchInventory())
+
+const filteredItems = computed(() => {
+    if (!searchQuery.value) return store.items
+    const query = searchQuery.value.toLowerCase()
+    return store.items.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.assetId.toLowerCase().includes(query)
+    )
 })
 
-const getIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-        case 'laptop': return 'i-lucide-laptop'
-        case 'monitor': return 'i-lucide-monitor'
-        case 'accessories': return 'i-lucide-plug'
-        default: return 'i-lucide-monitor-smartphone'
+const selectedItem = computed(() => {
+    if (!store.items.length) return null
+    if (selectedId.value) {
+        return store.items.find(i => i.id === selectedId.value) || store.items[0]
     }
+    return store.items[0]
+})
+
+function selectItem(id: string) {
+    selectedId.value = id
+}
+
+// Auto-select first item when data loads
+watch(() => store.items.length, (newLength) => {
+    if (newLength > 0 && !selectedId.value) {
+        selectedId.value = store.items[0].id
+    }
+}, { immediate: true })
+
+
+const getIcon = (category: string) => {
+    const cat = category?.toLowerCase() || ''
+    if (cat.includes('laptop')) return 'i-lucide-laptop'
+    if (cat.includes('monitor')) return 'i-lucide-monitor'
+    return 'i-lucide-monitor-smartphone'
 }
 </script>
 
 <style scoped>
+.sidebar-height {
+    max-height: calc(100vh - 160px);
+}
+
 .fade-slide-enter-active,
 .fade-slide-leave-active {
     transition: all 0.3s ease;

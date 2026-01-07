@@ -85,8 +85,9 @@ import { useLeaveStore } from '~/stores/leaves'
 import { storeToRefs } from 'pinia'
 
 const leaveStore = useLeaveStore()
-const { loading } = storeToRefs(leaveStore)
+const { loading, leaveBalances, leaveRequests } = storeToRefs(leaveStore)
 const isApplyModalOpen = ref(false)
+
 await useAsyncData('leave-data', async () => {
     await Promise.all([
         leaveStore.fetchLeaves(),
@@ -94,8 +95,39 @@ await useAsyncData('leave-data', async () => {
     ])
 })
 
-const balances = computed(() => leaveStore.uiBalances)
-const requests = computed(() => leaveStore.uiRequests)
+// UI configuration for leave types
+const leaveTypeConfig: Record<string, { icon: string; color: string }> = {
+    'Annual Leave': { icon: 'i-lucide-calendar', color: 'indigo' },
+    'Sick Leave': { icon: 'i-lucide-thermometer', color: 'rose' },
+    'Casual Leave': { icon: 'i-lucide-coffee', color: 'amber' },
+    'Maternity Leave': { icon: 'i-lucide-baby', color: 'emerald' },
+}
+
+// Transform balances for UI
+const balances = computed(() => {
+    return Object.entries(leaveBalances.value).map(([type, data]: [string, any]) => ({
+        type,
+        total: data.allocated + (data.carried_forward || 0),
+        used: data.used,
+        available: data.available,
+        icon: leaveTypeConfig[type]?.icon || 'i-lucide-info',
+        color: leaveTypeConfig[type]?.color || 'blue'
+    }))
+})
+
+// Transform requests for UI
+const requests = computed(() => {
+    return leaveRequests.value.map(r => ({
+        id: r.id,
+        type: r.leave_type,
+        startDate: r.from_date,
+        endDate: r.to_date,
+        duration: `${r.no_of_days} Days`,
+        status: r.status.toLowerCase() as import('~/types/leaves').LeaveStatus,
+        appliedDate: new Date(r.created_at).toLocaleDateString(),
+        reason: r.reason
+    }))
+})
 
 const activeFilter = ref('All')
 const filteredRequests = computed(() =>
