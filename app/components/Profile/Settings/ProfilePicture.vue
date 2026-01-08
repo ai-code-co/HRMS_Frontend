@@ -17,14 +17,14 @@ const upload = async (e: Event) => {
         body: formData,
     })
 
-    employeeStore.updateEmployee({ photo: updated.photo })
+    employeeStore.updateEmployee({ photo_url: updated.photo })
 }
 </script>
 
 <template>
     <div class="flex flex-col md:flex-row items-center gap-8">
         <div class="w-44 h-44 rounded-full overflow-hidden border-4 border-slate-50 shadow-inner">
-            <img :src="employee?.photo || `https://ui-avatars.com/api/?name=${employee?.first_name?.[0]}${employee?.last_name?.[0]}&background=random`"
+            <img :src="employee?.photo_url || `https://ui-avatars.com/api/?name=${employee?.first_name?.[0]}${employee?.last_name?.[0]}&background=random`"
                 class="w-full h-full object-cover" />
         </div>
 

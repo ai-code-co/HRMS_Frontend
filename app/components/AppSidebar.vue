@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from '~/composables/useAuth'
+import { getAccessibleNavItems } from '~/utils/roleConfig'
 
 const route = useRoute()
 const router = useRouter()
+const { user } = useAuth()
 
 const props = defineProps<{
   mobileOpen: boolean
@@ -23,28 +26,18 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-const links = [
-  { label: 'Profile', icon: 'i-lucide-user', to: '/profile' },
-  { label: 'Dashboard', icon: 'i-lucide-house', to: '/dashboard' },
-  { label: 'Attendance', icon: 'i-lucide-calendar', to: '/attendance' },
-  { label: 'My Inventory', icon: 'i-lucide-monitor', to: '/inventory' },
-  { label: 'Leaves', icon: 'i-lucide-file-text', to: '/leaves' },
-  { label: 'Salary', icon: 'i-lucide-dollar-sign', to: '/salary' },
-  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
-  { label: 'Inventory', icon: 'i-lucide-wrench', to: '/adminInventory' },
-  { label: 'Holidays', icon: 'i-lucide-sun', to: '/holidays' },
-]
-
 const isHovered = ref(false)
 
 watch(isMobileOpen, (val) => {
-  if (process.client) {
+  if (typeof document !== 'undefined') {
     document.body.style.overflow = val ? 'hidden' : ''
   }
 })
 
 onUnmounted(() => {
-  if (process.client) document.body.style.overflow = ''
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
 })
 
 const closeMobile = () => {
@@ -52,11 +45,11 @@ const closeMobile = () => {
 }
 
 const handleMouseEnter = () => {
-  if (process.client && window.innerWidth >= 1024) isHovered.value = true
+  if (typeof window !== 'undefined' && window.innerWidth >= 1024) isHovered.value = true
 }
 
 const handleMouseLeave = () => {
-  if (process.client && window.innerWidth >= 1024) isHovered.value = false
+  if (typeof window !== 'undefined' && window.innerWidth >= 1024) isHovered.value = false
 }
 
 watch(() => route.path, closeMobile)
@@ -64,7 +57,13 @@ watch(() => route.path, closeMobile)
 const handleNavClick = () => {
   if (isMobileOpen.value) closeMobile()
 }
+
 const isExpanded = computed(() => isMobileOpen.value || isHovered.value)
+
+// Get role-filtered navigation items
+const links = computed(() => {
+  return getAccessibleNavItems(user.value?.role_detail || null)
+})
 </script>
 
 <template>

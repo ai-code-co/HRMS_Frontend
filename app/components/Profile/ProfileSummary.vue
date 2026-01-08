@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Camera } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { useEmployeeStore } from '~/stores/employee'
 
 interface User {
     name: string
@@ -15,29 +16,59 @@ const props = defineProps<{
     profileInfo: { label: string; value: string }[]
 }>()
 
+const employeeStore = useEmployeeStore()
+const toast = useToast()
+
 const name = computed(() => props.user?.name ?? '-')
 const role = computed(() => props.user?.role ?? '-')
 const empId = computed(() => props.user?.empId ?? '-')
 const isActive = computed(() => props.user?.isActive ?? false)
 
 const profileImageUploadRef = ref<HTMLInputElement | null>(null)
-
 const profileImagePreviewUrl = ref<string | null>(null)
+const isUploading = ref(false)
 
 const triggerPicker = () => {
     profileImageUploadRef.value?.click()
 }
 
-const handleFileChange = (event: Event) => {
+const handleFileChange = async (event: Event) => {
     const target = event.target as HTMLInputElement
     const file = target.files?.[0]
 
     if (file) {
         if (!file.type.startsWith('image/')) return
+        
+        // Show preview immediately
         if (profileImagePreviewUrl.value) {
             URL.revokeObjectURL(profileImagePreviewUrl.value)
         }
         profileImagePreviewUrl.value = URL.createObjectURL(file)
+
+        // Upload to server
+        isUploading.value = true
+        try {
+            await employeeStore.updateProfilePhoto(file)
+            toast.add({ 
+                title: 'Success', 
+                description: 'Profile photo updated successfully', 
+                color: 'success' 
+            })
+        } catch (err: any) {
+            console.error('Upload failed:', err)
+            toast.add({ 
+                title: 'Error', 
+                description: err?.message || 'Failed to update profile photo', 
+                color: 'error' 
+            })
+            // Reset preview on error
+            if (profileImagePreviewUrl.value) {
+                URL.revokeObjectURL(profileImagePreviewUrl.value)
+            }
+            profileImagePreviewUrl.value = null
+        } finally {
+            isUploading.value = false
+        }
     }
 }
 </script>
@@ -53,11 +84,11 @@ const handleFileChange = (event: Event) => {
                     image: 'object-cover'
                 }" />
             </div>
-            <button type="button" @click="triggerPicker" aria-label="Upload profile picture"
-                class="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-slate-100 text-slate-400 hover:text-primary-600 cursor-pointer transition-colors z-10 flex items-center justify-center">
-                <UIcon :name="Camera" class="w-5 h-5" />
+            <button type="button" @click="triggerPicker" aria-label="Upload profile picture" :disabled="isUploading"
+                class="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-slate-100 text-slate-400 hover:text-primary-600 cursor-pointer transition-colors z-10 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                <UIcon :name="isUploading ? 'i-heroicons-arrow-path' : Camera" :class="{ 'animate-spin': isUploading }" class="w-5 h-5" />
             </button>
-            <input ref="profileImageUploadRef" type="file" accept="image/*" class="hidden" @change="handleFileChange" />
+            <input ref="profileImageUploadRef" type="file" accept="image/*" class="hidden" @change="handleFileChange" :disabled="isUploading" />
         </div>
 
         <div class="flex-1 space-y-4 w-full">

@@ -1,0 +1,54 @@
+import type { RoleDetail } from '~/types/auth'
+
+export interface NavigationItem {
+  label: string
+  icon: string
+  to: string
+  requiredRole?: ('Admin' | 'HR' | 'Manager' | 'Employee')[]
+  requiredPermission?: string
+}
+
+export const navigationItems: NavigationItem[] = [
+  { label: 'Profile', icon: 'i-lucide-user', to: '/profile' },
+  { label: 'Dashboard', icon: 'i-lucide-house', to: '/dashboard' },
+  { label: 'Attendance', icon: 'i-lucide-calendar', to: '/attendance' },
+  { label: 'My Inventory', icon: 'i-lucide-monitor', to: '/inventory' },
+  { label: 'Leaves', icon: 'i-lucide-file-text', to: '/leaves' },
+  { label: 'Salary', icon: 'i-lucide-dollar-sign', to: '/salary' },
+  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings', requiredRole: ['Admin', 'HR'] },
+  { label: 'Inventory', icon: 'i-lucide-wrench', to: '/adminInventory', requiredRole: ['Admin', 'HR'] },
+  { label: 'Holidays', icon: 'i-lucide-sun', to: '/holidays', requiredRole: ['Admin', 'HR'] },
+]
+
+export const canAccessNavItem = (item: NavigationItem, roleDetail: RoleDetail | null): boolean => {
+  if (!roleDetail) return false
+
+  if (!item.requiredRole) return true
+
+  return item.requiredRole.includes(roleDetail.role)
+}
+
+export const getAccessibleNavItems = (roleDetail: RoleDetail | null): NavigationItem[] => {
+  return navigationItems.filter(item => canAccessNavItem(item, roleDetail))
+}
+
+export const rolePermissionMap: Record<string, string[]> = {
+  Admin: [
+    'can_view_all_employees',
+    'can_create_employees',
+    'can_edit_all_employees',
+    'can_delete_employees',
+    'can_view_subordinates',
+    'can_approve_leave',
+    'can_approve_timesheet',
+  ],
+  HR: [
+    'can_view_all_employees',
+    'can_create_employees',
+    'can_edit_all_employees',
+    'can_approve_leave',
+    'can_approve_timesheet',
+  ],
+  Manager: ['can_view_subordinates', 'can_approve_leave', 'can_approve_timesheet'],
+  Employee: [],
+}

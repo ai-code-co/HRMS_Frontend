@@ -16,17 +16,17 @@
           content: 'w-64',
           item: { disabled: 'cursor-text opacity-100' }
         }">
-          <UAvatar :src="user.photo" :alt="user.first_name + ' ' + user.last_name" size="sm"
+          <UAvatar :src="user.photo_url" :alt="user.first_name + ' ' + user.last_name" size="sm"
             class="cursor-pointer hover:ring-2 hover:ring-primary-500/50 transition-all" />
 
           <template #account="{ item }">
             <div class="flex items-center gap-3 py-2">
-              <UAvatar :src="user.photo" size="lg" :alt="user.first_name + ' ' + user.last_name" />
+              <UAvatar :src="user.photo_url" size="lg" :alt="user.first_name + ' ' + user.last_name" />
               <div class="flex flex-col">
                 <p class="text-sm font-semibold text-gray-900 dark:text-white">
                   {{ user.first_name }} {{ user.last_name }}
                 </p>
-                <UBadge :label="user.department || 'N/A'" variant="subtle" size="sm" color="neutral"
+                <UBadge :label="user?.role_detail?.role || 'N/A'" variant="subtle" size="sm" color="neutral"
                   class="mt-1 w-fit text-[10px] px-1.5 py-0.5" />
               </div>
             </div>

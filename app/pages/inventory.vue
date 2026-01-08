@@ -84,6 +84,10 @@
                                         :sub-value="`by ${selectedItem.auditBy}`" :highlight="true" />
                                 </div>
                             </div>
+
+                            <div>
+                                <MyInventoryHistoryTimeline :history="selectedItem.history" />
+                            </div>
                         </div>
                     </Transition>
                 </div>

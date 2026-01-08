@@ -20,7 +20,7 @@ const user = computed(() => {
         name: employee.value.full_name,
         role: employee.value.designation_detail?.name ?? '-',
         empId: employee.value.employee_id,
-        avatar: employee.value.photo,
+        avatar: employee.value.photo_url,
         email: employee.value.email,
         phone: employee.value.phone,
         joinDate: employee.value.joining_date,

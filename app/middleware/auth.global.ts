@@ -1,16 +1,19 @@
-export default defineNuxtRouteMiddleware((to, from) => {
-    const { token, isAuthenticated } = useAuth()
+export default defineNuxtRouteMiddleware((to) => {
+    const { token, isAuthenticated, hasPermission } = useAuth()
 
     const publicRoutes = ['/login', '/forgot-password', '/reset-password']
     const isPublicRoute = publicRoutes.includes(to.path)
 
-    // Redirect authenticated users away from auth pages
     if (isPublicRoute && isAuthenticated.value) {
         return navigateTo('/dashboard')
     }
 
-    // Redirect unauthenticated users to login (except for public routes)
     if (!isPublicRoute && !token.value) {
         return navigateTo('/login')
+    }
+
+    const requiredPermission = to.meta.permission as string | undefined
+    if (requiredPermission && !hasPermission(requiredPermission as any)) {
+        return navigateTo('/dashboard')
     }
 })
