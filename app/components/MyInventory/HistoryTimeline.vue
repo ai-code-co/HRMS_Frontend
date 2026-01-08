@@ -18,12 +18,12 @@
                             <UAvatar :src="event.avatar" :alt="event.user" size="sm"
                                 class="border-2 border-white shadow-sm" />
                             <div>
-                                <p class="text-sm font-black text-slate-800">{{ event.user }}</p>
+                                <p class="text-sm font-black text-slate-800">{{ event.employee_name }}</p>
                                 <p class="text-[11px] font-bold text-primary-500 uppercase tracking-widest">{{
                                     event.action }}</p>
                             </div>
                         </div>
-                        <span class="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{{ event.timestamp
+                        <span class="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{{ event.formatted_date
                             }}</span>
                     </div>
 

@@ -38,7 +38,7 @@ export interface Employee {
     nationality?: string
     blood_group?: string
 
-    photo?: string | null
+    photo_url?: string | null
 
     department: number
     department_detail?: DepartmentDetail

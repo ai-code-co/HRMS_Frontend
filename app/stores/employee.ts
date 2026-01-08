@@ -84,6 +84,41 @@ export const useEmployeeStore = defineStore('employee', {
             } finally {
                 this.loading = false;
             }
+        },
+
+        async updateProfilePhoto(file: File) {
+            try {
+                const uploadFormData = new FormData()
+                uploadFormData.append('image', file)
+
+                const uploadResponse = await useApi<{ public_id: string }>('/auth/upload-image/', {
+                    method: 'POST',
+                    body: uploadFormData,
+                    credentials: 'include'
+                })
+
+                const publicId = uploadResponse.public_id
+
+                const updateResponse = await useApi<Employee>('/api/employees/me/', {
+                    method: 'PATCH',
+                    body: {
+                        photo: publicId
+                    },
+                    credentials: 'include'
+                })
+
+                if (updateResponse && this.employee) {
+                    this.employee = { ...this.employee, ...updateResponse }
+                } else if (updateResponse) {
+                    this.employee = updateResponse
+                }
+
+                return updateResponse
+            } catch (err: any) {
+                this.error = err?.message || 'Failed to update profile photo'
+                console.error('Update profile photo error:', err)
+                throw err
+            }
         }
     },
 })
