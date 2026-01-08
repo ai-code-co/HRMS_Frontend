@@ -39,7 +39,7 @@ const trendColor = computed(() =>
             <div v-if="trend" class="flex items-center gap-0.5 text-[10px] font-bold" :class="trendColor">
                 <ArrowUpRight v-if="trend.startsWith('+')" :size="12" />
                 <ArrowDownRight v-else :size="12" />
-                {{ trend }}%
+                {{ trend }}
             </div>
         </div>
     </div>
