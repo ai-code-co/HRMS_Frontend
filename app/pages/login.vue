@@ -92,7 +92,7 @@ async function handleLogin(event: FormSubmitEvent<Schema>) {
     await initAuth()
 
     toast.add({ title: 'Logged in successfully!' })
-    router.push('/')
+    router.push('/dashboard')
   } catch (error: any) {
     toast.add({
       title: error?.data?.error || 'Login failed',

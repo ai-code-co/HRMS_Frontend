@@ -27,6 +27,7 @@ type Schema = z.output<typeof schema>
 const employeeStore = useEmployeeStore()
 const { employee } = storeToRefs(employeeStore)
 const { isEmployee } = useRoleAccess()
+const toast = useToast()
 
 const isReadOnly = computed(() => isEmployee.value)
 const canEditBasicInfo = computed(() => !isEmployee.value)
@@ -45,24 +46,22 @@ const loading = ref(false)
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     loading.value = true
     try {
-        const updated = await useApi('/api/employees/me/', {
+        const {data: updatedEmployee} = await useApi('/api/employees/me/', {
             method: 'PATCH',
             body: event.data,
         })
 
-        employeeStore.updateEmployee(updated)
-        const toast = useToast()
+        employeeStore.updateEmployee(updatedEmployee)
         toast.add({
             title: 'Success',
             description: 'Personal details updated successfully',
-            color: 'green'
+            color: 'success'
         })
     } catch (err: any) {
-        const toast = useToast()
         toast.add({
             title: 'Error',
             description: err?.data?.error || err?.message || 'Failed to update personal details',
-            color: 'red'
+            color: 'error'
         })
     } finally {
         loading.value = false

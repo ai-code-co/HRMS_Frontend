@@ -35,7 +35,7 @@
                         :data="dashboardStore.dashboardData?.productivity?.graph_data" />
 
                     <DashboardEventsList :title="currentRole === 'admin' ? 'Pending Approvals' : 'Upcoming Holidays'"
-                        :items="events" :action-label="currentRole === 'admin' ? 'Review' : 'Details'" />
+                        :items="events" />
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-8">

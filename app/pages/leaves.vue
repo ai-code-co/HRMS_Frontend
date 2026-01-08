@@ -60,6 +60,13 @@
                             <p class="text-xs text-slate-400">{{ r.startDate }} — {{ r.endDate }}</p>
                         </div>
                         <div class="flex gap-2">
+                            <p v-if="r.doc_link_url" class="text-xs font-semibold text-emerald-600 text-end">
+                                Document Present
+                            </p>
+                            <p v-else class="text-xs text-slate-400 text-end">
+                                No Document
+                            </p>
+
                             <div :class="{
                                 'bg-emerald-50 text-emerald-600': r.status === 'approved',
                                 'bg-amber-50 text-amber-600': r.status === 'pending',
@@ -125,7 +132,8 @@ const requests = computed(() => {
         duration: `${r.no_of_days} Days`,
         status: r.status.toLowerCase() as import('~/types/leaves').LeaveStatus,
         appliedDate: new Date(r.created_at).toLocaleDateString(),
-        reason: r.reason
+        reason: r.reason,
+        doc_link_url: r.doc_link_url,
     }))
 })
 

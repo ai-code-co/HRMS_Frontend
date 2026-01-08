@@ -9,6 +9,7 @@ export interface LeaveRequestAPI {
     leave_type: string
     status: string
     created_at: string
+    doc_link_url: string | null
 }
 
 export interface LeaveListResponse {
