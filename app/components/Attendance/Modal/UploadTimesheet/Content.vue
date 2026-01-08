@@ -53,13 +53,21 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 
+const props = defineProps<{
+    day: any | null
+}>()
+
 const emit = defineEmits<{
     (e: 'close'): void
+    (e: 'update-success'): void
 }>()
 
 const isSubmitting = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const previewUrl = ref<string | null>(null)
+
+const attendanceStore = useAttendanceStore()
+const toast = useToast()
 
 const state = reactive({
     clock_in: '',
@@ -67,7 +75,6 @@ const state = reactive({
     comment: '',
     screenshot: undefined as File | undefined
 })
-
 
 const timeSheetSchema = z.object({
     clock_in: z.string().min(1, "Required"),
@@ -104,13 +111,94 @@ function removeFile() {
     if (fileInput.value) fileInput.value.value = ''
 }
 
+function calculateTotalHours(clockIn: string, clockOut: string): string {
+    if (!clockIn || !clockOut) return '0'
+    
+    const [inHours, inMinutes] = clockIn.split(':').map(Number)
+    const [outHours, outMinutes] = clockOut.split(':').map(Number)
+    
+    const inTotalMinutes = (inHours ?? 0) * 60 + (inMinutes ?? 0)
+    const outTotalMinutes = (outHours ?? 0) * 60 + (outMinutes ?? 0)
+    
+    const diffMinutes = outTotalMinutes - inTotalMinutes
+    const hours = Math.floor(diffMinutes / 60)
+    const minutes = diffMinutes % 60
+    
+    const totalHours = hours + (minutes / 60)
+    return totalHours.toFixed(1)
+}
+
+function formatTimeToAmPm(time24: string): string {
+    if (!time24) return ''
+    const [hours, minutes] = time24.split(':').map(Number)
+    const ampm = (hours ?? 0) >= 12 ? 'PM' : 'AM'
+    const displayHours = (hours ?? 0) % 12 || 12
+    return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`
+}
+
 async function onSubmit(event: FormSubmitEvent<Schema>) {
+    if (!props.day) {
+        toast.add({ title: 'Error', description: 'Day information is missing', color: 'error' })
+        return
+    }
+
     isSubmitting.value = true
     try {
-        await new Promise(r => setTimeout(r, 1000))
+        const totalTime = calculateTotalHours(state.clock_in, state.clock_out)
+        const homeInTime = formatTimeToAmPm(state.clock_in)
+        const homeOutTime = formatTimeToAmPm(state.clock_out)
+
+        // Upload screenshot if available and get public_id
+        let screenshotPublicId: string | undefined
+        if (state.screenshot) {
+            const formData = new FormData()
+            formData.append('image', state.screenshot)
+            try {
+                const uploadResponse = await useApi<{ public_id: string }>('/auth/upload-image/', {
+                    method: 'POST',
+                    body: formData,
+                })
+                screenshotPublicId = uploadResponse.public_id
+            } catch (uploadError) {
+                console.error('Failed to upload screenshot:', uploadError)
+                toast.add({ 
+                    title: 'Error', 
+                    description: 'Failed to upload screenshot', 
+                    color: 'error' 
+                })
+                isSubmitting.value = false
+                return
+            }
+        }
+
+        await attendanceStore.submitTimesheet(
+            props.day.full_date || props.day.date,
+            totalTime,
+            state.comment,
+            props.day.is_working_from_home || false,
+            homeInTime,
+            homeOutTime,
+            screenshotPublicId
+        )
+
+        toast.add({ title: 'Success', description: 'Timesheet submitted successfully', color: 'success' })
+        
+        // Reset form
+        state.clock_in = ''
+        state.clock_out = ''
+        state.comment = ''
+        removeFile()
+        
+        // Emit events to close modals and refresh
+        emit('update-success')
         emit('close')
-    } catch (err) {
-        console.error(err)
+    } catch (error: any) {
+        console.error('Failed to submit timesheet:', error)
+        toast.add({ 
+            title: 'Error', 
+            description: error?.message || 'Failed to submit timesheet', 
+            color: 'error' 
+        })
     } finally {
         isSubmitting.value = false
     }
