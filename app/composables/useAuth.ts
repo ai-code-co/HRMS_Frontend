@@ -38,6 +38,42 @@ export const useAuth = () => {
         }
     }
 
+    const refreshToken = async () => {
+        try {
+            const config = useRuntimeConfig()
+            const cookieRefreshToken = useCookie<string | null>('refresh_token')
+            const token = useCookie<string | null>('token')
+
+            const { access } = await $fetch<{ access: string }>(
+                '/auth/refresh-token/',
+                {
+                    baseURL: config.public.apiBase,
+                    method: 'POST',
+                    body: { refresh: cookieRefreshToken.value },
+                    retry: 0,
+                }
+            )
+
+            token.value = access
+            return access
+        } catch (err) {
+            logout()
+            throw err
+        }
+    }
+
+    const logout = async () => {
+        try {
+            // await useApi('/auth/logout', {
+            //     method: 'POST',
+            //     credentials: 'include',
+            // })
+        } catch (err) {
+            // Silently fail on logout
+        } finally {
+            clearAuth()
+        }
+    }
     const role = computed(() => user.value?.role_detail?.role)
 
     const permissions = computed<RolePermissions | null>(() => {
@@ -65,6 +101,8 @@ export const useAuth = () => {
         hasAnyPermission,
         setAuth,
         clearAuth,
+        refreshToken,
+        logout,
         initAuth,
         isAuthenticated,
     }
