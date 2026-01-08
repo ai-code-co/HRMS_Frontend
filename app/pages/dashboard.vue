@@ -5,10 +5,10 @@
                 <div>
                     <div class="flex items-center gap-3">
                         <p class="text-[11px] font-black text-indigo-600 uppercase tracking-[0.3em] mb-1">Overview</p>
-                        <button @click="toggleRole"
+                        <!-- <button @click="toggleRole"
                             class="text-[9px] bg-slate-200 px-2 py-0.5 rounded text-slate-500 hover:bg-slate-300 transition">
                             Switch to {{ currentRole === 'user' ? 'Admin' : 'User' }} View
-                        </button>
+                        </button> -->
                     </div>
                     <h1 class="text-3xl font-black text-slate-800 tracking-tight">
                         {{ currentRole === 'admin' ? 'Organization Insights' : `Welcome back, ${userName}!` }}
