@@ -7,7 +7,7 @@
             </template>
 
             <template #body>
-                <AttendanceModalDayDetailsContent :day="record" />
+                <AttendanceModalDayDetailsContent :day="record" @update-success="handleUpdateSuccess" />
             </template>
         </UDrawer>
 
@@ -17,7 +17,7 @@
             </template>
 
             <template #body>
-                <AttendanceModalDayDetailsContent :day="record" class="w-full" />
+                <AttendanceModalDayDetailsContent :day="record" @update-success="handleUpdateSuccess" class="w-full" />
             </template>
         </UModal>
     </template>
@@ -34,6 +34,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'update:open', value: boolean): void
     (e: 'close'): void
+    (e: 'update-success'): void
 }>()
 
 const device = useDevice()
@@ -46,5 +47,12 @@ const modelOpen = computed({
 const close = () => {
     emit('update:open', false)
     emit('close')
+}
+
+const handleUpdateSuccess = () => {
+    // Emit the event to parent (attendance.vue page)
+    emit('update-success')
+    // Close the modal
+    close()
 }
 </script>

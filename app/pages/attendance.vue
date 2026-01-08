@@ -13,7 +13,7 @@
                     @click="openDetails(day)" />
             </div>
         </main>
-        <AttendanceModalDayDetailsOverlay v-model:open="isModalOpen" :record="selectedRecord" />
+        <AttendanceModalDayDetailsOverlay v-model:open="isModalOpen" :record="selectedRecord" @update-success="handleUpdateSuccess" />
     </div>
 </template>
 <script setup lang="ts">
@@ -33,5 +33,10 @@ function openDetails(day: any) {
         selectedRecord.value = day.record
         isModalOpen.value = true
     }
+}
+
+function handleUpdateSuccess() {
+    // Refresh the attendance data when update is successful
+    attendanceStore.fetchAttendance()
 }
 </script>
