@@ -38,7 +38,7 @@ const handleFileChange = async (event: Event) => {
 
     if (file) {
         if (!file.type.startsWith('image/')) return
-        
+
         // Show preview immediately
         if (profileImagePreviewUrl.value) {
             URL.revokeObjectURL(profileImagePreviewUrl.value)
@@ -49,17 +49,17 @@ const handleFileChange = async (event: Event) => {
         isUploading.value = true
         try {
             await employeeStore.updateProfilePhoto(file)
-            toast.add({ 
-                title: 'Success', 
-                description: 'Profile photo updated successfully', 
-                color: 'success' 
+            toast.add({
+                title: 'Success',
+                description: 'Profile photo updated successfully',
+                color: 'success'
             })
         } catch (err: any) {
             console.error('Upload failed:', err)
-            toast.add({ 
-                title: 'Error', 
-                description: err?.message || 'Failed to update profile photo', 
-                color: 'error' 
+            toast.add({
+                title: 'Error',
+                description: err?.message || 'Failed to update profile photo',
+                color: 'error'
             })
             // Reset preview on error
             if (profileImagePreviewUrl.value) {
@@ -103,8 +103,11 @@ const handleFileChange = async (event: Event) => {
                             ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                             : 'bg-red-50 text-red-600 border border-red-100'"
                             class="px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5">
-                            <div v-if="isActive" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            {{ isActive ? 'ACTIVE' : 'INACTIVE' }}
+                            <div :class="isActive ? 'bg-emerald-500' : 'bg-red-500'"
+                                class="w-1.5 h-1.5 rounded-full animate-pulse" />
+                            <span class="hidden md:inline">
+                                {{ isActive ? 'ACTIVE' : 'INACTIVE' }}
+                            </span>
                         </div>
                     </div>
 
@@ -120,7 +123,7 @@ const handleFileChange = async (event: Event) => {
                     <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
                         {{ info.label }}
                     </span>
-                    <span class="text-sm font-bold text-slate-700">
+                    <span class="text-sm font-bold text-slate-700 truncate">
                         {{ info.value }}
                     </span>
                 </div>
