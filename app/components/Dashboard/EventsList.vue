@@ -4,7 +4,6 @@ import type { EventItem } from '~/types/dashboard';
 defineProps<{
     title: string;
     items: EventItem[];
-    actionLabel: string;
 }>();
 
 const colorMap = {
@@ -35,10 +34,6 @@ const colorMap = {
                         <p class="text-[11px] font-medium text-slate-400">{{ item.sub }}</p>
                     </div>
                 </div>
-                <UButton size="lg" color="neutral" variant="solid"
-                    class="font-bold uppercase tracking-widest shadow-none bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white cursor-pointer transition-all">
-                    {{ actionLabel }}
-                </UButton>
             </div>
         </div>
     </section>

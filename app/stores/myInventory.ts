@@ -7,6 +7,7 @@ export interface Comment {
   employee_name: string
   created_at: string
   formatted_date: string
+  photo_url: string
 }
 
 export interface InventoryDevice {
@@ -50,7 +51,8 @@ export const useMyInventoryStore = defineStore('myInventory', () => {
           comment: comment.comment,
           employee_name: comment.employee_name,
           created_at: comment.created_at,
-          formatted_date: comment.formatted_date
+          formatted_date: comment.formatted_date,
+          photo_url: comment.photo_url,
         }))
       }))
     } catch (err) {

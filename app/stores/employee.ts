@@ -99,20 +99,20 @@ export const useEmployeeStore = defineStore('employee', {
 
                 const publicId = uploadResponse.public_id
 
-                const updateResponse = await useApi<Employee>('/api/employees/me/', {
+                const { data: updateResponse } = await useApi<Employee>('/api/employees/me/', {
                     method: 'PATCH',
                     body: {
                         photo: publicId
                     },
                     credentials: 'include'
                 })
-
+                await useAuth().initAuth()
                 if (updateResponse && this.employee) {
                     this.employee = { ...this.employee, ...updateResponse }
+                    console.log('Profile photo updated:', this.employee)
                 } else if (updateResponse) {
                     this.employee = updateResponse
                 }
-
                 return updateResponse
             } catch (err: any) {
                 this.error = err?.message || 'Failed to update profile photo'

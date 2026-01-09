@@ -1,9 +1,14 @@
 export default defineNuxtRouteMiddleware((to) => {
     const { token, isAuthenticated, hasPermission } = useAuth()
 
-    const publicRoutes = ['/login', '/forgot-password', '/reset-password']
+    const resetRoutes = ['/forgot-password', '/reset-password'];
+    const publicRoutes = ['/login']
     const isPublicRoute = publicRoutes.includes(to.path)
 
+    if (resetRoutes.includes(to.path)) {
+        return
+    }
+    
     if (isPublicRoute && isAuthenticated.value) {
         return navigateTo('/dashboard')
     }
