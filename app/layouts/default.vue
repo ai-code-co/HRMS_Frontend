@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const sidebarOpen = ref(false)
 const route = useRoute()
+const { isLoading: isPageLoading } = useGlobalLoader()
 
 const isAuthRoute = computed(() => {
   return [
@@ -17,6 +18,17 @@ watch(() => route.path, () => {
 
 <template>
   <div class="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <!-- Global Page Loading Overlay -->
+    <Transition name="fade">
+      <div v-if="isPageLoading"
+        class="fixed inset-0 bg-white/80 dark:bg-gray-950/80 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="flex flex-col items-center gap-3">
+          <UIcon name="i-lucide-loader-2" class="w-10 h-10 text-indigo-600 animate-spin" />
+          <span class="text-sm font-medium text-slate-600 dark:text-slate-300">Loading...</span>
+        </div>
+      </div>
+    </Transition>
+
     <aside v-if="!isAuthRoute">
       <AppSidebar v-model:mobileOpen="sidebarOpen" />
     </aside>
@@ -34,3 +46,15 @@ watch(() => route.path, () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
