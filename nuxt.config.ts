@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   routeRules: {
-    '/': { prerender: true }
+    '/': { redirect: '/dashboard' }
   },
   runtimeConfig: {
     public: {
