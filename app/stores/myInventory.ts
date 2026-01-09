@@ -36,7 +36,7 @@ export const useMyInventoryStore = defineStore('myInventory', () => {
 
       const rawDevices = response.data?.devices || response.devices || []
 
-      items.value = rawDevices.map((d: any) => ({
+      const mappedItems = rawDevices.map((d: any) => ({
         id: d.id.toString(),
         name: d.model_name,
         category: d.device_type_name,
@@ -56,6 +56,8 @@ export const useMyInventoryStore = defineStore('myInventory', () => {
           photo_url: comment.photo_url,
         }))
       }))
+      items.value = mappedItems
+      return mappedItems
     } catch (err: any) {
       const toast = useToast()
       toast.add({
@@ -63,14 +65,20 @@ export const useMyInventoryStore = defineStore('myInventory', () => {
         description: extractErrorMessage(err, 'Failed to fetch inventory'),
         color: 'error'
       })
+      return []
     } finally {
       isLoading.value = false
     }
   }
 
+  function setItems(data: InventoryDevice[]) {
+    items.value = data
+  }
+
   return {
     items,
     isLoading,
-    fetchInventory
+    fetchInventory,
+    setItems
   }
 })

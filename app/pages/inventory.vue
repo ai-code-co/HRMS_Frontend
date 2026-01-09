@@ -57,7 +57,7 @@
                                         selectedItem.name }}</h2>
                                     <div class="flex items-center gap-3">
                                         <span class="text-xs font-bold text-slate-400">{{ selectedItem.category
-                                            }}</span>
+                                        }}</span>
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-200" />
                                         <UBadge variant="soft" color="neutral" size="xs">ID: {{ selectedItem.id }}
                                         </UBadge>
@@ -85,8 +85,30 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <MyInventoryHistoryTimeline :history="selectedItem.history" />
+                            <div v-if="timelineItems.length">
+                                <h3 class="text-lg font-black text-blue-700 mb-4 flex gap-2 items-center">
+                                    <HistoryIcon />
+                                    Device History
+                                </h3>
+                                <UTimeline :items="timelineItems" color="primary" size="md" :ui="{
+                                    date: 'float-end ms-1',
+                                    description: 'px-3 py-2 ring ring-default mt-2 rounded-md text-default'
+                                }">
+                                    <template #indicator="{ item }">
+                                        <UAvatar v-if="item.avatar?.src" :src="item.avatar.src" size="md" />
+                                        <UIcon v-else name="i-lucide-message-circle" class="w-4 h-4" />
+                                    </template>
+                                    <template #title="{ item }">
+                                        <span class="font-bold text-slate-700">{{ item.title }}</span>
+                                    </template>
+                                    <template #description="{ item }">
+                                        <p class="text-slate-500 text-sm">{{ item.description }}</p>
+                                    </template>
+                                </UTimeline>
+                            </div>
+                            <div v-else class="text-center py-8 text-slate-400">
+                                <UIcon name="i-lucide-history" class="w-8 h-8 mb-2" />
+                                <p class="text-sm font-medium">No history available</p>
                             </div>
                         </div>
                     </Transition>
@@ -97,6 +119,7 @@
 </template>
 
 <script setup lang="ts">
+import { HistoryIcon } from 'lucide-vue-next'
 import { useMyInventoryStore } from '~/stores/myInventory'
 
 const store = useMyInventoryStore()
@@ -104,10 +127,13 @@ const store = useMyInventoryStore()
 const searchQuery = ref('')
 const selectedId = ref<string | null>(null)
 
-await useAsyncData('inventory-fetch', async () => {
-    await store.fetchInventory()
-    return true
+const { data: inventoryData } = await useAsyncData('inventory-fetch', () => {
+    return store.fetchInventory()
 })
+
+if (import.meta.client && inventoryData.value) {
+    store.setItems(inventoryData.value)
+}
 
 const filteredItems = computed(() => {
     if (!searchQuery.value) return store.items
@@ -124,6 +150,16 @@ const selectedItem = computed(() => {
         return store.items.find(i => i.id === selectedId.value) || store.items[0]
     }
     return store.items[0]
+})
+
+const timelineItems = computed(() => {
+    if (!selectedItem.value?.history) return []
+    return selectedItem.value.history.map(comment => ({
+        date: comment.formatted_date,
+        title: comment.employee_name,
+        description: comment.comment,
+        avatar: comment.photo_url ? { src: comment.photo_url } : undefined
+    }))
 })
 
 function selectItem(id: string) {

@@ -8,12 +8,16 @@ import { tabs } from '~/utils/tabConfig'
 
 const employeeStore = useEmployeeStore()
 const { employee, loading } = storeToRefs(employeeStore)
-await useAsyncData('employee', async () => {
+const { data: employeeData } = await useAsyncData('employee', async () => {
     if (!employee.value) {
-        await employeeStore.fetchEmployee()
+        return await employeeStore.fetchEmployee()
     }
-    return true
+    return employee.value
 })
+
+if (import.meta.client && employeeData.value) {
+    employeeStore.setEmployee(employeeData.value)
+}
 
 const user = computed(() => {
     if (!employee.value) return null

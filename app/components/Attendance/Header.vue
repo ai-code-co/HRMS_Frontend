@@ -1,5 +1,5 @@
 <template>
-    <header class="h-16 border-b border-slate-200 px-6 flex items-center justify-between bg-white">
+    <header class="h-24 sm:h-16 border-b border-slate-200 px-6 flex flex-col sm:flex-row items-center justify-between bg-white gap-4">
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2">
                 <UButton variant="ghost" icon="i-lucide-chevron-left" @click="store.prev" />

@@ -78,7 +78,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
             const response = await useApi(endpoint, { params })
 
             const newRecords: Record<string, any> = {}
-            console.log('API Response:', response)
             const data = response?.data?.attendance || response.data || []
 
             data.forEach((item: any) => {
@@ -87,18 +86,24 @@ export const useAttendanceStore = defineStore('attendance', () => {
             })
 
             attendanceRecords.value = newRecords
+            return newRecords
         } catch (error: any) {
             toast.add({
                 title: 'Error',
                 description: extractErrorMessage(error, 'Failed to fetch attendance'),
                 color: 'error'
             })
+            return {}
         } finally {
             loading.value = false
             if (showGlobalLoader && import.meta.client) {
                 hideLoader()
             }
         }
+    }
+
+    function setAttendanceRecords(records: Record<string, any>) {
+        attendanceRecords.value = records
     }
     function setViewMode(mode: 'month' | 'week') {
         viewMode.value = mode
@@ -217,6 +222,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
         loading,
         headerLabel,
         fetchAttendance,
+        setAttendanceRecords,
         setViewMode,
         next,
         prev,

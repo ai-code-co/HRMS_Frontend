@@ -1,5 +1,6 @@
 <template>
-    <UModal v-model:open="modelOpen" :overlay="true" :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm', content: 'w-[90vw] sm:w-full sm:max-w-2xl' }" size="2xl">
+    <UModal v-model:open="modelOpen" :overlay="true"
+        :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm', content: 'w-[90vw] sm:w-full sm:max-w-2xl' }" size="2xl">
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <h3 class="text-lg font-semibold text-slate-800">Apply Leave</h3>
@@ -26,9 +27,8 @@
                         </div>
 
                         <UFormField label="Leave Type" name="leave_type">
-                            <USelectMenu v-model="state.leave_type" :items="Object.keys(leaveStore.balances)"
-                                size="xl" placeholder="Select leave type" color="secondary" variant="outline"
-                                class="w-full" />
+                            <USelectMenu v-model="state.leave_type" :items="Object.keys(leaveStore.balances)" size="xl"
+                                placeholder="Select leave type" color="secondary" variant="outline" class="w-full" />
                         </UFormField>
 
                         <UFormField v-if="state.leave_type === 'rh'" label="Select Restricted Holiday"
@@ -160,7 +160,6 @@ const fetchRhLeaves = async () => {
             }
         }) || []
     } catch (err) {
-        console.error("Failed to load RH list")
     }
 }
 
@@ -242,7 +241,6 @@ async function onSubmit(event: FormSubmitEvent<any>) {
         await leaveStore.applyLeave(payload)
         modelOpen.value = false
     } catch (err: any) {
-        console.error('Error applying leave:', err)
     }
 }
 </script>

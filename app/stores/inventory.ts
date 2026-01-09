@@ -89,13 +89,15 @@ export const useInventoryStore = defineStore('inventory', {
     actions: {
         async fetchDashboardSummary() {
             const toast = useToast();
-            if (this.loadingDashboard) return;
+            if (this.loadingDashboard) return null;
             this.loadingDashboard = true;
             try {
                 const response = await useApi<InventoryApiResponse>('/api/inventory/dashboard/summary/', { credentials: 'include' });
                 if (response.error === 0 && response.data) {
                     this.dashboardData = response.data;
+                    return response.data;
                 }
+                return null;
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch dashboard');
                 toast.add({
@@ -103,9 +105,14 @@ export const useInventoryStore = defineStore('inventory', {
                     description: this.error,
                     color: 'error'
                 });
+                return null;
             } finally {
                 this.loadingDashboard = false;
             }
+        },
+
+        setDashboardData(data: InventoryDashboardData | null) {
+            this.dashboardData = data;
         },
 
         async fetchDevicesByType(typeId: string | number) {

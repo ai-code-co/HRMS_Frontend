@@ -6,10 +6,13 @@ import NextHoliday from '~/components/Holidays/NextHoliday.vue';
 const holidayStore = useHolidayStore()
 const { holidays, nextHoliday } = storeToRefs(holidayStore)
 
-const { data, status, error } = await useAsyncData('holidays', async () => {
-    await holidayStore.fetchHolidays()
-    return true
+const { data: holidaysData } = await useAsyncData('holidays', () => {
+    return holidayStore.fetchHolidays()
 })
+
+if (import.meta.client && holidaysData.value) {
+    holidayStore.setHolidays(holidaysData.value)
+}
 
 // UI state - managed in component
 const filter = ref<'all' | 'public' | 'restricted'>('all')

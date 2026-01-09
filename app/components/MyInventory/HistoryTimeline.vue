@@ -42,6 +42,6 @@
 </template>
 
 <script setup lang="ts">
-import type { InventoryItem } from '~/stores/myInventory'
-defineProps<{ history: InventoryItem['history'] }>()
+// import type { InventoryItem } from '~/stores/myInventory'
+defineProps<{ history: ['history'] }>()
 </script>

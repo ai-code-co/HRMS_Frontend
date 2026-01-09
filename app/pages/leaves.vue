@@ -119,13 +119,17 @@ const isApplyModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const selectedLeave = ref<any>(null)
 
-await useAsyncData('leave-data', async () => {
-    await Promise.all([
+const { data: leaveData } = await useAsyncData('leave-data', async () => {
+    const [requests, balances] = await Promise.all([
         leaveStore.fetchLeaves(),
         leaveStore.fetchLeaveBalances()
     ])
-    return true
+    return { requests, balances }
 })
+
+if (import.meta.client && leaveData.value) {
+    leaveStore.setLeaveData(leaveData.value.requests, leaveData.value.balances)
+}
 
 // UI configuration for leave types
 const leaveTypeConfig: Record<string, { icon: string; color: string }> = {

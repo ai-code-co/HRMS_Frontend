@@ -32,7 +32,7 @@ export const useHolidayStore = defineStore('holidays', () => {
             const today = new Date()
             today.setHours(0, 0, 0, 0)
 
-            holidays.value = rawData.map(item => {
+            const mappedHolidays = rawData.map(item => {
                 const holidayDate = new Date(item.date)
                 const status: HolidayStatus = holidayDate < today ? 'Passed' : 'Upcoming'
 
@@ -47,6 +47,8 @@ export const useHolidayStore = defineStore('holidays', () => {
                     status: status
                 }
             })
+            holidays.value = mappedHolidays
+            return mappedHolidays
         } catch (err: any) {
             error.value = extractErrorMessage(err, 'Failed to load holidays')
             const toast = useToast()
@@ -55,9 +57,14 @@ export const useHolidayStore = defineStore('holidays', () => {
                 description: error.value,
                 color: 'error'
             })
+            return []
         } finally {
             isLoading.value = false
         }
+    }
+
+    const setHolidays = (data: Holiday[]) => {
+        holidays.value = data
     }
 
     const nextHoliday = computed(() => {
@@ -69,6 +76,7 @@ export const useHolidayStore = defineStore('holidays', () => {
         isLoading,
         error,
         nextHoliday,
-        fetchHolidays
+        fetchHolidays,
+        setHolidays
     }
 })
