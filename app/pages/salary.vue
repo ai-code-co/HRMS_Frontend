@@ -32,8 +32,8 @@
                                             ${{ store.selectedRecord.netPaid.toLocaleString() }}
                                         </p>
                                     </div>
-                                    <UButton icon="i-heroicons-document-arrow-down" size="xl" color="primary"
-                                        variant="soft" class="rounded-2xl" />
+                                    <!-- <UButton icon="i-heroicons-document-arrow-down" size="xl" color="primary"
+                                        variant="soft" class="rounded-2xl" /> -->
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

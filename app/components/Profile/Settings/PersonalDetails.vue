@@ -64,6 +64,7 @@ type Schema = z.output<typeof schema>
 const employeeStore = useEmployeeStore()
 const { employee } = storeToRefs(employeeStore)
 const { isSuperUser } = useRoleAccess()
+const toast = useToast()
 
 const canEditOfficialInfo = computed(() => isSuperUser.value)
 const canEditPersonalInfo = computed(() => true)
@@ -118,14 +119,12 @@ const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
 
         employeeStore.updateEmployee(updated)
         originalState.value = { ...state }
-        const toast = useToast()
         toast.add({
             title: 'Success',
             description: 'Personal details updated successfully',
             color: 'success'
         })
     } catch (err: any) {
-        const toast = useToast()
         toast.add({
             title: 'Error',
             description: err?.data?.error || err?.message || 'Failed to update personal details',

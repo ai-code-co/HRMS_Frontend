@@ -26,8 +26,8 @@
                 </span>
             </div>
 
-            <UButton icon="i-heroicons-cloud-arrow-down" color="secondary" class="font-bold rounded-xl"
-                label="Download All" />
+            <!-- <UButton icon="i-heroicons-cloud-arrow-down" color="secondary" class="font-bold rounded-xl"
+                label="Download All" /> -->
         </div>
     </header>
 </template>
