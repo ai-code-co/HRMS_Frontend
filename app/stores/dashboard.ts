@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 interface Overview {
     monthly_attendance_pct: string
@@ -54,6 +55,7 @@ export const useDashboardStore = defineStore('dashboard', {
         async fetchSummary() {
             this.loading = true
             this.error = null
+            const toast = useToast()
             try {
                 const response = await useApi('/api/dashboard/summary/')
                 if (response.error === 0) {
@@ -62,7 +64,12 @@ export const useDashboardStore = defineStore('dashboard', {
                     this.error = 'Failed to fetch dashboard data'
                 }
             } catch (err: any) {
-                this.error = err.message || 'An error occurred'
+                this.error = extractErrorMessage(err, 'Failed to fetch dashboard data')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
             } finally {
                 this.loading = false
             }

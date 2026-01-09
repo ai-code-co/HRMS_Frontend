@@ -19,10 +19,9 @@ const isMobileOpen = computed({
   set: (v) => emit('update:mobileOpen', v)
 })
 
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  sessionStorage.clear()
-  closeMobile()
+const handleLogout = async () => {
+  const auth = useAuth()
+  await auth.logout()
   router.push('/login')
 }
 
@@ -78,10 +77,8 @@ const links = computed(() => {
       isMobileOpen ? 'w-full' : isHovered ? 'w-56' : 'w-16 lg:w-16'
     ]" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <div class="flex items-center gap-3 py-5 px-4 shrink-0 overflow-hidden">
-      <UButton variant="solid" size="lg" class="cursor-pointer"
-        @click.stop="isMobileOpen = !isMobileOpen">
-        <UIcon :name="isMobileOpen ? 'i-lucide-x' : 'i-lucide-menu'" size="sm"
-          :class="{ 'rotate-90': isMobileOpen }" />
+      <UButton variant="solid" size="lg" class="cursor-pointer" @click.stop="isMobileOpen = !isMobileOpen">
+        <UIcon :name="isMobileOpen ? 'i-lucide-x' : 'i-lucide-menu'" size="sm" :class="{ 'rotate-90': isMobileOpen }" />
       </UButton>
 
       <span class="text-xl font-bold tracking-tight whitespace-nowrap transition-all duration-300" :class="[

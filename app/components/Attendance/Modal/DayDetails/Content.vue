@@ -44,7 +44,7 @@
                             Total Duration
                         </p>
                         <p class="text-2xl font-black text-slate-800">
-                            {{day.total_time }} Hrs
+                            {{ day.total_time }} Hrs
                         </p>
                     </div>
 
@@ -57,6 +57,53 @@
                 </div>
                 <UProgress :modelValue="Math.min((day.seconds_actual_worked_time / day.orignal_total_time) * 100, 100)"
                     :color="day.seconds_actual_worked_time >= day.orignal_total_time ? 'primary' : 'error'" />
+            </div>
+            <div v-if="manualAttendanceSubmission"
+                :class="[attendanceSubmissionStyles.container, 'p-4 border rounded-2xl']">
+                <div class="flex items-center justify-between mb-3">
+                    <div :class="[attendanceSubmissionStyles.text, 'flex items-center gap-2']">
+                        <Fingerprint :size="16" />
+                        <span class="text-[10px] font-bold uppercase">Manual Attendance Applied</span>
+                    </div>
+                    <span
+                        :class="[attendanceSubmissionStyles.badge, 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase']">
+                        {{ manualAttendanceSubmission.status }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Requested In</p>
+                        <p class="text-sm font-bold text-slate-700">{{
+                            isValid(parseISO(manualAttendanceSubmission.in_time))
+                                ?
+                                format(manualAttendanceSubmission.in_time, 'hh:mm a') : '--:--' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Requested Out</p>
+                        <p class="text-sm font-bold text-slate-700">{{
+                            isValid(parseISO(manualAttendanceSubmission.out_time))
+                                ?
+                                format(manualAttendanceSubmission.out_time, 'hh:mm a') : '--:--' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="leaveSubmission" :class="[leaveSubmissionStyles.container, 'p-4 border rounded-2xl']">
+                <div class="flex items-center justify-between mb-3">
+                    <div :class="[leaveSubmissionStyles.text, 'flex items-center gap-2']">
+                        <FileText :size="16" />
+                        <span class="text-[10px] font-bold uppercase">Leave Applied</span>
+                    </div>
+                    <span
+                        :class="[leaveSubmissionStyles.badge, 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase']">
+                        {{ leaveSubmission.status }}
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <p class=" text-slate-400 font-medium">Leave Type:</p>
+                    <p class="font-bold text-slate-700">{{ leaveSubmission.type }}</p>
+                </div>
             </div>
         </template>
         <template v-else>
@@ -72,20 +119,24 @@
             </div>
         </template>
         <div class="flex gap-3 mt-6">
-            <UModal v-model:open="isTimeSheetUploadModalOpen" title="Upload Timesheet"
+            <UModal v-model:open="isTimesheetModalOpen" title="Upload Timesheet"
                 :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }" :overlay="true">
-                <UButton color="info" variant="subtle" size="lg" block class="cursor-pointer">
+                <UButton color="info" variant="subtle" size="lg" block class="cursor-pointer"
+                    :disabled="areActionButtonsDisabled">
                     Upload Timesheet
                 </UButton>
                 <template #header>
-                    <AttendanceModalUploadTimesheetHeader :day="day" @close="closeTimeSheetUploadModal" />
+                    <AttendanceModalUploadTimesheetHeader :day="day" @close="closeTimesheetModal" />
                 </template>
                 <template #body>
-                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimeSheetUploadModal" @update-success="handleTimeSheetSuccess" />
+                    <AttendanceModalUploadTimesheetContent :day="day" @close="closeTimesheetModal"
+                        @update-success="handleTimesheetUploadSuccess" />
                 </template>
             </UModal>
 
-            <UButton color="secondary" size="lg" block class="cursor-pointer" @click="isEditing ? handleUpdateSession() : isEditing = !isEditing" :disabled="isSubmitting">
+            <UButton color="secondary" size="lg" block class="cursor-pointer"
+                @click="isEditing ? handleUpdateSession() : isEditing = !isEditing"
+                :disabled="areActionButtonsDisabled">
                 {{ isSubmitting ? 'Updating...' : isEditing ? 'Update Session' : 'Edit Session' }}
             </UButton>
         </div>
@@ -93,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { Clock, ArrowRight, Calendar } from 'lucide-vue-next'
+import { Clock, ArrowRight, Calendar, Fingerprint, FileText } from 'lucide-vue-next'
 import { format, parseISO, isValid } from 'date-fns'
 import { Time } from '@internationalized/date'
 import AttendanceModalUploadTimesheetHeader from '~/components/Attendance/Modal/UploadTimesheet/Header.vue'
@@ -112,7 +163,67 @@ const inTime = shallowRef<Time | null>(null)
 const outTime = shallowRef<Time | null>(null)
 const isSubmitting = ref(false)
 
-const isTimeSheetUploadModalOpen = ref(false)
+const isTimesheetModalOpen = ref(false)
+
+const manualAttendanceSubmission = computed(() => {
+    return props.day?.attendance_submission || null
+})
+
+const leaveSubmission = computed(() => {
+    return props.day?.leave_submission || null
+})
+
+const areActionButtonsDisabled = computed(() => manualAttendanceSubmission.value || leaveSubmission.value || isSubmitting.value)
+
+const attendanceSubmissionStyles = computed(() => {
+    const status = manualAttendanceSubmission.value?.status
+    switch (status) {
+        case 'APPROVED':
+            return {
+                container: 'bg-success-50 border-success-100',
+                text: 'text-success-600',
+                badge: 'bg-success-100 text-success-600'
+            }
+        case 'REJECTED':
+        case 'CANCELLED':
+            return {
+                container: 'bg-rose-50 border-rose-100',
+                text: 'text-rose-600',
+                badge: 'bg-rose-100 text-rose-600'
+            }
+        default:
+            return {
+                container: 'bg-amber-50/50 border-amber-100',
+                text: 'text-amber-600',
+                badge: 'bg-amber-100 text-amber-600'
+            }
+    }
+})
+
+const leaveSubmissionStyles = computed(() => {
+    const status = leaveSubmission.value?.status
+    switch (status) {
+        case 'Approved':
+            return {
+                container: 'bg-success-50 border-success-100',
+                text: 'text-success-600',
+                badge: 'bg-success-100 text-success-600'
+            }
+        case 'Rejected':
+        case 'Cancelled':
+            return {
+                container: 'bg-rose-50 border-rose-100',
+                text: 'text-rose-600',
+                badge: 'bg-rose-100 text-rose-600'
+            }
+        default:
+            return {
+                container: 'bg-amber-50/50 border-amber-100',
+                text: 'text-amber-600',
+                badge: 'bg-amber-100 text-amber-600'
+            }
+    }
+})
 
 const attendanceStore = useAttendanceStore()
 const toast = useToast()
@@ -183,29 +294,27 @@ async function handleUpdateSession() {
 
         isEditing.value = false
         toast.add({ title: 'Success', description: 'Attendance updated successfully', color: 'success' })
-        
+
         // Emit event to notify parent to refresh
         emit('update-success')
     } catch (error: any) {
         console.error('Failed to update attendance:', error)
-        toast.add({ 
-            title: 'Error', 
-            description: error?.message || 'Failed to update attendance', 
-            color: 'error' 
+        toast.add({
+            title: 'Error',
+            description: error?.message || 'Failed to update attendance',
+            color: 'error'
         })
     } finally {
         isSubmitting.value = false
     }
 }
 
-const closeTimeSheetUploadModal = () => {
-    isTimeSheetUploadModalOpen.value = false
+const closeTimesheetModal = () => {
+    isTimesheetModalOpen.value = false
 }
 
-const handleTimeSheetSuccess = () => {
-    // Close the timesheet modal
-    isTimeSheetUploadModalOpen.value = false
-    // Emit event to parent to refresh attendance data
+const handleTimesheetUploadSuccess = () => {
+    isTimesheetModalOpen.value = false
     emit('update-success')
 }
 </script>

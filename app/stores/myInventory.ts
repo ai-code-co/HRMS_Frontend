@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export interface Comment {
   id: number
@@ -55,8 +56,13 @@ export const useMyInventoryStore = defineStore('myInventory', () => {
           photo_url: comment.photo_url,
         }))
       }))
-    } catch (err) {
-      console.error('Fetch error:', err)
+    } catch (err: any) {
+      const toast = useToast()
+      toast.add({
+        title: 'Error',
+        description: extractErrorMessage(err, 'Failed to fetch inventory'),
+        color: 'error'
+      })
     } finally {
       isLoading.value = false
     }

@@ -109,6 +109,7 @@ await useAsyncData('leave-data', async () => {
         leaveStore.fetchLeaves(),
         leaveStore.fetchLeaveBalances()
     ])
+    return true
 })
 
 // UI configuration for leave types

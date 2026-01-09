@@ -24,13 +24,32 @@
                 {{ formatTime(day.record.in_time) }}
                 <span v-if="day.record.out_time"> - {{ formatTime(day.record.out_time) }}</span>
             </div>
+
+            <div v-else-if="isMissingTime"
+                class="text-[9px] font-bold px-1 py-0.5 rounded text-center uppercase tracking-wider"
+                :class="DAY_TYPE_STYLES.MISSING_TIME.label">
+                {{ DAY_TYPE_STYLES.MISSING_TIME.displayLabel }}
+            </div>
+            <div v-if="isAttendanceSubmitted">
+                <div class="text-xs font-bold text-center leading-tight"
+                    :class="DAY_TYPE_STYLES.MANUAL_ATTENDANCE.label">
+                    {{ DAY_TYPE_STYLES.MANUAL_ATTENDANCE.displayLabel }}:
+                    <span>
+                        {{ capitalize(isAttendanceSubmitted.status) }}
+                    </span>
+                </div>
+            </div>
+            <div v-if="isLeaveSubmitted">
+                <div class="text-xs font-bold text-center leading-tight" :class="DAY_TYPE_STYLES.LEAVE_APPLIED.label">
+                    {{ DAY_TYPE_STYLES.LEAVE_APPLIED.displayLabel }}
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { format, parseISO, isValid } from 'date-fns';
-import { computed } from 'vue';
 
 const props = defineProps<{
     day: {
@@ -53,7 +72,7 @@ const DAY_TYPE_STYLES = {
         label: 'text-amber-800',
         displayLabel: 'Half Day'
     },
-    NON_WORKING_DAY: {
+    WEEKEND_OFF: {
         cell: 'bg-amber-200',
         label: 'text-slate-600',
         displayLabel: 'Weekend'
@@ -72,11 +91,34 @@ const DAY_TYPE_STYLES = {
         cell: 'bg-blue-50 border-blue-100',
         label: 'text-blue-800',
         displayLabel: 'Holiday'
-    }
+    },
+    MISSING_TIME: {
+        cell: 'bg-blue-200',
+        label: 'text-blue-800',
+        displayLabel: 'In/Out Time Missing'
+    },
+    MANUAL_ATTENDANCE: {
+        cell: 'bg-red-800',
+        label: 'text-purple-800',
+        displayLabel: 'Manual Attendance'
+    },
+    LEAVE_APPLIED: {
+        cell: 'bg-purple-100 border-purple-200',
+        label: 'text-red-700',
+        displayLabel: 'Leave Applied'
+    },
 } as const
 
 const normalizedType = computed(() => {
     return props.day.record?.day_type?.toUpperCase().replace(/\s+/g, '_') || ''
+})
+
+const isAttendanceSubmitted = computed(() => {
+    return props.day.record?.attendance_submission || false
+})
+
+const isLeaveSubmitted = computed(() => {
+    return props.day.record?.leave_submission || false
 })
 
 const isFutureDay = computed(() => {
@@ -96,6 +138,7 @@ const shouldShowRecord = computed(() => {
 
 const cellStyle = computed(() => {
     if (!shouldShowRecord.value) return 'bg-white'
+    if (isMissingTime.value) return DAY_TYPE_STYLES.MISSING_TIME.cell
     return DAY_TYPE_STYLES[normalizedType.value as keyof typeof DAY_TYPE_STYLES]?.cell || 'bg-white'
 })
 
@@ -113,6 +156,15 @@ const displayLabel = computed(() => {
 const hasTimeRecords = computed(() => {
     const r = props.day.record
     return r?.in_time && r?.total_time && r?.total_time !== '0m :0s'
+})
+
+const isMissingTime = computed(() => {
+    if (!props.day.record) return false
+    const type = normalizedType.value
+    if (!['WORKING_DAY', 'HALF_DAY'].includes(type)) return false
+    if (isFutureDay.value) return false
+    const r = props.day.record
+    return !r.in_time || !r.out_time
 })
 
 function formatTime(timeStr: string) {

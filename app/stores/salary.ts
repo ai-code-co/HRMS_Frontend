@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export interface BreakdownItem {
     label: string
@@ -59,8 +60,13 @@ export const useSalaryStore = defineStore('salary', {
                     this.updateRecordDetails(response.data.selected_payslip);
                     this.selectedRecordId = response.data.selected_payslip.id.toString();
                 }
-            } catch (error) {
-                console.error("Failed to fetch salary data", error);
+            } catch (error: any) {
+                const toast = useToast()
+                toast.add({
+                    title: 'Error',
+                    description: extractErrorMessage(error, 'Failed to fetch salary data'),
+                    color: 'error'
+                })
             } finally {
                 this.isLoading = false;
             }
@@ -76,8 +82,13 @@ export const useSalaryStore = defineStore('salary', {
                 try {
                     const response = await useApi(`api/payroll/user-salary-info/?month=${record.month}&year=${record.year}`);
                     this.updateRecordDetails(response.data.selected_payslip);
-                } catch (error) {
-                    console.error("Failed to fetch month details", error);
+                } catch (error: any) {
+                    const toast = useToast()
+                    toast.add({
+                        title: 'Error',
+                        description: extractErrorMessage(error, 'Failed to fetch month details'),
+                        color: 'error'
+                    })
                 }
             }
         },

@@ -6,8 +6,9 @@ import NextHoliday from '~/components/Holidays/NextHoliday.vue';
 const holidayStore = useHolidayStore()
 const { holidays, nextHoliday } = storeToRefs(holidayStore)
 
-const { data, status, error } = await useAsyncData('holidays', () => {
-    return holidayStore.fetchHolidays()
+const { data, status, error } = await useAsyncData('holidays', async () => {
+    await holidayStore.fetchHolidays()
+    return true
 })
 
 // UI state - managed in component

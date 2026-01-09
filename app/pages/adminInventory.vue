@@ -45,6 +45,7 @@ await useAsyncData('dashboard-summary', async () => {
     if (urlCategory) {
         await restoreStateFromUrl(urlCategory, urlDevice)
     }
+    return true
 })
 const restoreStateFromUrl = async (categoryId: string, deviceId?: string) => {
     view.value = 'list';

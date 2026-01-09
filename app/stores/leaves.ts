@@ -5,6 +5,7 @@ import type {
     LeaveBalanceResponse,
     LeaveStatus
 } from '~/types/leaves'
+import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export const useLeaveStore = defineStore('leaves', {
     state: () => ({
@@ -15,7 +16,6 @@ export const useLeaveStore = defineStore('leaves', {
     }),
 
     getters: {
-        // Simple computed properties for data access
         leaveRequests: (state) => state.requests,
         leaveBalances: (state) => state.balances,
         isLoading: (state) => state.loading,
@@ -28,11 +28,11 @@ export const useLeaveStore = defineStore('leaves', {
                 const res = await useApi<LeaveListResponse>('/api/leaves/')
                 this.requests = res.results
             } catch (err: any) {
-                this.error = err?.message || 'Failed to fetch leave requests'
+                this.error = extractErrorMessage(err, 'Failed to fetch leave requests')
                 const toast = useToast()
                 toast.add({
                     title: 'Error',
-                    description: this.error || 'Failed to fetch leave requests',
+                    description: this.error,
                     color: 'error'
                 })
             }
@@ -40,17 +40,17 @@ export const useLeaveStore = defineStore('leaves', {
 
         async fetchLeaveBalances() {
             this.error = null
+            const toast = useToast()
             try {
                 const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/')
                 if (res.error === 0) {
                     this.balances = res.data
                 }
             } catch (err: any) {
-                this.error = err?.message || 'Failed to fetch leave balances'
-                const toast = useToast()
+                this.error = extractErrorMessage(err, 'Failed to fetch leave balances')
                 toast.add({
                     title: 'Error',
-                    description: this.error || 'Failed to fetch leave balances',
+                    description: this.error,
                     color: 'error'
                 })
             }
@@ -59,6 +59,7 @@ export const useLeaveStore = defineStore('leaves', {
         async applyLeave(payload: any) {
             this.loading = true
             this.error = null
+            const toast = useToast()
             try {
                 await useApi('/api/leaves/', {
                     method: 'POST',
@@ -66,18 +67,17 @@ export const useLeaveStore = defineStore('leaves', {
                 })
                 await this.fetchLeaves()
                 await this.fetchLeaveBalances()
-                const toast = useToast()
+
                 toast.add({
                     title: 'Success',
                     description: 'Leave request submitted successfully',
                     color: 'success'
                 })
             } catch (err: any) {
-                this.error = err?.message || 'Failed to submit leave request'
-                const toast = useToast()
+                this.error = extractErrorMessage(err, 'Failed to submit leave request')
                 toast.add({
                     title: 'Error',
-                    description: this.error || 'Failed to submit leave request',
+                    description: this.error,
                     color: 'error'
                 })
                 throw err
@@ -89,6 +89,7 @@ export const useLeaveStore = defineStore('leaves', {
         async updateLeave(id: number, status: any) {
             this.loading = true
             this.error = null
+            const toast = useToast()
             const payload = { status }
             try {
                 await useApi(`/api/leaves/${id}/`, {
@@ -97,18 +98,16 @@ export const useLeaveStore = defineStore('leaves', {
                 })
                 await this.fetchLeaves()
                 await this.fetchLeaveBalances()
-                const toast = useToast()
                 toast.add({
                     title: 'Success',
                     description: 'Leave request updated successfully',
                     color: 'success'
                 })
             } catch (err: any) {
-                this.error = err?.message || 'Failed to update leave request'
-                const toast = useToast()
+                this.error = extractErrorMessage(err, 'Failed to update leave request')
                 toast.add({
                     title: 'Error',
-                    description: this.error || 'Failed to update leave request',
+                    description: this.error,
                     color: 'error'
                 })
                 throw err
