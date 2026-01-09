@@ -24,6 +24,11 @@
                 {{ formatTime(day.record.in_time) }}
                 <span v-if="day.record.out_time"> - {{ formatTime(day.record.out_time) }}</span>
             </div>
+
+            <div v-else-if="isMissingTime" class="text-[9px] font-bold px-1 py-0.5 rounded text-center uppercase tracking-wider"
+                :class="MISSING_TIME_STYLE.label">
+                {{ MISSING_TIME_STYLE.displayLabel }}
+            </div>
         </div>
     </div>
 </template>
@@ -53,7 +58,7 @@ const DAY_TYPE_STYLES = {
         label: 'text-amber-800',
         displayLabel: 'Half Day'
     },
-    NON_WORKING_DAY: {
+    WEEKEND_OFF: {
         cell: 'bg-amber-200',
         label: 'text-slate-600',
         displayLabel: 'Weekend'
@@ -74,6 +79,12 @@ const DAY_TYPE_STYLES = {
         displayLabel: 'Holiday'
     }
 } as const
+
+const MISSING_TIME_STYLE = {
+    cell: 'bg-blue-200',
+    label: 'text-blue-800',
+    displayLabel: 'In/Out Time Missing'
+}
 
 const normalizedType = computed(() => {
     return props.day.record?.day_type?.toUpperCase().replace(/\s+/g, '_') || ''
@@ -96,6 +107,7 @@ const shouldShowRecord = computed(() => {
 
 const cellStyle = computed(() => {
     if (!shouldShowRecord.value) return 'bg-white'
+    if (isMissingTime.value) return MISSING_TIME_STYLE.cell
     return DAY_TYPE_STYLES[normalizedType.value as keyof typeof DAY_TYPE_STYLES]?.cell || 'bg-white'
 })
 
@@ -113,6 +125,16 @@ const displayLabel = computed(() => {
 const hasTimeRecords = computed(() => {
     const r = props.day.record
     return r?.in_time && r?.total_time && r?.total_time !== '0m :0s'
+})
+
+const isMissingTime = computed(() => {
+    if (!props.day.record) return false
+    const type = normalizedType.value
+    // Only check for missing time on WORKING_DAY or HALF_DAY (not future days)
+    if (!['WORKING_DAY', 'HALF_DAY'].includes(type)) return false
+    if (isFutureDay.value) return false
+    const r = props.day.record
+    return !r.in_time || !r.out_time
 })
 
 function formatTime(timeStr: string) {

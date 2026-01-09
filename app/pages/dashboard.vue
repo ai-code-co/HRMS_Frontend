@@ -1,5 +1,5 @@
 <template>
-    <div class="flex-1 h-full overflow-y-auto custom-scrollbar p-4 md:p-8 max-w-[1600px] mx-auto w-full bg-[#F8FAFC]">
+    <div class="flex-1 h-full p-4 md:p-8 mx-auto w-full bg-[#F8FAFC]">
         <div class="space-y-8 pb-20">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
