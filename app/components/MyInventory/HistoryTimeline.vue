@@ -11,11 +11,11 @@
             <template v-if="history.length > 0">
                 <div v-for="(event, idx) in history" :key="idx" class="relative">
                     <div
-                        class="absolute -left-6.25 top-1 w-6.5 h-6.5 rounded-full bg-white border-4 border-slate-100 group-hover:border-primary-500 transition-colors" />
+                        class="absolute -left-7.5 top-0.5 w-6.5 h-6.5 rounded-full bg-white border-4 border-slate-100 group-hover:border-primary-500 transition-colors" />
 
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-4">
-                            <UAvatar :src="event.avatar" :alt="event.user" size="sm"
+                            <UAvatar :src="event.photo_url" :alt="event.user" size="sm"
                                 class="border-2 border-white shadow-sm" />
                             <div>
                                 <p class="text-sm font-black text-slate-800">{{ event.employee_name }}</p>

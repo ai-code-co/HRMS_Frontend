@@ -54,18 +54,23 @@
 
                 <div v-else class="space-y-3">
                     <div v-for="r in filteredRequests" :key="r.id"
-                        class="bg-white border border-slate-200 p-5 rounded-[1.5rem] flex justify-between items-center">
+                     @click="openLeaveDetails(r)"
+                        class="bg-white border border-slate-200 p-5 rounded-[1.5rem] flex justify-between items-center cursor-pointer transition-all hover:border-indigo-300 hover:shadow-md">
                         <div>
                             <p class="font-bold text-sm">{{ r.type }}</p>
                             <p class="text-xs text-slate-400">{{ r.startDate }} — {{ r.endDate }}</p>
                         </div>
                         <div class="flex gap-2">
-                            <p v-if="r.doc_link_url" class="text-xs font-semibold text-emerald-600 text-end">
-                                Document Present
-                            </p>
-                            <p v-else class="text-xs text-slate-400 text-end">
-                                No Document
-                            </p>
+                            <UBadge
+                            v-if="r.doc_link_url"
+                            color="info"
+                            variant="soft"
+                            size="xs"
+                            icon="lucide:file-check"
+                            class="justify-end px-4 rounded-full"
+                            >
+                            Document Uploaded
+                            </UBadge>
 
                             <div :class="{
                                 'bg-emerald-50 text-emerald-600': r.status === 'approved',
@@ -74,7 +79,7 @@
                             }" class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase">
                                 {{ r.status }}
                             </div>
-                            <UButton v-if="r.status === 'pending'" @click="cancelLeave(r.id)"
+                            <UButton v-if="r.status === 'pending'" @click.stop="cancelLeave(r.id)"
                                 class="cursor-pointer rounded-full" color="error">
                                 <UIcon name="i-lucide-x" />
                             </UButton>
@@ -84,6 +89,8 @@
             </section>
         </main>
         <LeaveModalApplyLeave v-model:open="isApplyModalOpen" class="w-full" />
+        <LeaveModalViewLeave v-model:open="isViewModalOpen" :leave="selectedLeave" @cancel="handleLeaveCancel"
+            class="w-full" />
     </div>
 </template>
 
@@ -94,6 +101,8 @@ import { storeToRefs } from 'pinia'
 const leaveStore = useLeaveStore()
 const { loading, leaveBalances, leaveRequests } = storeToRefs(leaveStore)
 const isApplyModalOpen = ref(false)
+const isViewModalOpen = ref(false)
+const selectedLeave = ref<any>(null)
 
 await useAsyncData('leave-data', async () => {
     await Promise.all([
@@ -147,5 +156,16 @@ const filteredRequests = computed(() =>
 const cancelLeave = async (id: number,) => {
     const status = 'Cancelled'
     await leaveStore.updateLeave(id, status)
+}
+
+const openLeaveDetails = (leave: any) => {
+    selectedLeave.value = leave
+    isViewModalOpen.value = true
+}
+
+const handleLeaveCancel = async (id: number) => {
+    const status = 'Cancelled'
+    await leaveStore.updateLeave(id, status)
+    selectedLeave.value = null
 }
 </script>
