@@ -160,7 +160,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
                 })
                 screenshotPublicId = uploadResponse.public_id
             } catch (uploadError) {
-                console.error('Failed to upload screenshot:', uploadError)
                 toast.add({ 
                     title: 'Error', 
                     description: 'Failed to upload screenshot', 
@@ -193,7 +192,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         emit('update-success')
         emit('close')
     } catch (error: any) {
-        console.error('Failed to submit timesheet:', error)
         toast.add({ 
             title: 'Error', 
             description: error?.message || 'Failed to submit timesheet', 

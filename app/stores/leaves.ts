@@ -27,6 +27,7 @@ export const useLeaveStore = defineStore('leaves', {
             try {
                 const res = await useApi<LeaveListResponse>('/api/leaves/')
                 this.requests = res.results
+                return res.results
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch leave requests')
                 const toast = useToast()
@@ -35,6 +36,7 @@ export const useLeaveStore = defineStore('leaves', {
                     description: this.error,
                     color: 'error'
                 })
+                return []
             }
         },
 
@@ -45,7 +47,9 @@ export const useLeaveStore = defineStore('leaves', {
                 const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/')
                 if (res.error === 0) {
                     this.balances = res.data
+                    return res.data
                 }
+                return {}
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch leave balances')
                 toast.add({
@@ -53,7 +57,13 @@ export const useLeaveStore = defineStore('leaves', {
                     description: this.error,
                     color: 'error'
                 })
+                return {}
             }
+        },
+
+        setLeaveData(requests: LeaveRequestAPI[], balances: Record<string, any>) {
+            this.requests = requests
+            this.balances = balances
         },
 
         async applyLeave(payload: any) {

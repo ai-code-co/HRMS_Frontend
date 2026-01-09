@@ -103,8 +103,11 @@ import { useSalaryStore } from '@/stores/salary'
 
 const store = useSalaryStore()
 
-await useAsyncData('salary', async () => {
-    await store.fetchSalaryData()
-    return true
+const { data: salaryData } = await useAsyncData('salary', () => {
+    return store.fetchSalaryData()
 })
+
+if (import.meta.client && salaryData.value) {
+    store.setSalaryData(salaryData.value)
+}
 </script>

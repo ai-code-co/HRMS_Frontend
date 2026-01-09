@@ -49,12 +49,17 @@ export const useEmployeeStore = defineStore('employee', {
                 )
 
                 this.employee = data ?? null
+                return data ?? null
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to load employee')
                 this.employee = null
+                return null
             } finally {
                 this.loading = false
             }
+        },
+        setEmployee(data: Employee | null) {
+            this.employee = data
         },
         clearEmployee() {
             this.employee = null
@@ -111,7 +116,6 @@ export const useEmployeeStore = defineStore('employee', {
                 await useAuth().initAuth()
                 if (updateResponse && this.employee) {
                     this.employee = { ...this.employee, ...updateResponse }
-                    console.log('Profile photo updated:', this.employee)
                 } else if (updateResponse) {
                     this.employee = updateResponse
                 }

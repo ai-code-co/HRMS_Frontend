@@ -55,7 +55,6 @@ const handleFileChange = async (event: Event) => {
                 color: 'success' 
             })
         } catch (err: any) {
-            console.error('Upload failed:', err)
             toast.add({ 
                 title: 'Error', 
                 description: err?.message || 'Failed to update profile photo', 

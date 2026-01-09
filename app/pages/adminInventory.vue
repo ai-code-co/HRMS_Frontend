@@ -37,16 +37,20 @@ const comments = ref([
     { id: '1', author: 'John Raven', text: 'All Good', date: '4th Aug 25', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sushmita' }
 ]);
 
-await useAsyncData('dashboard-summary', async () => {
-    await store.fetchDashboardSummary()
+const { data: dashboardSummaryData } = await useAsyncData('dashboard-summary', async () => {
+    const data = await store.fetchDashboardSummary()
 
     const urlCategory = route.query.category as string | undefined
     const urlDevice = route.query.device as string | undefined
     if (urlCategory) {
         await restoreStateFromUrl(urlCategory, urlDevice)
     }
-    return true
+    return data
 })
+
+if (import.meta.client && dashboardSummaryData.value) {
+    store.setDashboardData(dashboardSummaryData.value)
+}
 const restoreStateFromUrl = async (categoryId: string, deviceId?: string) => {
     view.value = 'list';
     selectedCategoryId.value = categoryId;

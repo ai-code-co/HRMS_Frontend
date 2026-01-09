@@ -298,7 +298,6 @@ async function handleUpdateSession() {
         // Emit event to notify parent to refresh
         emit('update-success')
     } catch (error: any) {
-        console.error('Failed to update attendance:', error)
         toast.add({
             title: 'Error',
             description: error?.message || 'Failed to update attendance',

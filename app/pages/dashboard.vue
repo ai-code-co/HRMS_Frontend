@@ -57,10 +57,13 @@ import { CalendarDays, UserCheck, Briefcase, Award } from 'lucide-vue-next';
 import { useDashboardStore } from '~/stores/dashboard';
 
 const dashboardStore = useDashboardStore();
-await useAsyncData('dashboard-data', async () => {
-    await dashboardStore.fetchSummary();
-    return true
+const { data: dashboardData } = await useAsyncData('dashboard-data', () => {
+    return dashboardStore.fetchSummary()
 })
+
+if (import.meta.client && dashboardData.value) {
+    dashboardStore.setDashboardData(dashboardData.value)
+}
 
 const currentRole = ref('user');
 

@@ -60,8 +60,10 @@ export const useDashboardStore = defineStore('dashboard', {
                 const response = await useApi('/api/dashboard/summary/')
                 if (response.error === 0) {
                     this.dashboardData = response.data
+                    return response.data
                 } else {
                     this.error = 'Failed to fetch dashboard data'
+                    return null
                 }
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch dashboard data')
@@ -70,9 +72,13 @@ export const useDashboardStore = defineStore('dashboard', {
                     description: this.error,
                     color: 'error'
                 })
+                return null
             } finally {
                 this.loading = false
             }
+        },
+        setDashboardData(data: DashboardData | null) {
+            this.dashboardData = data
         }
     }
 })

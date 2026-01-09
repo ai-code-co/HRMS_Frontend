@@ -60,6 +60,12 @@ export const useSalaryStore = defineStore('salary', {
                     this.updateRecordDetails(response.data.selected_payslip);
                     this.selectedRecordId = response.data.selected_payslip.id.toString();
                 }
+
+                return {
+                    records: this.records,
+                    annualCtc: this.annualCtc,
+                    selectedRecordId: this.selectedRecordId
+                };
             } catch (error: any) {
                 const toast = useToast()
                 toast.add({
@@ -67,9 +73,16 @@ export const useSalaryStore = defineStore('salary', {
                     description: extractErrorMessage(error, 'Failed to fetch salary data'),
                     color: 'error'
                 })
+                return null;
             } finally {
                 this.isLoading = false;
             }
+        },
+
+        setSalaryData(data: { records: SalaryRecord[], annualCtc: number, selectedRecordId: string }) {
+            this.records = data.records;
+            this.annualCtc = data.annualCtc;
+            this.selectedRecordId = data.selectedRecordId;
         },
 
         async selectRecord(id: string) {

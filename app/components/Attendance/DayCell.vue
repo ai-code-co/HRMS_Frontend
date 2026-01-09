@@ -35,7 +35,7 @@
                     :class="DAY_TYPE_STYLES.MANUAL_ATTENDANCE.label">
                     {{ DAY_TYPE_STYLES.MANUAL_ATTENDANCE.displayLabel }}:
                     <span>
-                        {{ capitalize(isAttendanceSubmitted.status) }}
+                        {{ capitalize(isAttendanceSubmitted.status) || '' }}
                     </span>
                 </div>
             </div>
@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 import { format, parseISO, isValid } from 'date-fns';
-
+import { capitalize } from '~/utils/function';
 const props = defineProps<{
     day: {
         date: Date
