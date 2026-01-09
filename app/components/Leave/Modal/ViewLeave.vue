@@ -1,5 +1,5 @@
 <template>
-    <UModal v-model:open="modelOpen" :overlay="true" :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm' }" size="2xl">
+    <UModal v-model:open="modelOpen" :overlay="true" :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm', content: 'w-[90vw] sm:w-full sm:max-w-2xl' }" size="2xl">
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <h3 class="text-lg font-semibold text-slate-800">Leave Details</h3>
@@ -9,7 +9,7 @@
 
         <template #body>
             <div v-if="leave" class="space-y-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="grid grid-cols-2 gap-8">
                     <!-- Left Column -->
                     <div class="space-y-3">
                         <div>
@@ -45,10 +45,6 @@
                             <p class="text-sm font-medium text-slate-800 mt-1 capitalize">{{ leave.status }}</p>
                         </div>
 
-                        <div v-if="leave.approverComment">
-                            <p class="text-sm font-semibold text-slate-600">Approver Comment</p>
-                            <p class="text-sm text-slate-700 mt-1 italic">{{ leave.approverComment }}</p>
-                        </div>
                     </div>
                 </div>
 

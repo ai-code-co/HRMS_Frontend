@@ -1,6 +1,6 @@
 <template>
     <div class="min-h-screen bg-[#F8FAFC]">
-        <main class="max-w-7xl mx-auto p-6 space-y-10">
+        <main class="max-w-7xl mx-auto p-0 sm:p-6 space-y-10">
             <div class="flex justify-between items-end">
                 <div>
                     <h2 class="text-2xl font-bold">Leave Overview</h2>
@@ -10,6 +10,9 @@
                     @click="isApplyModalOpen = true">
                     Apply Leave
                 </UButton>
+                <UButton icon="i-lucide-plus" size="xl"
+                    class="sm:hidden fixed bottom-6 right-6 rounded-full shadow-lg z-50"
+                    @click="isApplyModalOpen = true" />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div v-for="b in balances" :key="b.type"
@@ -30,12 +33,13 @@
                 </div>
             </div>
             <section class="space-y-4">
-                <div class="flex justify-between items-center">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0 justify-between">
                     <h3 class="font-bold">Application History</h3>
-                    <div class="flex items-center gap-1.5 bg-slate-100/60 p-1 rounded-xl w-fit border border-slate-200">
+                    <div
+                        class="flex flex-wrap items-center gap-0 sm:gap-1.5 bg-slate-100/60 p-1 rounded-xl w-full md:w-fit border border-slate-200">
                         <UButton v-for="f in ['All', 'Approved', 'Pending', 'Rejected']" :key="f" size="xs"
                             variant="ghost" :class="[
-                                'px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',
+                                'px-3 sm:px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',
                                 activeFilter === f ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'
                             ]" @click="activeFilter = f">
                             {{ f }}
@@ -53,34 +57,45 @@
                 </div>
 
                 <div v-else class="space-y-3">
-                    <div v-for="r in filteredRequests" :key="r.id"
-                     @click="openLeaveDetails(r)"
+                    <div v-for="r in filteredRequests" :key="r.id" @click="openLeaveDetails(r)"
                         class="bg-white border border-slate-200 p-5 rounded-[1.5rem] flex justify-between items-center cursor-pointer transition-all hover:border-indigo-300 hover:shadow-md">
                         <div>
                             <p class="font-bold text-sm">{{ r.type }}</p>
                             <p class="text-xs text-slate-400">{{ r.startDate }} — {{ r.endDate }}</p>
                         </div>
                         <div class="flex gap-2">
-                            <UBadge
-                            v-if="r.doc_link_url"
-                            color="info"
-                            variant="soft"
-                            size="xs"
-                            icon="lucide:file-check"
-                            class="justify-end px-4 rounded-full"
-                            >
-                            Document Uploaded
+                            <!-- Desktop/Tablet: Full Badge -->
+                            <UBadge v-if="r.doc_link_url" color="info" variant="soft" size="xs" icon="lucide:file-check"
+                                class="justify-end px-4 rounded-full hidden sm:flex">
+                                Document Uploaded
                             </UBadge>
 
-                            <div :class="{
+                            <!-- Mobile: Icon Only -->
+                            <div v-if="r.doc_link_url"
+                                class="flex sm:hidden items-center justify-center w-6 h-6 rounded-full bg-blue-100">
+                                <UIcon name="i-lucide-file-check" class="w-4 h-4 text-blue-600" />
+                            </div>
+
+                            <!-- Desktop/Tablet: Full Status Badge -->
+                            <div v-if="true" :class="{
                                 'bg-emerald-50 text-emerald-600': r.status === 'approved',
                                 'bg-amber-50 text-amber-600': r.status === 'pending',
                                 'bg-rose-50 text-rose-600': r.status === 'rejected' || r.status === 'cancelled',
-                            }" class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase">
+                            }" class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase hidden sm:block">
                                 {{ r.status }}
                             </div>
+
+                            <!-- Mobile: Status Dot -->
+                            <div v-if="true" class="flex sm:hidden items-center gap-2">
+                                <div :class="{
+                                    'bg-emerald-500': r.status === 'approved',
+                                    'bg-amber-500': r.status === 'pending',
+                                    'bg-rose-500': r.status === 'rejected' || r.status === 'cancelled',
+                                }" class="w-2 h-2 rounded-full"></div>
+                            </div>
+
                             <UButton v-if="r.status === 'pending'" @click.stop="cancelLeave(r.id)"
-                                class="cursor-pointer rounded-full" color="error">
+                                class="cursor-pointer rounded-full px-1.5 sm:px-2.5" color="error">
                                 <UIcon name="i-lucide-x" />
                             </UButton>
                         </div>
