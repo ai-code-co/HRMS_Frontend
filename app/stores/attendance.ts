@@ -5,6 +5,7 @@ import {
     eachDayOfInterval, format, isSameMonth, isSameDay,
     addMonths, subMonths, addWeeks, subWeeks, getMonth, getYear
 } from 'date-fns'
+import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export const useAttendanceStore = defineStore('attendance', () => {
     const currentDate = ref(new Date())
@@ -53,6 +54,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
     async function fetchAttendance(showGlobalLoader = false) {
         loading.value = true
+        const toast = useToast()
         if (showGlobalLoader && import.meta.client) {
             showLoader()
         }
@@ -86,7 +88,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
             attendanceRecords.value = newRecords
         } catch (error: any) {
-            console.error('Fetch error:', error)
+            toast.add({
+                title: 'Error',
+                description: extractErrorMessage(error, 'Failed to fetch attendance'),
+                color: 'error'
+            })
         } finally {
             loading.value = false
             if (showGlobalLoader && import.meta.client) {
@@ -142,7 +148,12 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
             return response
         } catch (error: any) {
-            console.error('Update attendance error:', error)
+            const toast = useToast()
+            toast.add({
+                title: 'Error',
+                description: extractErrorMessage(error, 'Failed to update attendance'),
+                color: 'error'
+            })
             throw error
         }
     }
@@ -156,13 +167,14 @@ export const useAttendanceStore = defineStore('attendance', () => {
         homeOutTime?: string,
         screenshotPublicId?: string
     ) {
+        const toast = useToast()
         try {
             const formData = new FormData()
             formData.append('date', date)
             formData.append('total_time', totalTime)
             formData.append('comments', comments)
             formData.append('is_working_from_home', String(isWorkingFromHome))
-            
+
             if (homeInTime) {
                 formData.append('home_in_time', homeInTime)
             }
@@ -189,7 +201,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
             return response
         } catch (error: any) {
-            console.error('Submit timesheet error:', error)
+            toast.add({
+                title: 'Error',
+                description: extractErrorMessage(error, 'Failed to submit timesheet'),
+                color: 'error'
+            })
             throw error
         }
     }

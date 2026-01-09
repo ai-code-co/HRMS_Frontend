@@ -12,6 +12,7 @@ await useAsyncData('employee', async () => {
     if (!employee.value) {
         await employeeStore.fetchEmployee()
     }
+    return true
 })
 
 const user = computed(() => {

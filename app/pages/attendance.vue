@@ -21,8 +21,9 @@ const attendanceStore = useAttendanceStore()
 
 const weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
-await useAsyncData('attendance', () => {
-    return attendanceStore.fetchAttendance()
+await useAsyncData('attendance', async () => {
+    await attendanceStore.fetchAttendance()
+    return true
 })
 
 const isModalOpen = ref(false)

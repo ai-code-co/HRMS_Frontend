@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { getIconForHoliday, formatDayName, formatShortDate } from '~/utils/holidays'
+import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export type HolidayType = 'Public' | 'Restricted'
 export type HolidayStatus = 'Upcoming' | 'Passed'
@@ -47,11 +48,11 @@ export const useHolidayStore = defineStore('holidays', () => {
                 }
             })
         } catch (err: any) {
-            error.value = err?.message || 'Failed to load holidays'
+            error.value = extractErrorMessage(err, 'Failed to load holidays')
             const toast = useToast()
             toast.add({
                 title: 'Error',
-                description: error.value || '',
+                description: error.value,
                 color: 'error'
             })
         } finally {

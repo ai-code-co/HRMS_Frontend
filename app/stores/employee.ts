@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Employee, EmployeeListResponse } from '../types/employee'
+import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export const useEmployeeStore = defineStore('employee', {
     state: () => ({
@@ -49,7 +50,7 @@ export const useEmployeeStore = defineStore('employee', {
 
                 this.employee = data ?? null
             } catch (err: any) {
-                this.error = err?.message || 'Failed to load employee'
+                this.error = extractErrorMessage(err, 'Failed to load employee')
                 this.employee = null
             } finally {
                 this.loading = false
@@ -73,12 +74,12 @@ export const useEmployeeStore = defineStore('employee', {
                 });
                 this.employeesList = data.results || [];
             } catch (err: any) {
-                this.error = err?.message || 'Failed to fetch employees list';
+                this.error = extractErrorMessage(err, 'Failed to fetch employees list');
                 this.employeesList = [];
                 const toast = useToast();
                 toast.add({
                     title: 'Error',
-                    description: this.error || 'Failed to fetch employees list',
+                    description: this.error,
                     color: 'error'
                 });
             } finally {
@@ -87,6 +88,7 @@ export const useEmployeeStore = defineStore('employee', {
         },
 
         async updateProfilePhoto(file: File) {
+            const toast = useToast()
             try {
                 const uploadFormData = new FormData()
                 uploadFormData.append('image', file)
@@ -115,8 +117,12 @@ export const useEmployeeStore = defineStore('employee', {
                 }
                 return updateResponse
             } catch (err: any) {
-                this.error = err?.message || 'Failed to update profile photo'
-                console.error('Update profile photo error:', err)
+                this.error = extractErrorMessage(err, 'Failed to update profile photo')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
                 throw err
             }
         }

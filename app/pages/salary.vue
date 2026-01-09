@@ -103,7 +103,8 @@ import { useSalaryStore } from '@/stores/salary'
 
 const store = useSalaryStore()
 
-await useAsyncData('attendance', () => {
-    return store.fetchSalaryData()
+await useAsyncData('salary', async () => {
+    await store.fetchSalaryData()
+    return true
 })
 </script>
