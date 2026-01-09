@@ -29,7 +29,7 @@
                                         <p class="text-[9px] font-black text-slate-300 uppercase tracking-widest">
                                             NET PAYABLE</p>
                                         <p class="text-2xl font-black text-indigo-600">
-                                            ${{ store.selectedRecord.netPaid.toLocaleString() }}
+                                            ₹ {{ store.selectedRecord.netPaid.toLocaleString() }}
                                         </p>
                                     </div>
                                     <!-- <UButton icon="i-heroicons-document-arrow-down" size="xl" color="primary"
