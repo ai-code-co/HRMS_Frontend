@@ -8,6 +8,7 @@ import type {
     InventoryDashboardData,
     DeviceApiObject
 } from '../types/inventory';
+import { extractErrorMessage } from '~/composables/useErrorMessage';
 
 function getIconName(name: string): string {
     const n = name.toLowerCase();
@@ -87,6 +88,7 @@ export const useInventoryStore = defineStore('inventory', {
 
     actions: {
         async fetchDashboardSummary() {
+            const toast = useToast();
             if (this.loadingDashboard) return;
             this.loadingDashboard = true;
             try {
@@ -95,7 +97,12 @@ export const useInventoryStore = defineStore('inventory', {
                     this.dashboardData = response.data;
                 }
             } catch (err: any) {
-                this.error = err?.message || 'Failed to fetch dashboard';
+                this.error = extractErrorMessage(err, 'Failed to fetch dashboard');
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
             } finally {
                 this.loadingDashboard = false;
             }
@@ -105,13 +112,19 @@ export const useInventoryStore = defineStore('inventory', {
             this.loadingDevices = true;
             this.rawDevices = [];
             this.currentDeviceDetail = null;
+            const toast = useToast();
             try {
                 const response = await useApi<DeviceListApiResponse>(`/api/inventory/device-types/${typeId}/devices/`, { credentials: 'include' });
                 if (response.error === 0 && Array.isArray(response.data)) {
                     this.rawDevices = response.data;
                 }
             } catch (err: any) {
-                this.error = err?.message || 'Failed to fetch devices';
+                this.error = extractErrorMessage(err, 'Failed to fetch devices');
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
             } finally {
                 this.loadingDevices = false;
             }
@@ -119,12 +132,18 @@ export const useInventoryStore = defineStore('inventory', {
 
         async fetchDeviceDetail(deviceId: string | number) {
             this.loadingDetail = true;
+            const toast = useToast();
             try {
                 const response = await useApi<DeviceDetailApiObject>(`/api/inventory/devices/${deviceId}/`, { credentials: 'include' });
                 this.currentDeviceDetail = response;
             } catch (err: any) {
-                this.error = err?.message || 'Failed to fetch device details';
+                this.error = extractErrorMessage(err, 'Failed to fetch device details');
                 this.currentDeviceDetail = null;
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
             } finally {
                 this.loadingDetail = false;
             }
@@ -170,7 +189,13 @@ export const useInventoryStore = defineStore('inventory', {
 
                 return updatedDevice;
             } catch (err: any) {
-                this.error = err?.message || 'Failed to update device';
+                this.error = extractErrorMessage(err, 'Failed to update device');
+                const toast = useToast();
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
                 throw err;
             }
         },
