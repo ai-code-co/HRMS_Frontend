@@ -72,7 +72,7 @@ const chartData = computed(() => ({
 <template>
     <ClientOnly>
         <template #default>
-            <section class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+            <section class="bg-white border border-slate-100 rounded-2xl  px-2 py-8 md:p-8 shadow-sm">
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-6">
                     <div>
@@ -82,8 +82,9 @@ const chartData = computed(() => ({
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Last 7 Days</p>
                     </div>
                     <UBadge v-if="dailyAverage" color="primary" variant="soft" size="md"
-                        :ui="{ rounded: 'rounded-full' }">
-                        Daily Average: {{ dailyAverage }}
+                        class="rounded-full">
+                        <span class="block md:hidden">{{ dailyAverage }}</span>
+                        <span class="hidden md:inline">Daily Average: {{ dailyAverage }}</span>
                     </UBadge>
                 </div>
 
