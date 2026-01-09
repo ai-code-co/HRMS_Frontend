@@ -11,6 +11,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     const viewMode = ref<'month' | 'week'>('month')
     const attendanceRecords = ref<Record<string, any>>({})
     const loading = ref(false)
+    const { showLoader, hideLoader } = useGlobalLoader()
 
     const weekOptions = { weekStartsOn: 1 as const }
 
@@ -50,8 +51,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
         })
     })
 
-    async function fetchAttendance() {
+    async function fetchAttendance(showGlobalLoader = false) {
         loading.value = true
+        if (showGlobalLoader && import.meta.client) {
+            showLoader()
+        }
         try {
             let endpoint = ''
             let params: Record<string, any> = {}
@@ -85,25 +89,28 @@ export const useAttendanceStore = defineStore('attendance', () => {
             console.error('Fetch error:', error)
         } finally {
             loading.value = false
+            if (showGlobalLoader && import.meta.client) {
+                hideLoader()
+            }
         }
     }
     function setViewMode(mode: 'month' | 'week') {
         viewMode.value = mode
-        fetchAttendance()
+        fetchAttendance(true)
     }
 
     function next() {
         currentDate.value = viewMode.value === 'month'
             ? addMonths(currentDate.value, 1)
             : addWeeks(currentDate.value, 1)
-        fetchAttendance()
+        fetchAttendance(true)
     }
 
     function prev() {
         currentDate.value = viewMode.value === 'month'
             ? subMonths(currentDate.value, 1)
             : subWeeks(currentDate.value, 1)
-        fetchAttendance()
+        fetchAttendance(true)
     }
 
     async function updateAttendance(
