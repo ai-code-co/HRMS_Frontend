@@ -64,7 +64,7 @@
 
                         <a :href="getDocumentUrl(leave.doc_link_url)" target="_blank" download
                             class="absolute top-2 right-2">
-                            <UButton icon="i-lucide-download" color="primary" variant="solid" size="xs"
+                            <UButton icon="i-lucide-eye" color="primary" variant="solid" size="xs"
                                 class="rounded-full shadow-md cursor-pointer" />
                         </a>
                     </div>

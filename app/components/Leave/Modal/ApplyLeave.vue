@@ -86,15 +86,25 @@
                     :description="uploadedFileName ? `Attached: ${uploadedFileName}` : 'Select an image to upload'"
                     class="my-3">
                     <div class="relative">
-                        <UInput type="file" icon="i-heroicons-paper-clip" accept="image/*" :disabled="isUploading"
-                            @change="handleFileUpload" size="xl" color="secondary" variant="outline">
-                            <template #trailing v-if="isUploading">
-                                <UIcon name="i-heroicons-arrow-path" class="animate-spin w-5 h-5 text-primary" />
-                            </template>
-                            <template #trailing v-else-if="state.doc_link">
+                        <UInput type="file" icon="i-heroicons-paper-clip" accept="image/*" @change="handleFileUpload"
+                            size="xl" color="secondary" variant="outline">
+                            <template #trailing v-if="uploadedImageUrl">
                                 <UIcon name="i-heroicons-check-badge" class="w-5 h-5 text-green-500" />
                             </template>
                         </UInput>
+                    </div>
+                    <!-- Image Preview Section -->
+                    <div v-if="uploadedImageUrl" class="mt-4 space-y-2">
+                        <p class="text-xs font-semibold uppercase text-slate-500">Preview</p>
+                        <div class="relative bg-slate-50 rounded-lg p-3 border border-slate-200">
+                            <img :src="uploadedImageUrl" alt="Uploaded document" 
+                                class="w-full h-48 object-cover rounded-md" />
+                            <a :href="uploadedImageUrl" target="_blank" download 
+                                class="absolute top-3 right-3">
+                                <UButton icon="i-lucide-eye" color="primary" variant="solid" size="xs"
+                                    class="rounded-full shadow-md cursor-pointer" />
+                            </a>
+                        </div>
                     </div>
                 </UFormField>
 
@@ -122,8 +132,9 @@ const props = defineProps<{ open: boolean }>()
 const emit = defineEmits(['update:open', 'close'])
 const rh = ref<any>(null);
 const rhOptions = ref<any[]>([]);
-const isUploading = ref(false)
+const selectedFile = ref<File | null>(null)
 const uploadedFileName = ref('')
+const uploadedImageUrl = ref<string>('')
 
 const leaveStore = useLeaveStore()
 const toast = useToast()
@@ -141,7 +152,6 @@ const state = ref({
     reason: '',
     is_first_half: false,
     is_second_half: false,
-    doc_link: undefined as string | undefined,
 })
 
 const fetchRhLeaves = async () => {
@@ -171,6 +181,13 @@ const modelOpen = computed({
     get: () => props.open,
     set: (value: boolean) => emit('update:open', value)
 })
+watch(() => props.open, (isOpen) => {
+    if (!isOpen) {
+        selectedFile.value = null
+        uploadedFileName.value = ''
+        uploadedImageUrl.value = ''
+    }
+})
 
 const close = () => {
     modelOpen.value = false
@@ -188,26 +205,16 @@ const calculatedDays = computed(() => {
     return days > 0 ? days : 0
 })
 
-const handleFileUpload = async (event: any) => {
+const handleFileUpload = (event: any) => {
     const file = event.target.files?.[0]
     if (!file) return
-    isUploading.value = true
+    selectedFile.value = file
     uploadedFileName.value = file.name
-    const formData = new FormData()
-    formData.append('image', file)
-    try {
-        const response = await useApi<{ public_id: string }>('/auth/upload-image/', {
-            method: 'POST',
-            body: formData,
-        })
-        state.value.doc_link = response.public_id;
-        toast.add({ title: 'File uploaded', color: 'success' })
-    } catch (err) {
-        uploadedFileName.value = ''
-        toast.add({ title: 'Upload failed', color: 'error' })
-    } finally {
-        isUploading.value = false
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        uploadedImageUrl.value = e.target?.result as string
     }
+    reader.readAsDataURL(file)
 }
 
 const toggleHalf = (type: 'first' | 'second') => {
@@ -226,6 +233,23 @@ const toggleHalf = (type: 'first' | 'second') => {
 
 async function onSubmit(event: FormSubmitEvent<any>) {
     try {
+        let docLink = ''
+        if (selectedFile.value) {
+            const formData = new FormData()
+            formData.append('image', selectedFile.value)
+            try {
+                const response = await useApi<{ public_id: string; url: string }>('/auth/upload-image/', {
+                    method: 'POST',
+                    body: formData,
+                })
+                docLink = response.public_id
+                toast.add({ title: 'File uploaded', color: 'success' })
+            } catch (err) {
+                toast.add({ title: 'Upload failed', color: 'error' })
+                return
+            }
+        }
+
         const payload = {
             ...event.data,
             from_date: format(state.value.from_date.toDate(getLocalTimeZone()), 'yyyy-MM-dd'),
@@ -233,6 +257,7 @@ async function onSubmit(event: FormSubmitEvent<any>) {
             no_of_days: calculatedDays.value,
             day_status: 'Full Day',
             action: 'apply_leave',
+            ...(docLink && { doc_link: docLink }),
         }
         if (state.value.leave_type === 'rh' && rh.value) {
             payload.leave_type = 'Restricted Holiday'
