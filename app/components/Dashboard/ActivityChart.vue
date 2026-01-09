@@ -1,34 +1,24 @@
 <script setup lang="ts">
-defineProps<{
-    role: 'admin' | 'user';
-}>();
+import { computed } from 'vue'
+import LineChart from './LineChart.vue'
 
-const dataPoints = [65, 80, 45, 90, 75, 85, 95];
-const days = ['18', '19', '20', '21', '22', '23', '24'];
+const props = defineProps<{
+  role: 'admin' | 'user'
+  data: { date: string; hours: number }[]
+  dailyAverage?: string
+}>()
+
+const chartTitle = computed(() =>
+  props.role === 'admin' ? 'Attendance Trends' : 'My Productivity'
+)
+
+const dailyAverage = computed(() => props.dailyAverage || '0h')
 </script>
 
 <template>
-    <section class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
-        <div class="flex items-center justify-between mb-10">
-            <div>
-                <h3 class="text-lg font-black text-slate-800 tracking-tight">
-                    {{ role === 'admin' ? 'Attendance Trends' : 'My Productivity' }}
-                </h3>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Last 7 Days</p>
-            </div>
-            <UBadge color="primary" variant="soft" size="md" :ui="{ rounded: 'rounded-full' }">
-                Daily Average: 8.5h
-            </UBadge>
-        </div>
-
-        <div class="h-64 flex items-end justify-between gap-4 px-2">
-            <div v-for="(h, i) in dataPoints" :key="i" class="flex-1 flex flex-col items-center gap-3 group">
-                <div class="relative w-full h-full flex items-end">
-                    <div class="w-full rounded-t-xl transition-all duration-300"
-                        :class="i === 6 ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-100'"></div>
-                </div>
-                <span class="text-[10px] font-bold text-slate-400">Oct {{ days[i] }}</span>
-            </div>
-        </div>
-    </section>
+  <LineChart
+    :title="chartTitle"
+    :daily-average="dailyAverage"
+    :data="props.data || []"
+  />
 </template>

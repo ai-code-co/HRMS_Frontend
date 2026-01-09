@@ -104,7 +104,10 @@ const store = useMyInventoryStore()
 const searchQuery = ref('')
 const selectedId = ref<string | null>(null)
 
-await useAsyncData('inventory-fetch', () => store.fetchInventory())
+await useAsyncData('inventory-fetch', async () => {
+    await store.fetchInventory()
+    return true
+})
 
 const filteredItems = computed(() => {
     if (!searchQuery.value) return store.items

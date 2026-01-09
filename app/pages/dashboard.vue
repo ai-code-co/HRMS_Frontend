@@ -11,7 +11,7 @@
                         </button> -->
                     </div>
                     <h1 class="text-3xl font-black text-slate-800 tracking-tight">
-                        {{ currentRole === 'admin' ? 'Organization Insights' : `Welcome back, ${userName}!` }}
+                        {{ currentRole === 'admin' ? 'Organization Insights' : `Welcome back, ${userName} !` }}
                     </h1>
                     <p class="text-sm font-medium text-slate-400 mt-1">
                         {{ currentRole === 'admin'
@@ -32,7 +32,8 @@
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <div class="xl:col-span-2 space-y-8">
                     <DashboardActivityChart :role="currentRole"
-                        :data="dashboardStore.dashboardData?.productivity?.graph_data" />
+                        :data="dashboardStore.dashboardData?.productivity?.graph_data || []"
+                        :daily-average="dashboardStore.dashboardData?.productivity?.daily_average" />
 
                     <DashboardEventsList :title="currentRole === 'admin' ? 'Pending Approvals' : 'Upcoming Holidays'"
                         :items="events" />
@@ -58,6 +59,7 @@ import { useDashboardStore } from '~/stores/dashboard';
 const dashboardStore = useDashboardStore();
 await useAsyncData('dashboard-data', async () => {
     await dashboardStore.fetchSummary();
+    return true
 })
 
 const currentRole = ref('user');

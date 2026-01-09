@@ -64,13 +64,22 @@ export const useAuth = () => {
 
     const logout = async () => {
         try {
-            // await useApi('/auth/logout', {
-            //     method: 'POST',
-            //     credentials: 'include',
-            // })
+            const cookieRefreshToken = useCookie<string | null>('refresh_token')
+            await useApi('/auth/logout/', {
+                method: 'POST',
+                body: {
+                    refresh: cookieRefreshToken.value
+                },
+                credentials: 'include',
+            })
         } catch (err) {
-            // Silently fail on logout
         } finally {
+            const toast = useToast()
+            toast.add({
+                title: 'Logout',
+                description: 'Logged Out Successfully!',
+                color: 'primary'
+            })
             clearAuth()
         }
     }
