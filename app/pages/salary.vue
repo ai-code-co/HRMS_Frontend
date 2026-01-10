@@ -42,8 +42,8 @@
                                 <SalaryMetadataCard label="TOTAL DEDUCTIONS"
                                     :value="`₹ ${store.selectedRecord.deductions.toLocaleString()}`" is-negative />
                                 <SalaryMetadataCard label="BANK" :value="store.selectedRecord.bankName"
-                                    :sub-value="`Acc: ₹ {store.selectedRecord.accNumber}`" />
-                                <SalaryMetadataCard label="STATUS" :value="store.selectedRecord.status" highlight />
+                                    :sub-value="`Acc: ${store.selectedRecord.accNumber}`" />
+                                <SalaryMetadataCard label="STATUS" :value="store.selectedRecord.status || ''" highlight />
                             </div>
 
                             <div class="grid grid-cols-1 xl:grid-cols-2 gap-12">

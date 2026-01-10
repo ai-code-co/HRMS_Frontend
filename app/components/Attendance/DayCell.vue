@@ -103,7 +103,7 @@ const DAY_TYPE_STYLES = {
         displayLabel: 'Manual Attendance'
     },
     LEAVE_APPLIED: {
-        cell: 'bg-purple-100 border-purple-200',
+        cell: 'bg-red-300 border-purple-200',
         label: 'text-red-700',
         displayLabel: 'Leave Applied'
     },
@@ -131,13 +131,14 @@ const shouldShowRecord = computed(() => {
     if (!props.day.record) return false
     const type = normalizedType.value
     if (isFutureDay.value) {
-        return ['LEAVE', 'HOLIDAY', 'NON_WORKING_DAY'].includes(type)
+        return ['HOLIDAY', 'WEEKEND_OFF', 'MANUAL_ATTENDANCE', 'LEAVE_APPLIED'].includes(type) || isLeaveSubmitted.value || isAttendanceSubmitted.value
     }
     return type !== 'FUTUREDAY' && type !== ''
 })
 
 const cellStyle = computed(() => {
     if (!shouldShowRecord.value) return 'bg-white'
+    if (shouldShowRecord.value && (normalizedType.value == 'FUTURE_DAY' || normalizedType.value == 'LEAVE_DAY')) return DAY_TYPE_STYLES['LEAVE_APPLIED'].cell
     if (isMissingTime.value) return DAY_TYPE_STYLES.MISSING_TIME.cell
     return DAY_TYPE_STYLES[normalizedType.value as keyof typeof DAY_TYPE_STYLES]?.cell || 'bg-white'
 })
