@@ -74,7 +74,7 @@ const handleFileChange = async (event: Event) => {
 
 <template>
     <section
-        class="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm p-2  md:p-4 flex flex-col md:flex-row items-center md:items-start gap-10">
+        class="bg-white border border-slate-100 rounded-2xl shadow-sm p-3  md:p-4 flex flex-col md:flex-row items-center md:items-start gap-10">
         <div class="relative group shrink-0">
             <div
                 class="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-slate-50 shadow-inner group-hover:scale-[1.02] transition-transform duration-500">

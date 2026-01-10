@@ -122,6 +122,13 @@ export interface Employee {
     country?: string
     postal_code?: string
 
+    address_line1_2?: string
+    address_line2_2?: string
+    city_2?: string
+    state_2?: string
+    country_2?: string
+    postal_code_2?: string
+
     photo?: string
     photo_url?: string | null
 
