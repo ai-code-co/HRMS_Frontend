@@ -19,10 +19,13 @@
                 :class="labelStyle">
                 {{ displayLabel }}
             </div>
+            <div v-if="holidayName" class="text-[10px] font-bold text-blue-700 text-center leading-tight">
+                {{ holidayName }}
+            </div>
 
             <div v-if="hasTimeRecords" class="text-[10px] font-bold text-slate-700 text-center leading-tight">
-                {{ formatTime(day.record.in_time) }}
-                <span v-if="day.record.out_time"> - {{ formatTime(day.record.out_time) }}</span>
+                {{ formatTimeFromISO(day.record.in_time) }}
+                <span v-if="day.record.out_time"> - {{ formatTimeFromISO(day.record.out_time) }}</span>
             </div>
 
             <div v-else-if="isMissingTime"
@@ -49,14 +52,15 @@
 </template>
 
 <script setup lang="ts">
-import { format, parseISO, isValid } from 'date-fns';
-import { capitalize } from '~/utils/function';
+import { capitalize, formatTimeFromISO } from '~/utils/function'
+
 const props = defineProps<{
     day: {
         date: Date
         dateKey: string
         isCurrentMonth: boolean
         isToday: boolean
+        isFutureDay: boolean
         record: any
     }
 }>()
@@ -118,19 +122,15 @@ const isAttendanceSubmitted = computed(() => {
 })
 
 const isLeaveSubmitted = computed(() => {
-    return props.day.record?.leave_submission || false
-})
-
-const isFutureDay = computed(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const dayDate = new Date(props.day.date); dayDate.setHours(0, 0, 0, 0);
-    return dayDate > today
+    const leaveSubmission = props.day.record?.leave_submission
+    if (!leaveSubmission) return false
+    return leaveSubmission.status?.toLowerCase() !== 'cancelled'
 })
 
 const shouldShowRecord = computed(() => {
     if (!props.day.record) return false
     const type = normalizedType.value
-    if (isFutureDay.value) {
+    if (props.day.isFutureDay) {
         return ['HOLIDAY', 'WEEKEND_OFF', 'MANUAL_ATTENDANCE', 'LEAVE_APPLIED'].includes(type) || isLeaveSubmitted.value || isAttendanceSubmitted.value
     }
     return type !== 'FUTUREDAY' && type !== ''
@@ -154,6 +154,11 @@ const displayLabel = computed(() => {
     return styleObj ? styleObj.displayLabel : normalizedType.value.replace(/_/g, ' ')
 })
 
+const holidayName = computed(() => {
+    if (normalizedType.value !== 'HOLIDAY') return ''
+    return props.day.record?.holiday?.name || ''
+})
+
 const hasTimeRecords = computed(() => {
     const r = props.day.record
     return r?.in_time && r?.total_time && r?.total_time !== '0m :0s'
@@ -163,14 +168,8 @@ const isMissingTime = computed(() => {
     if (!props.day.record) return false
     const type = normalizedType.value
     if (!['WORKING_DAY', 'HALF_DAY'].includes(type)) return false
-    if (isFutureDay.value) return false
+    if (props.day.isFutureDay) return false
     const r = props.day.record
     return !r.in_time || !r.out_time
 })
-
-function formatTime(timeStr: string) {
-    if (!timeStr) return ''
-    const date = parseISO(timeStr)
-    return isValid(date) ? format(date, 'h:mm a') : ''
-}
 </script>

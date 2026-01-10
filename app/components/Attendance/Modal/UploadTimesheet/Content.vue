@@ -52,6 +52,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
+import { formatTime24ToAmPm, calculateTotalHours } from '~/utils/function'
 
 const props = defineProps<{
     day: any | null
@@ -111,31 +112,6 @@ function removeFile() {
     if (fileInput.value) fileInput.value.value = ''
 }
 
-function calculateTotalHours(clockIn: string, clockOut: string): string {
-    if (!clockIn || !clockOut) return '0'
-    
-    const [inHours, inMinutes] = clockIn.split(':').map(Number)
-    const [outHours, outMinutes] = clockOut.split(':').map(Number)
-    
-    const inTotalMinutes = (inHours ?? 0) * 60 + (inMinutes ?? 0)
-    const outTotalMinutes = (outHours ?? 0) * 60 + (outMinutes ?? 0)
-    
-    const diffMinutes = outTotalMinutes - inTotalMinutes
-    const hours = Math.floor(diffMinutes / 60)
-    const minutes = diffMinutes % 60
-    
-    const totalHours = hours + (minutes / 60)
-    return totalHours.toFixed(1)
-}
-
-function formatTimeToAmPm(time24: string): string {
-    if (!time24) return ''
-    const [hours, minutes] = time24.split(':').map(Number)
-    const ampm = (hours ?? 0) >= 12 ? 'PM' : 'AM'
-    const displayHours = (hours ?? 0) % 12 || 12
-    return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`
-}
-
 async function onSubmit(event: FormSubmitEvent<Schema>) {
     if (!props.day) {
         toast.add({ title: 'Error', description: 'Day information is missing', color: 'error' })
@@ -145,8 +121,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     isSubmitting.value = true
     try {
         const totalTime = calculateTotalHours(state.clock_in, state.clock_out)
-        const homeInTime = formatTimeToAmPm(state.clock_in)
-        const homeOutTime = formatTimeToAmPm(state.clock_out)
+        const homeInTime = formatTime24ToAmPm(state.clock_in)
+        const homeOutTime = formatTime24ToAmPm(state.clock_out)
 
         let screenshotPublicId: string | undefined
         if (state.screenshot) {

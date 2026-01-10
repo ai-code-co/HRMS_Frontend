@@ -160,7 +160,7 @@ const requests = computed(() => {
         endDate: r.to_date,
         duration: `${r.no_of_days} Days`,
         status: r.status.toLowerCase() as import('~/types/leaves').LeaveStatus,
-        appliedDate: new Date(r.created_at).toLocaleDateString(),
+        appliedDate: r.created_at,
         reason: r.reason,
         doc_link_url: r.doc_link_url,
     }))

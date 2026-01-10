@@ -14,6 +14,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     const loading = ref(false)
     const { showLoader, hideLoader } = useGlobalLoader()
 
+    const weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
     const weekOptions = { weekStartsOn: 1 as const }
 
     const calendarInterval = computed(() => {
@@ -40,17 +41,40 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
     const calendarDays = computed(() => {
         const { start, end } = calendarInterval.value
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
         return eachDayOfInterval({ start, end }).map(date => {
             const dateKey = format(date, 'yyyy-MM-dd')
+            const dayDate = new Date(date)
+            dayDate.setHours(0, 0, 0, 0)
+
             return {
                 date,
                 dateKey,
                 isCurrentMonth: isSameMonth(date, currentDate.value),
                 isToday: isSameDay(date, new Date()),
+                isFutureDay: dayDate > today,
                 record: attendanceRecords.value[dateKey] || null
             }
         })
     })
+
+    function isDayOpenable(day: { record: any; isFutureDay: boolean }): boolean {
+        if (!day.record) return false
+
+        if (day.isFutureDay) {
+            const dayType = day.record?.day_type?.toUpperCase().replace(/\s+/g, '_')
+            const leaveSubmission = day.record?.leave_submission
+            const isLeaveCancelled = leaveSubmission?.status?.toLowerCase() === 'cancelled'
+
+            return ['HOLIDAY', 'WEEKEND_OFF'].includes(dayType) ||
+                (leaveSubmission && !isLeaveCancelled) ||
+                day.record?.attendance_submission
+        }
+
+        return true
+    }
 
     async function fetchAttendance(showGlobalLoader = false) {
         loading.value = true
@@ -218,6 +242,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return {
         currentDate,
         viewMode,
+        weekdays,
         calendarDays,
         loading,
         headerLabel,
@@ -227,6 +252,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
         next,
         prev,
         updateAttendance,
-        submitTimesheet
+        submitTimesheet,
+        isDayOpenable
     }
 })

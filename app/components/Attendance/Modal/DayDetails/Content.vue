@@ -131,7 +131,7 @@
                     </div>
                     <div>
                         <p class="text-[10px] text-slate-400 uppercase font-medium">Date</p>
-                        <p class="text-sm font-bold text-slate-700">{{ formatDate(day.full_date || day.date) }}</p>
+                        <p class="text-sm font-bold text-slate-700">{{ formatDateFromISO(day.full_date || day.date) }}</p>
                     </div>
                 </div>
             </div>
@@ -216,9 +216,10 @@
 </template>
 
 <script setup lang="ts">
-import { Clock, ArrowRight, Calendar, Fingerprint, FileText, PartyPopper, Coffee } from 'lucide-vue-next'
-import { format, parseISO, isValid } from 'date-fns'
+import { Clock, ArrowRight, Fingerprint, FileText, PartyPopper } from 'lucide-vue-next'
+import { parseISO, isValid, format } from 'date-fns'
 import { Time } from '@internationalized/date'
+import { formatTimeFromISO, formatDateFromISO } from '~/utils/function'
 import AttendanceModalUploadTimesheetHeader from '~/components/Attendance/Modal/UploadTimesheet/Header.vue'
 import AttendanceModalUploadTimesheetContent from '~/components/Attendance/Modal/UploadTimesheet/Content.vue'
 
@@ -249,9 +250,9 @@ const isFutureDay = computed(() => props.day?.isFutureDay || false)
 
 const areActionButtonsDisabled = computed(() => isFutureDay.value || manualAttendanceSubmission.value || leaveSubmission.value || isSubmitting.value)
 
-const attendanceSubmissionStyles = computed(() => {
-    const status = manualAttendanceSubmission.value?.status
-    switch (status) {
+function getSubmissionStyles(status: string | undefined) {
+    const normalizedStatus = status?.toUpperCase()
+    switch (normalizedStatus) {
         case 'APPROVED':
             return {
                 container: 'bg-success-50 border-success-100',
@@ -272,31 +273,14 @@ const attendanceSubmissionStyles = computed(() => {
                 badge: 'bg-amber-100 text-amber-600'
             }
     }
+}
+
+const attendanceSubmissionStyles = computed(() => {
+    return getSubmissionStyles(manualAttendanceSubmission.value?.status)
 })
 
 const leaveSubmissionStyles = computed(() => {
-    const status = leaveSubmission.value?.status
-    switch (status) {
-        case 'Approved':
-            return {
-                container: 'bg-success-50 border-success-100',
-                text: 'text-success-600',
-                badge: 'bg-success-100 text-success-600'
-            }
-        case 'Rejected':
-        case 'Cancelled':
-            return {
-                container: 'bg-rose-50 border-rose-100',
-                text: 'text-rose-600',
-                badge: 'bg-rose-100 text-rose-600'
-            }
-        default:
-            return {
-                container: 'bg-amber-50/50 border-amber-100',
-                text: 'text-amber-600',
-                badge: 'bg-amber-100 text-amber-600'
-            }
-    }
+    return getSubmissionStyles(leaveSubmission.value?.status)
 })
 
 const attendanceStore = useAttendanceStore()
@@ -326,24 +310,12 @@ function toTime(iso?: string): Time | null {
 }
 
 const displayInTime = computed(() => {
-    const timeStr = props.day?.in_time || props.day?.home_in_time
-    if (!timeStr) return '--:--'
-    const date = parseISO(timeStr)
-    return isValid(date) ? format(date, 'hh:mm a') : '--:--'
+    return formatTimeFromISO(props.day?.in_time || props.day?.home_in_time)
 })
 
 const displayOutTime = computed(() => {
-    const timeStr = props.day?.out_time || props.day?.home_out_time
-    if (!timeStr) return '--:--'
-    const date = parseISO(timeStr)
-    return isValid(date) ? format(date, 'hh:mm a') : '--:--'
+    return formatTimeFromISO(props.day?.out_time || props.day?.home_out_time)
 })
-
-function formatDate(dateStr: string | Date): string {
-    if (!dateStr) return '--'
-    const date = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr
-    return isValid(date) ? format(date, 'dd MMM yyyy') : '--'
-}
 
 function formatTimeForApi(time: Time | null): string {
     if (!time) return ''
