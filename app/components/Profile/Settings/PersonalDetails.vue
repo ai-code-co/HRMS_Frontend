@@ -20,11 +20,17 @@ const schema = z.object({
     state: z.string().optional(),
     country: z.string().optional(),
     postal_code: z.string().optional(),
-    phone: z.string().min(10, 'Invalid phone'),
-    alternate_phone: z.string().optional(),
+    address_line1_2: z.string().optional(),
+    address_line2_2: z.string().optional(),
+    city_2: z.string().optional(),
+    state_2: z.string().optional(),
+    country_2: z.string().optional(),
+    postal_code_2: z.string().optional(),
+    phone: z.string().min(10, 'Phone must be 10 digits').max(10, 'Phone cannot exceed 10 digits'),
+    alternate_phone: z.string().min(10, 'Phone must be 10 digits').max(10, 'Phone cannot exceed 10 digits').optional(),
     emergency_contact_name: z.string().optional(),
     emergency_contact_relationship: z.string().optional(),
-    emergency_phone: z.string().optional(),
+    emergency_phone: z.string().max(10, 'Phone cannot exceed 10 digits').optional(),
 })
 
 const marital_statusOptions = ref<SelectMenuItem[]>([
@@ -93,6 +99,12 @@ const getInitialState = () => ({
     state: employee.value?.state ?? '',
     country: employee.value?.country ?? '',
     postal_code: employee.value?.postal_code ?? '',
+    address_line1_2: employee.value?.address_line1_2 ?? '',
+    address_line2_2: employee.value?.address_line2_2 ?? '',
+    city_2: employee.value?.city_2 ?? '',
+    state_2: employee.value?.state_2 ?? '',
+    country_2: employee.value?.country_2 ?? '',
+    postal_code_2: employee.value?.postal_code_2 ?? '',
     phone: employee.value?.phone ?? '',
     alternate_phone: employee.value?.alternate_phone ?? '',
     emergency_contact_name: employee.value?.emergency_contacts?.[0]?.name ?? '',
@@ -190,9 +202,10 @@ const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
 
             <section class="space-y-3">
                 <h4 class="font-bold text-lg">Contact Information</h4>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-10">
                     <UFormField name="phone" label="Phone">
                         <UInput v-model="state.phone" type="text" inputmode="numeric" pattern="[0-9]+" 
+                            maxlength="10"
                             @keypress="handleNumericKeyPress"
                             :disabled="!canEditPersonalInfo" class="w-full"
                             placeholder="+91 XXXXX XXXXX" />
@@ -200,49 +213,12 @@ const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
 
                     <UFormField name="alternate_phone" label="Alternate Phone">
                         <UInput v-model="state.alternate_phone" type="text" inputmode="numeric" pattern="[0-9]+"
+                            maxlength="10"
                             @keypress="handleNumericKeyPress"
                             :disabled="!canEditPersonalInfo" class="w-full"
                             placeholder="+91 XXXXX XXXXX" />
                     </UFormField>
                 </div>
-            </section>
-
-            <section class="space-y-3">
-                <h4 class="font-bold text-lg">Address Details</h4>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <UFormField name="address_line1" label="Current Address">
-                        <UTextarea v-model="state.address_line1" :disabled="!canEditPersonalInfo" :rows="3"
-                            class="w-full" placeholder="Enter current address" />
-                    </UFormField>
-
-                    <UFormField name="address_line2" label="Permanent Address">
-                        <UTextarea v-model="state.address_line2" :disabled="!canEditPersonalInfo" :rows="3"
-                            class="w-full" placeholder="Enter permanent address" />
-                    </UFormField>
-
-                    <UFormField name="city" label="City">
-                        <UInput v-model="state.city" :disabled="!canEditPersonalInfo" class="w-full"
-                            placeholder="Enter city" />
-                    </UFormField>
-
-                    <UFormField name="state" label="State">
-                        <UInput v-model="state.state" :disabled="!canEditPersonalInfo" class="w-full"
-                            placeholder="Enter state" />
-                    </UFormField>
-
-                    <UFormField name="country" label="Country">
-                        <UInput v-model="state.country" :disabled="!canEditPersonalInfo" class="w-full"
-                            placeholder="Enter country" />
-                    </UFormField>
-
-                    <UFormField name="postal_code" label="Postal Code">
-                        <UInput v-model="state.postal_code" :disabled="!canEditPersonalInfo" class="w-full"
-                            placeholder="Enter postal code" />
-                    </UFormField>
-                </div>
-            </section>
-
-            <section class="space-y-3">
                 <h4 class="font-bold text-lg">Emergency Contact</h4>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     <UFormField name="emergency_contact_name" label="Contact Name">
@@ -258,9 +234,81 @@ const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
 
                     <UFormField name="emergency_phone" label="Emergency Phone">
                         <UInput v-model="state.emergency_phone" type="text" inputmode="numeric" pattern="[0-9]+"
+                            maxlength="10"
                             @keypress="handleNumericKeyPress"
                             :disabled="!canEditPersonalInfo" class="w-full"
                             placeholder="+91 XXXXX XXXXX" />
+                    </UFormField>
+                </div>
+            </section>
+
+            <section class="space-y-3">
+                <h4 class="font-bold text-lg">Address Details</h4>
+                <div class="font-semibold text-md mb-1">Current Address</div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <UFormField name="address_line1" label="Address Line 1">
+                        <UTextarea v-model="state.address_line1" :disabled="!canEditPersonalInfo" :rows="3"
+                            class="w-full" placeholder="Enter address line 1" />
+                    </UFormField>
+
+                    <UFormField name="address_line2" label="Address Line 2">
+                        <UTextarea v-model="state.address_line2" :disabled="!canEditPersonalInfo" :rows="3"
+                            class="w-full" placeholder="Enter address line 2" />
+                    </UFormField>
+
+                    <UFormField name="city" label="Current City">
+                        <UInput v-model="state.city" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter current city" />
+                    </UFormField>
+
+                    <UFormField name="state" label="Current State">
+                        <UInput v-model="state.state" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter current state" />
+                    </UFormField>
+
+                    <UFormField name="country" label="Current Country">
+                        <UInput v-model="state.country" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter current country" />
+                    </UFormField>
+
+                    <UFormField name="postal_code" label="Current Postal Code">
+                        <UInput v-model="state.postal_code" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter current postal code" />
+                    </UFormField>
+                </div>
+            </section>
+
+            <section class="space-y-3">
+                <div class="font-semibold text-md mb-1 mt-10">Permanent Address</div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    <UFormField name="address_line1_2" label="Address Line 1">
+                        <UTextarea v-model="state.address_line1_2" :disabled="!canEditPersonalInfo" :rows="3"
+                            class="w-full" placeholder="Enter address line 1" />
+                    </UFormField>
+
+                    <UFormField name="address_line2_2" label="Address Line 2">
+                        <UTextarea v-model="state.address_line2_2" :disabled="!canEditPersonalInfo" :rows="3"
+                            class="w-full" placeholder="Enter address line 2" />
+                    </UFormField>
+
+                    <UFormField name="city_2" label="Permanent City">
+                        <UInput v-model="state.city_2" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter city" />
+                    </UFormField>
+
+                    <UFormField name="state_2" label="Permanent State">
+                        <UInput v-model="state.state_2" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter state" />
+                    </UFormField>
+
+                    <UFormField name="country_2" label="Permanent Country">
+                        <UInput v-model="state.country_2" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter country" />
+                    </UFormField>
+
+                    <UFormField name="postal_code_2" label="Permanent Postal Code">
+                        <UInput v-model="state.postal_code_2" :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="Enter postal code" />
                     </UFormField>
                 </div>
             </section>
