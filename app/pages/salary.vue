@@ -38,11 +38,11 @@
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <SalaryMetadataCard label="GROSS EARNINGS"
-                                    :value="`$${store.selectedRecord.gross.toLocaleString()}`" />
+                                    :value="`₹ ${store.selectedRecord.gross.toLocaleString()}`" />
                                 <SalaryMetadataCard label="TOTAL DEDUCTIONS"
-                                    :value="`$${store.selectedRecord.deductions.toLocaleString()}`" is-negative />
+                                    :value="`₹ ${store.selectedRecord.deductions.toLocaleString()}`" is-negative />
                                 <SalaryMetadataCard label="BANK" :value="store.selectedRecord.bankName"
-                                    :sub-value="`Acc: ${store.selectedRecord.accNumber}`" />
+                                    :sub-value="`Acc: ₹ {store.selectedRecord.accNumber}`" />
                                 <SalaryMetadataCard label="STATUS" :value="store.selectedRecord.status" highlight />
                             </div>
 

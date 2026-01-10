@@ -32,7 +32,7 @@
 
                     <div class="flex items-center justify-between mt-2">
                         <p class="text-xs font-black text-slate-700">
-                            ${{ record.netPaid.toLocaleString() }}
+                            ₹{{ record.netPaid.toLocaleString() }}
                         </p>
                         <p class="text-[10px] font-medium text-slate-300">
                             {{ record.paymentDate }}

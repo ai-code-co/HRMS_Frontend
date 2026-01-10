@@ -14,12 +14,12 @@ const legendColorMap: Record<string, string> = {
 </script>
 
 <template>
-    <section class="bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+    <section class="bg-white border border-slate-100 rounded-2xl px-5 py-8 md:p-8 shadow-sm">
         <h3 class="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-8 text-center">
             {{ title }}
         </h3>
 
-        <div class="relative w-48 h-48 mx-auto mb-10">
+        <div class="relative w-40 h-40 md:w-48 md:h-48 mx-auto mb-10">
             <svg class="w-full h-full transform -rotate-90">
                 <circle cx="50%" cy="50%" r="70" stroke="#f1f5f9" stroke-width="20" fill="transparent" />
                 <circle cx="50%" cy="50%" r="70" stroke="#4f46e5" stroke-width="20" stroke-dasharray="440"
