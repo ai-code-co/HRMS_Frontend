@@ -6,7 +6,7 @@
             </div>
             <div>
                 <h3 class="text-sm font-bold text-slate-800">
-                    {{ day?.full_date ? format(parseISO(day.full_date), 'eee, MMM dd, yyyy') : '' }}
+                    {{ day?.full_date ? format(parseISO(day.full_date), 'eee, dd MMM, yyyy') : '' }}
                 </h3>
                 <p class="text-[10px] text-slate-400 font-bold uppercase">
                     Session Overview
@@ -22,11 +22,6 @@
 import { Calendar } from 'lucide-vue-next'
 import { format, parseISO } from 'date-fns'
 
-const props = defineProps<{ day: any }>()
+defineProps<{ day: any }>()
 defineEmits(['close'])
-
-const formattedDate = computed(() => {
-    if (!props.day?.full_date) return '---'
-    return format(parseISO(props.day.full_date), 'eee, MMM dd, yyyy')
-})
 </script>
