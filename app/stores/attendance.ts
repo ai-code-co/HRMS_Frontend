@@ -203,7 +203,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
                     ...response.data
                 }
             }
-
+            toast.add({ title: 'Success', description: 'Timesheet submitted successfully', color: 'success' })
             return response
         } catch (error: any) {
             toast.add({

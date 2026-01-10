@@ -33,8 +33,23 @@ const isModalOpen = ref(false)
 const selectedRecord = ref(null)
 
 function openDetails(day: any) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const dayDate = new Date(day.date)
+    dayDate.setHours(0, 0, 0, 0)
+    const isFutureDay = dayDate > today
+
+    if (isFutureDay) {
+        // Only allow opening modal for future days if there's a leave or holiday
+        const dayType = day.record?.day_type?.toUpperCase().replace(/\s+/g, '_')
+        const hasLeaveOrHoliday = ['HOLIDAY', 'WEEKEND_OFF'].includes(dayType) ||
+            day.record?.leave_submission ||
+            day.record?.attendance_submission
+        if (!hasLeaveOrHoliday) return
+    }
+
     if (day.record) {
-        selectedRecord.value = day.record
+        selectedRecord.value = { ...day.record, isFutureDay }
         isModalOpen.value = true
     }
 }

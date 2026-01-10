@@ -100,22 +100,94 @@
                         {{ leaveSubmission.status }}
                     </span>
                 </div>
-                <div class="flex items-center gap-2 text-xs">
-                    <p class=" text-slate-400 font-medium">Leave Type:</p>
-                    <p class="font-bold text-slate-700">{{ leaveSubmission.type }}</p>
+                <div class="grid grid-cols-2 gap-4 items-center">
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Leave Type</p>
+                        <p class="text-sm font-bold text-slate-700">{{ leaveSubmission.type || '--' }}</p>
+                    </div>
+                    <div v-if="leaveSubmission.reason">
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Reason</p>
+                        <p class="text-sm text-slate-700">{{ leaveSubmission.reason }}</p>
+                    </div>
                 </div>
             </div>
         </template>
         <template v-else>
-            <div class="py-12 flex flex-col items-center text-center space-y-4">
-                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                    <Calendar :size="40" />
+            <div v-if="day.day_type === 'HOLIDAY'" class="p-4 border rounded-2xl bg-blue-50 border-blue-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2 text-blue-600">
+                        <PartyPopper :size="16" />
+                        <span class="text-[10px] font-bold uppercase">Official Holiday</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-600">
+                        Holiday
+                    </span>
                 </div>
-                <h4 class="text-lg font-bold text-slate-700">No Shift Recorded</h4>
-                <p class="text-sm text-slate-400 italic max-w-xs">
-                    This day was marked as a
-                    {{ day.day_type === 'HOLIDAY' ? 'official holiday' : 'weekend off' }}.
-                </p>
+                <div class="grid grid-cols-2 gap-4 items-center">
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Holiday Name</p>
+                        <p class="text-sm font-bold text-slate-700">{{ day.holiday.name || day.name || 'Public Holiday'
+                        }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Date</p>
+                        <p class="text-sm font-bold text-slate-700">{{ formatDate(day.full_date || day.date) }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="leaveSubmission" :class="[leaveSubmissionStyles.container, 'p-4 border rounded-2xl mt-4']">
+                <div class="flex items-center justify-between mb-3">
+                    <div :class="[leaveSubmissionStyles.text, 'flex items-center gap-2']">
+                        <FileText :size="16" />
+                        <span class="text-[10px] font-bold uppercase">Leave Applied</span>
+                    </div>
+                    <span
+                        :class="[leaveSubmissionStyles.badge, 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase']">
+                        {{ leaveSubmission.status }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 items-center">
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Leave Type</p>
+                        <p class="text-sm font-bold text-slate-700">{{ leaveSubmission.type || '--' }}</p>
+                    </div>
+                    <div v-if="leaveSubmission.reason">
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Reason</p>
+                        <p class="text-sm text-slate-700">{{ leaveSubmission.reason }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="manualAttendanceSubmission"
+                :class="[attendanceSubmissionStyles.container, 'p-4 border rounded-2xl mt-4']">
+                <div class="flex items-center justify-between mb-3">
+                    <div :class="[attendanceSubmissionStyles.text, 'flex items-center gap-2']">
+                        <Fingerprint :size="16" />
+                        <span class="text-[10px] font-bold uppercase">Manual Attendance Applied</span>
+                    </div>
+                    <span
+                        :class="[attendanceSubmissionStyles.badge, 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase']">
+                        {{ manualAttendanceSubmission.status }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 items-center">
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Requested In</p>
+                        <p class="text-sm font-bold text-slate-700">{{
+                            isValid(parseISO(manualAttendanceSubmission.in_time))
+                                ?
+                                format(manualAttendanceSubmission.in_time, 'hh:mm a') : '--:--' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Requested Out</p>
+                        <p class="text-sm font-bold text-slate-700">{{
+                            isValid(parseISO(manualAttendanceSubmission.out_time))
+                                ?
+                                format(manualAttendanceSubmission.out_time, 'hh:mm a') : '--:--' }}
+                        </p>
+                    </div>
+                </div>
             </div>
         </template>
         <div class="flex gap-3 mt-6">
@@ -144,7 +216,7 @@
 </template>
 
 <script setup lang="ts">
-import { Clock, ArrowRight, Calendar, Fingerprint, FileText } from 'lucide-vue-next'
+import { Clock, ArrowRight, Calendar, Fingerprint, FileText, PartyPopper, Coffee } from 'lucide-vue-next'
 import { format, parseISO, isValid } from 'date-fns'
 import { Time } from '@internationalized/date'
 import AttendanceModalUploadTimesheetHeader from '~/components/Attendance/Modal/UploadTimesheet/Header.vue'
@@ -173,7 +245,9 @@ const leaveSubmission = computed(() => {
     return props.day?.leave_submission || null
 })
 
-const areActionButtonsDisabled = computed(() => manualAttendanceSubmission.value || leaveSubmission.value || isSubmitting.value)
+const isFutureDay = computed(() => props.day?.isFutureDay || false)
+
+const areActionButtonsDisabled = computed(() => isFutureDay.value || manualAttendanceSubmission.value || leaveSubmission.value || isSubmitting.value)
 
 const attendanceSubmissionStyles = computed(() => {
     const status = manualAttendanceSubmission.value?.status
@@ -265,6 +339,12 @@ const displayOutTime = computed(() => {
     return isValid(date) ? format(date, 'hh:mm a') : '--:--'
 })
 
+function formatDate(dateStr: string | Date): string {
+    if (!dateStr) return '--'
+    const date = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr
+    return isValid(date) ? format(date, 'dd MMM yyyy') : '--'
+}
+
 function formatTimeForApi(time: Time | null): string {
     if (!time) return ''
     const hour = time.hour
@@ -294,8 +374,6 @@ async function handleUpdateSession() {
 
         isEditing.value = false
         toast.add({ title: 'Success', description: 'Attendance updated successfully', color: 'success' })
-
-        // Emit event to notify parent to refresh
         emit('update-success')
     } catch (error: any) {
         toast.add({

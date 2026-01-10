@@ -148,7 +148,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         const homeInTime = formatTimeToAmPm(state.clock_in)
         const homeOutTime = formatTimeToAmPm(state.clock_out)
 
-        // Upload screenshot if available and get public_id
         let screenshotPublicId: string | undefined
         if (state.screenshot) {
             const formData = new FormData()
@@ -179,24 +178,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             homeOutTime,
             screenshotPublicId
         )
-
-        toast.add({ title: 'Success', description: 'Timesheet submitted successfully', color: 'success' })
-        
-        // Reset form
         state.clock_in = ''
         state.clock_out = ''
         state.comment = ''
         removeFile()
-        
-        // Emit events to close modals and refresh
         emit('update-success')
         emit('close')
     } catch (error: any) {
-        toast.add({ 
-            title: 'Error', 
-            description: error?.message || 'Failed to submit timesheet', 
-            color: 'error' 
-        })
     } finally {
         isSubmitting.value = false
     }
