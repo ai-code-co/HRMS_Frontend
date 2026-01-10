@@ -34,7 +34,6 @@ const filteredHolidays = computed(() =>
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2 mb-1">
-                    <UIcon name="i-lucide-sparkles" class="size-3.5 text-indigo-600" />
                     <p class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em]">Excellence HRMS</p>
                 </div>
                 <h1 class="text-2xl font-black text-slate-800 tracking-tight">Holiday Calendar 2025</h1>
@@ -45,7 +44,7 @@ const filteredHolidays = computed(() =>
                     :ui="{ rounded: 'rounded-xl' }" />
             </div> -->
         </div>
-        <NextHoliday v-if="nextHoliday && !searchQuery && filter === 'all'" :holiday="nextHoliday" />
+        <NextHoliday v-if="nextHoliday && !searchQuery" :holiday="nextHoliday" />
         <div class="flex items-center gap-1.5 bg-slate-100/60 p-1 rounded-xl w-fit border border-slate-200">
             <UButton v-for="f in filterOptions" :key="f" size="xs" variant="ghost" :class="[
                 'px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',

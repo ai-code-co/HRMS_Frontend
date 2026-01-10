@@ -37,7 +37,7 @@ const links = computed(() => {
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
-    <div class="flex items-center gap-4 py-5 px-3 shrink-0 overflow-hidden">
+    <div class="flex items-center gap-4 py-5 px-2 shrink-0 overflow-hidden">
       <div class="w-6 h-6 flex items-center justify-center shrink-0 ml-3">
         <UIcon name="i-lucide-layout-grid" class="w-6 h-6 text-primary-600" />
       </div>
@@ -56,7 +56,7 @@ const links = computed(() => {
         :items="links"
         :collapsed="!isHovered"
         :ui="{
-          link: 'relative flex items-center gap-4 px-3 py-3 rounded-xl transition-colors font-medium',
+          link: 'relative flex items-center gap-4 px-2 py-3 rounded-xl transition-colors font-medium',
           linkLeadingIcon: 'w-6 h-6 shrink-0',
           linkLabel: 'transition-opacity duration-300'
         }"
