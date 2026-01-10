@@ -3,14 +3,11 @@
         class="px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 bg-white/50 backdrop-blur-sm sticky top-0 z-20">
         <div>
             <div class="flex items-center gap-3 mb-1">
-                <div class="p-2 bg-indigo-600 rounded-lg text-white">
-                    <UIcon name="i-heroicons-banknotes" class="w-5 h-5" />
-                </div>
-                <h1 class="text-2xl font-black text-slate-800 tracking-tight">
+                <h2 class="text-2xl font-bold">
                     Salary Credits
-                </h1>
+                </h2>
             </div>
-            <p class="text-xs font-bold text-slate-400">
+            <p class="text-sm text-slate-400">
                 Earnings history and payslips.
             </p>
         </div>
