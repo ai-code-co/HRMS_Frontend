@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const sidebarOpen = ref(false)
 const route = useRoute()
 const { isLoading: isPageLoading } = useGlobalLoader()
 
@@ -9,10 +8,6 @@ const isAuthRoute = computed(() => {
     '/forgot-password',
     '/reset-password'
   ].includes(route.path)
-})
-
-watch(() => route.path, () => {
-  sidebarOpen.value = false
 })
 </script>
 
@@ -29,16 +24,10 @@ watch(() => route.path, () => {
       </div>
     </Transition>
 
-    <aside v-if="!isAuthRoute">
-      <AppSidebar v-model:mobileOpen="sidebarOpen" />
-    </aside>
-    <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300" :class="{
-      'ml-16': !isAuthRoute && !sidebarOpen,
-      'ml-0': isAuthRoute || sidebarOpen,
-      'lg:ml-0': true
-    }">
+    <AppSidebar v-if="!isAuthRoute" />
+    <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
 
-      <AppHeader v-if="!isAuthRoute" @menu="sidebarOpen = true" />
+      <AppHeader v-if="!isAuthRoute" />
 
       <main class="flex-1 overflow-y-auto p-4 md:p-8">
         <slot />
