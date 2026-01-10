@@ -22,7 +22,7 @@
                     Annual CTC
                 </span>
                 <span class="text-sm font-black text-slate-800">
-                    ${{ annualCtc.toLocaleString() }}
+                    ₹ {{ annualCtc.toLocaleString() }}
                 </span>
             </div>
 
