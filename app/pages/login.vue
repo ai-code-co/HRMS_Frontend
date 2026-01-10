@@ -24,8 +24,14 @@
 
           <UFormField name="password">
             <div class="space-y-1">
-              <UInput class="w-full" size="xl" type="password" placeholder="••••••••" :icon="Lock"
-                v-model="form.password" />
+              <UInput class="w-full" size="xl" :type="showPassword ? 'text' : 'password'" placeholder="••••••••" :icon="Lock"
+                v-model="form.password">
+                <template #trailing>
+                  <button type="button" @click="showPassword = !showPassword" class="text-slate-500 hover:text-slate-700 transition-colors">
+                    <component :is="showPassword ? Eye : EyeOff" class="w-5 h-5" />
+                  </button>
+                </template>
+              </UInput>
               <div class="flex justify-end pt-1">
                 <a href="/forgot-password" class="text-xs text-slate-500 hover:text-indigo-600 transition-colors">
                   Forgot password?
@@ -55,7 +61,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { User, Lock } from 'lucide-vue-next'
+import { User, Lock, Eye, EyeOff } from 'lucide-vue-next'
 import { z } from "zod"
 import type { FormSubmitEvent } from '#ui/types'
 
@@ -64,6 +70,7 @@ const { setAuth, initAuth } = useAuth()
 const toast = useToast()
 
 const isLoading = ref(false)
+const showPassword = ref(false)
 
 const form = reactive({
   username: '',

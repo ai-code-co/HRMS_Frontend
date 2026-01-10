@@ -15,8 +15,13 @@
 
             <form @submit.prevent="handleSubmit" class="space-y-6">
                 <div>
-                    <UInput v-model="password" type="password" class="w-full" size="xl"
+                    <UInput v-model="password" :type="showPassword ? 'text' : 'password'" class="w-full" size="xl"
                         placeholder="Enter a new password" autocomplete="new-password" required :icon="LockKeyhole">
+                        <template #trailing>
+                            <button type="button" @click="showPassword = !showPassword" class="text-slate-500 hover:text-slate-700 transition-colors">
+                                <component :is="showPassword ? Eye : EyeOff" class="w-5 h-5" />
+                            </button>
+                        </template>
                     </UInput>
                     <div v-if="errors.password" class="text-sm text-red-500">{{ errors.password }}</div>
                 </div>
@@ -35,12 +40,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { LockKeyhole, KeyIcon } from 'lucide-vue-next'
+import { LockKeyhole, KeyIcon, Eye, EyeOff } from 'lucide-vue-next'
 import { z } from 'zod'
 
 const toast = useToast()
 const password = ref('')
 const loading = ref(false)
+const showPassword = ref(false)
 const route = useRoute()
 const router = useRouter()
 

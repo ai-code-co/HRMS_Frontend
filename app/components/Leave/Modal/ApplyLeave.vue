@@ -82,16 +82,12 @@
                     </div>
                 </div>
 
-                <UFormField label="Supporting Document"
+                <UFormField label="Upload Document"
                     :description="uploadedFileName ? `Attached: ${uploadedFileName}` : 'Select an image to upload'"
                     class="my-3">
-                    <div class="relative">
+                    <div v-if="!uploadedImageUrl" class="relative">
                         <UInput type="file" icon="i-heroicons-paper-clip" accept="image/*" @change="handleFileUpload"
-                            size="xl" color="secondary" variant="outline">
-                            <template #trailing v-if="uploadedImageUrl">
-                                <UIcon name="i-heroicons-check-badge" class="w-5 h-5 text-green-500" />
-                            </template>
-                        </UInput>
+                            size="xl" color="secondary" variant="outline" />
                     </div>
                     <!-- Image Preview Section -->
                     <div v-if="uploadedImageUrl" class="mt-4 space-y-2">
@@ -99,11 +95,11 @@
                         <div class="relative bg-slate-50 rounded-lg p-3 border border-slate-200">
                             <img :src="uploadedImageUrl" alt="Uploaded document" 
                                 class="w-full h-48 object-cover rounded-md" />
-                            <a :href="uploadedImageUrl" target="_blank" download 
+                            <button type="button" @click="selectedFile = null; uploadedFileName = ''; uploadedImageUrl = ''"
                                 class="absolute top-3 right-3">
-                                <UButton icon="i-lucide-eye" color="primary" variant="solid" size="xs"
+                                <UButton icon="i-heroicons-x-mark" color="error" variant="solid" size="xs"
                                     class="rounded-full shadow-md cursor-pointer" />
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </UFormField>

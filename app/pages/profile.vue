@@ -80,7 +80,7 @@ const activeTab = ref<number>(1)
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#F8FAFC] p-4 md:p-6 flex flex-col gap-8">
+    <div class="min-h-screen bg-[#F8FAFC] p-3 md:p-6 flex flex-col gap-8">
         <template v-if="loading">
             <div class="space-y-6">
                 <USkeleton class="h-48 w-full" />
