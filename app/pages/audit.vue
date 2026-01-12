@@ -1,74 +1,93 @@
 <template>
-    <div v-if="store.isLoading && !store.items.length" class="p-12 text-center">
-        <p class="text-slate-400 font-bold animate-pulse">Loading Inventory...</p>
-    </div>
-
-    <div v-else-if="selectedItem" class="flex flex-col bg-[#F8FAFC]">
-        <header class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-3 mb-1">
-                    <h1 class="text-2xl font-black text-slate-800 tracking-tight">Device Audit</h1>
-                </div>
-                <p class="text-xs font-bold text-slate-400">Update condition and status of assigned devices.</p>
+    <div class="w-full min-h-screen bg-[#F8FAFC] flex flex-col">
+        <div v-if="store.isLoading && !allDevices.length" class="flex-1 flex items-center justify-center">
+            <div class="text-center space-y-4">
+                <UIcon name="i-lucide-loader-2" class="w-12 h-12 text-indigo-600 animate-spin mx-auto" />
+                <p class="text-slate-400 font-bold">Loading Devices...</p>
             </div>
-        </header>
+        </div>
 
-        <main class="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden px-4">
-            <aside class="w-full lg:w-96 space-y-4 overflow-y-auto shrink-0 custom-scrollbar sidebar-height">
-                <button v-for="item in filteredItems" :key="item.id" @click="selectItem(item.id)" :class="[
-                    'w-full text-left p-6 bg-white rounded-3xl border-2 transition-all duration-300 relative group overflow-hidden cursor-pointer',
-                    selectedId === item.id ? 'border-primary-500 shadow-xl shadow-primary-100/50' : 'border-slate-50 hover:border-primary-100 shadow-sm'
-                ]">
-                    <div class="flex items-start gap-5">
-                        <div :class="[
-                            'p-4 rounded-2xl transition-colors',
-                            selectedId === item.id ? 'bg-slate-50 text-primary-600' : 'bg-slate-50 text-slate-400 group-hover:text-primary-400'
-                        ]">
-                            <UIcon :name="getIcon(item.category)" class="w-5 h-5" />
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-start justify-between mb-1">
-                                <h3 class="font-black text-slate-800 text-sm truncate pr-2">{{ item.name }}</h3>
+        <div v-else class="flex flex-col h-full">
+            <header class="p-4 sm:p-6 border-b border-slate-100 bg-white">
+                <div class="space-y-2">
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Device Audit</h1>
+                    <p class="text-xs sm:text-sm font-bold text-slate-400">
+                        Complete device audits before proceeding. <span class="text-orange-600">{{ unauditedDevices.length }}</span> device(s) pending out of {{ allDevices.length }}.
+                    </p>
+                </div>
+            </header>
+
+        <main class="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden p-4 sm:p-6">
+            <aside class="w-full lg:w-96 space-y-3 overflow-y-auto shrink-0 custom-scrollbar sidebar-height">
+                <button v-for="device in allDevices" 
+                        :key="device.id" 
+                        @click="selectDevice(device.id)"
+                        :class="[
+                            'w-full text-left p-5 bg-white rounded-2xl border-2 transition-all duration-300 relative group overflow-hidden cursor-pointer',
+                            selectedDeviceId === device.id 
+                                ? 'border-primary-500 shadow-lg shadow-primary-100/50' 
+                                : 'border-slate-100 hover:border-primary-200 shadow-sm'
+                        ]"
+                    >
+                        <div class="flex items-start gap-4">
+                            <div :class="[
+                                'p-3 rounded-xl transition-colors shrink-0',
+                                selectedDeviceId === device.id 
+                                    ? 'bg-primary-50 text-primary-600' 
+                                    : 'bg-slate-100 text-slate-400 group-hover:text-primary-400'
+                            ]">
+                                <UIcon :name="getIcon(device.category)" class="w-5 h-5" />
                             </div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ item.assetId }}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-bold text-slate-800 text-sm truncate">{{ device.name }}</h3>
+                                    <UBadge 
+                                        v-if="device.isAudited"
+                                        variant="soft" 
+                                        color="success" 
+                                        size="xs" 
+                                        class="shrink-0"
+                                    >
+                                        ✓ Audited
+                                    </UBadge>
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ device.serialNumber }}
                             </p>
                         </div>
                     </div>
                 </button>
             </aside>
+                <section v-if="selectedDevice" class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col mb-4 overflow-y-auto">
+                    <div v-if="store.selectedDeviceLoading" class="flex items-center justify-center">
+                        <div class="text-center space-y-4">
+                            <UIcon name="i-lucide-loader-2" class="w-10 h-10 text-indigo-600 animate-spin mx-auto" />
+                            <p class="text-sm text-slate-400 font-medium">Loading device details...</p>
+                        </div>
+                    </div>
 
-            <section
-                class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col mb-4 overflow-y-auto">
-                <div class="flex-1 p-2 md:p-4">
-                    <Transition name="fade-slide" mode="out-in">
-                        <div :key="selectedItem.id" class="space-y-4">
-                            <div class="flex items-start justify-between">
-                                <div>
-                                    <h2 class="text-lg font-black text-slate-800 tracking-tight mb-1">{{
-                                        selectedItem.name }}</h2>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-bold text-slate-400">{{ selectedItem.category
-                                        }}</span>
-                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                                        <UBadge variant="soft" color="neutral" size="xs">ID: {{ selectedItem.id }}
-                                        </UBadge>
-                                    </div>
+                    <div v-else class="flex-1 p-2 md:p-4">
+                        <div class="space-y-4">
+                            <div class="space-y-2">
+                                <h2 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{{ selectedDevice.name }}</h2>
+                                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                                    <span class="text-xs font-bold text-slate-400 uppercase">{{ selectedDevice.category }}</span>
+                                    <span class="w-1 h-1 rounded-full bg-slate-300" />
+                                    <UBadge variant="soft" color="neutral" size="xs">{{ selectedDevice.brand }}</UBadge>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
                                 <div
                                     class="aspect-video rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                    <img :src="selectedItem.image"
+                                    <img :src="selectedDevice.photo"
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <MyInventoryMetadataCard label="SERIAL NUMBER" :value="selectedItem.serialNumber" />
-                                    <MyInventoryMetadataCard label="INTERNAL ASSET ID" :value="selectedItem.assetId" />
-                                    <MyInventoryMetadataCard label="MODEL" :value="selectedItem.model" />
-                                    <MyInventoryMetadataCard label="AUDIT STATUS" :value="selectedItem.auditStatus"
-                                        :sub-value="`by ${selectedItem.auditBy}`" :highlight="true" />
+                                    <MyInventoryMetadataCard label="SERIAL NUMBER" :value="selectedDevice.serialNumber" />
+                                    <MyInventoryMetadataCard label="INTERNAL ASSET ID" :value="selectedDevice.assetId" />
+                                    <MyInventoryMetadataCard label="MODEL" :value="selectedDevice.model" />
+                                    <MyInventoryMetadataCard label="PURCHASE DATE" :value="selectedDevice.purchaseDate" />
                                 </div>
                             </div>
 
@@ -100,10 +119,17 @@
                                 </div>
                             </UForm>
                         </div>
-                    </Transition>
-                </div>
-            </section>
-        </main>
+                    </div>
+                </section>
+
+                <section v-else class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex items-center justify-center">
+                    <div class="text-center space-y-3">
+                        <UIcon name="i-lucide-inbox" class="w-10 h-10 text-slate-300 mx-auto" />
+                        <p class="text-slate-400 font-medium">Select a device to begin audit</p>
+                    </div>
+                </section>
+            </main>
+        </div>
     </div>
 </template>
 
@@ -112,7 +138,8 @@ import { ref, computed, watch } from 'vue'
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import type { SelectMenuItem } from '@nuxt/ui'
-import { useMyInventoryStore } from '~/stores/myInventory'
+import { useAuditStore, type Device } from '~/stores/audit'
+import { formatDateFromISO } from '~/utils/function'
 
 const auditSchema = z.object({
     condition: z.string().min(1, 'Condition is required'),
@@ -122,11 +149,11 @@ const auditSchema = z.object({
 
 type AuditSchema = z.output<typeof auditSchema>
 
-const store = useMyInventoryStore()
+const store = useAuditStore()
 const toast = useToast()
 const router = useRouter()
 
-const selectedId = ref<string | null>(null)
+const selectedDeviceId = ref<number | null>(null)
 const isSubmitting = ref(false)
 
 const formState = ref({
@@ -153,29 +180,79 @@ const statusOptions = ref<SelectMenuItem[]>([
     { label: 'Other', value: 'other' },
 ])
 
-const { data: inventoryData } = await useAsyncData('inventory-fetch', () => {
-    return store.fetchInventory()
+await useAsyncData('audit-status-fetch', async () => {
+    if (!store.auditStatus) {
+        await store.fetchAuditStatus()
+    }
+    await store.loadDeviceList()
+    return null
 })
 
-if (import.meta.client && inventoryData.value) {
-    store.setItems(inventoryData.value)
+const allDevices = computed(() => {
+    return store.allDevices
+})
+
+const unauditedDevices = computed(() => {
+    return store.unauditedDevices
+})
+
+
+const selectedDevice = ref<any>(null)
+
+const getIcon = (category: string) => {
+    const cat = category?.toLowerCase() || ''
+    if (cat.includes('laptop')) return 'i-lucide-laptop'
+    if (cat.includes('monitor')) return 'i-lucide-monitor'
+    if (cat.includes('mobile')) return 'i-lucide-smartphone'
+    if (cat.includes('tablet')) return 'i-lucide-tablet'
+    return 'i-lucide-monitor-smartphone'
 }
 
-const filteredItems = computed(() => {
-    return store.items
-})
-
-const selectedItem = computed(() => {
-    if (!store.items.length) return null
-    if (selectedId.value) {
-        return store.items.find(i => i.id === selectedId.value) || store.items[0]
-    }
-    return store.items[0]
-})
-
-function selectItem(id: string) {
-    selectedId.value = id
+async function selectDevice(deviceId: number) {
+    selectedDeviceId.value = deviceId
     resetForm()
+    
+    const device = await store.fetchDeviceDetails(deviceId)
+    if (device) {
+        selectedDevice.value = device
+    }
+}
+
+async function onSubmit(event: FormSubmitEvent<AuditSchema>) {
+    if (!selectedDevice.value) return
+
+    isSubmitting.value = true
+    
+    const success = await store.submitAudit(selectedDevice.value.id, {
+        condition: event.data.condition,
+        status: event.data.status,
+        comment: event.data.comment,
+    })
+    
+    if (success) {
+        await store.fetchAuditStatus()
+        await store.loadDeviceList()  // Refresh device list with updated audit status
+
+        if (store.allItemsAudited) {
+            toast.add({
+                title: 'Congratulations!',
+                description: 'All devices have been audited!',
+                color: 'success',
+            })
+            setTimeout(() => {
+                navigateTo('/dashboard')
+            }, 1500)
+        } else {
+            const nextDevice = unauditedDevices.value.find((d: any) => d.id !== selectedDevice.value?.id)
+            if (nextDevice) {
+                selectDevice(nextDevice.id)
+            } else {
+                resetForm()
+            }
+        }
+    }
+    
+    isSubmitting.value = false
 }
 
 function resetForm() {
@@ -186,74 +263,26 @@ function resetForm() {
     }
 }
 
-async function onSubmit(event: FormSubmitEvent<AuditSchema>) {
-    if (!selectedItem.value) return
-
-    isSubmitting.value = true
-    try {
-        await useApi(`/api/inventory/devices/${selectedItem.value.id}/submit-audit/`, {
-            method: 'POST',
-            body: {
-                condition: event.data.condition,
-                status: event.data.status,
-                comment: event.data.comment,
-            },
-        })
-
-        toast.add({
-            title: 'Success',
-            description: `Audit submitted successfully for ${selectedItem.value.name}`,
-            color: 'success',
-        })
-
-        resetForm()
-    } catch (err: any) {
-        toast.add({
-            title: 'Error',
-            description: err?.data?.error || err?.message || 'Failed to submit audit',
-            color: 'error',
-        })
-    } finally {
-        isSubmitting.value = false
-    }
-}
-
 watch(
-    () => store.items.length,
+    () => allDevices.value.length,
     (newLength) => {
-        if (newLength > 0 && !selectedId.value && store.items[0]?.id) {
-            selectedId.value = store.items[0].id
+        if (newLength > 0 && !selectedDeviceId.value) {
+            const firstUnaudited = unauditedDevices.value[0]
+            const firstDevice = allDevices.value[0]
+            if (firstUnaudited) {
+                selectDevice(firstUnaudited.id)
+            } else if (firstDevice) {
+                selectDevice(firstDevice.id)
+            }
         }
     },
     { immediate: true }
 )
-
-const getIcon = (category: string) => {
-    const cat = category?.toLowerCase() || ''
-    if (cat.includes('laptop')) return 'i-lucide-laptop'
-    if (cat.includes('monitor')) return 'i-lucide-monitor'
-    return 'i-lucide-monitor-smartphone'
-}
 </script>
 
 <style scoped>
 .sidebar-height {
-    max-height: calc(100vh - 160px);
-}
-
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-    transition: all 0.3s ease;
-}
-
-.fade-slide-enter-from {
-    opacity: 0;
-    transform: translateX(20px);
-}
-
-.fade-slide-leave-to {
-    opacity: 0;
-    transform: translateX(-20px);
+    max-height: calc(100vh - 180px);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -263,5 +292,9 @@ const getIcon = (category: string) => {
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #E2E8F0;
     border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #CBD5E1;
 }
 </style>
