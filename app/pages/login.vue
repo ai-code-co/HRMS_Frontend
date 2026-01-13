@@ -45,15 +45,6 @@
             Log In
           </UButton>
         </UForm>
-
-        <div class="mt-8 pt-6 border-t border-slate-200/60">
-          <p class="text-center text-sm text-slate-500 mt-6">
-            {{ "Don't have an account?" }}
-            <button class="ml-1 text-indigo-600 hover:text-indigo-700 font-semibold hover:underline">
-              {{ 'Sign Up' }}
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   </div>
