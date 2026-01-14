@@ -41,15 +41,13 @@ export const useAuth = () => {
     const refreshToken = async () => {
         try {
             const config = useRuntimeConfig()
-            const cookieRefreshToken = useCookie<string | null>('refresh_token')
-            const token = useCookie<string | null>('token')
 
             const { access } = await $fetch<{ access: string }>(
                 '/auth/refresh-token/',
                 {
                     baseURL: config.public.apiBase,
                     method: 'POST',
-                    body: { refresh: cookieRefreshToken.value },
+                    body: { refresh: refreshTokenCookie.value },
                     retry: 0,
                 }
             )
@@ -57,30 +55,35 @@ export const useAuth = () => {
             token.value = access
             return access
         } catch (err) {
-            logout()
+            clearAuth()
+            if (import.meta.client) {
+                navigateTo('/login')
+            }
             throw err
         }
     }
 
     const logout = async () => {
         try {
-            const cookieRefreshToken = useCookie<string | null>('refresh_token')
             await useApi('/auth/logout/', {
                 method: 'POST',
                 body: {
-                    refresh: cookieRefreshToken.value
+                    refresh: refreshTokenCookie.value
                 },
                 credentials: 'include',
             })
         } catch (err) {
+            // Silently fail logout API call
         } finally {
-            const toast = useToast()
-            toast.add({
-                title: 'Logout',
-                description: 'Logged Out Successfully!',
-                color: 'primary'
-            })
             clearAuth()
+            if (import.meta.client) {
+                const toast = useToast()
+                toast.add({
+                    title: 'Logout',
+                    description: 'Logged Out Successfully!',
+                    color: 'primary'
+                })
+            }
         }
     }
     const role = computed(() => user.value?.role_detail?.role)

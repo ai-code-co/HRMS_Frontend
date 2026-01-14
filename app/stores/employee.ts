@@ -38,14 +38,22 @@ export const useEmployeeStore = defineStore('employee', {
     },
 
     actions: {
-        async fetchEmployee() {
+        async fetchEmployee(showGlobalLoader = false, userId?: number | null) {
             this.loading = true
             this.error = null
+            const { showLoader, hideLoader } = useGlobalLoader()
 
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
             try {
+                let params: Record<string, any> = {}
+                if (userId) {
+                    params.userid = userId
+                }
                 const data = await useApi<Employee>(
                     '/api/employees/me/',
-                    { credentials: 'include' }
+                    { credentials: 'include', params }
                 )
 
                 this.employee = data ?? null
@@ -56,6 +64,9 @@ export const useEmployeeStore = defineStore('employee', {
                 return null
             } finally {
                 this.loading = false
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
             }
         },
         setEmployee(data: Employee | null) {
@@ -106,7 +117,7 @@ export const useEmployeeStore = defineStore('employee', {
 
                 const publicId = uploadResponse.public_id
 
-                const { data: updateResponse } = await useApi<Employee>('/api/employees/me/', {
+                const { data: updateResponse } = await useApi<{ data: Employee }>('/api/employees/me/', {
                     method: 'PATCH',
                     body: {
                         photo: publicId

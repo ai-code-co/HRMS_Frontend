@@ -1,6 +1,6 @@
 <template>
     <div class="flex flex-col h-screen bg-white">
-        <AttendanceHeader/>
+        <AttendanceHeader />
         <main class="flex-1 overflow-y-auto relative">
             <div class="hidden sm:grid grid-cols-7 sticky top-0 z-10 border-b border-slate-200">
                 <div v-for="d in attendanceStore.weekdays" :key="d"
@@ -13,14 +13,22 @@
                     @click="openDetails(day)" />
             </div>
         </main>
-        <AttendanceModalDayDetailsOverlay v-model:open="isModalOpen" :record="selectedRecord" @update-success="handleUpdateSuccess" />
+        <AttendanceModalDayDetailsOverlay v-model:open="isModalOpen" :record="selectedRecord"
+            @update-success="handleUpdateSuccess" />
     </div>
 </template>
 <script setup lang="ts">
 const attendanceStore = useAttendanceStore()
+const { selectedEmployeeId } = useEmployeeContext()
 
-const { data: attendanceData } = await useAsyncData('attendance', () => {
-    return attendanceStore.fetchAttendance()
+const hasInitialized = ref(false)
+
+const { data: attendanceData, pending } = await useAsyncData('attendance', () => {
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
+    return attendanceStore.fetchAttendance(showLoader, selectedEmployeeId.value)
+}, {
+    watch: [selectedEmployeeId]
 })
 
 if (import.meta.client && attendanceData.value) {
@@ -38,6 +46,6 @@ function openDetails(day: any) {
 }
 
 function handleUpdateSuccess() {
-    attendanceStore.fetchAttendance()
+    attendanceStore.fetchAttendance(false, selectedEmployeeId.value)
 }
 </script>

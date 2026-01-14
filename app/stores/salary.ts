@@ -34,10 +34,19 @@ export const useSalaryStore = defineStore('salary', {
             state.records.find(r => r.id === state.selectedRecordId) || state.records[0] || null
     },
     actions: {
-        async fetchSalaryData() {
+        async fetchSalaryData(showGlobalLoader = false, userId?: number | null) {
             this.isLoading = true;
+            const { showLoader, hideLoader } = useGlobalLoader()
+
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
             try {
-                const response = await useApi(`api/payroll/user-salary-info/`);
+                let params: Record<string, any> = {}
+                if (userId) {
+                    params.userid = userId
+                }
+                const response = await useApi(`api/payroll/user-salary-info/`, { params });
                 this.annualCtc = response.data.annual_ctc;
 
                 this.records = response.data.payslip_months.map((m: any) => ({
@@ -76,6 +85,9 @@ export const useSalaryStore = defineStore('salary', {
                 return null;
             } finally {
                 this.isLoading = false;
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
             }
         },
 

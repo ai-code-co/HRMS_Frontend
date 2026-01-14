@@ -33,7 +33,8 @@
                 </div>
             </div>
             <section class="space-y-4">
-                <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0 justify-between">
+                <div
+                    class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0 justify-between">
                     <h3 class="font-bold">Application History</h3>
                     <div
                         class="flex flex-wrap items-center gap-0 sm:gap-1.5 bg-slate-100/60 p-1 rounded-xl w-full md:w-fit border border-slate-200">
@@ -118,13 +119,19 @@ const { loading, leaveBalances, leaveRequests } = storeToRefs(leaveStore)
 const isApplyModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const selectedLeave = ref<any>(null)
+const { selectedEmployeeId } = useEmployeeContext()
+const hasInitialized = ref(false)
 
 const { data: leaveData } = await useAsyncData('leave-data', async () => {
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
     const [requests, balances] = await Promise.all([
-        leaveStore.fetchLeaves(),
-        leaveStore.fetchLeaveBalances()
+        leaveStore.fetchLeaves(showLoader, selectedEmployeeId.value),
+        leaveStore.fetchLeaveBalances(showLoader, selectedEmployeeId.value)
     ])
     return { requests, balances }
+}, {
+    watch: [selectedEmployeeId]
 })
 
 if (import.meta.client && leaveData.value) {
