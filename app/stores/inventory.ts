@@ -92,7 +92,7 @@ export const useInventoryStore = defineStore('inventory', {
             if (this.loadingDashboard) return null;
             this.loadingDashboard = true;
             try {
-                const response = await useApi<InventoryApiResponse>('/api/inventory/dashboard/summary/', { credentials: 'include' });
+                const response = await useApi<InventoryApiResponse>('/api/inventory/summary/', { credentials: 'include' });
                 if (response.error === 0 && response.data) {
                     this.dashboardData = response.data;
                     return response.data;

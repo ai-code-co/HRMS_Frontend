@@ -29,10 +29,19 @@ export const useMyInventoryStore = defineStore('myInventory', () => {
   const items = ref<InventoryDevice[]>([])
   const isLoading = ref(false)
 
-  async function fetchInventory() {
+  async function fetchInventory(showGlobalLoader = false, userId?: number | null) {
     isLoading.value = true
+    const { showLoader, hideLoader } = useGlobalLoader()
+
+    if (showGlobalLoader && import.meta.client) {
+      showLoader()
+    }
     try {
-      const response = await useApi<any>('/api/inventory/devices/my-devices/')
+      let params: Record<string, any> = {}
+      if (userId) {
+        params.userid = userId
+      }
+      const response = await useApi<any>('/api/inventory/devices/my-devices/', { params })
 
       const rawDevices = response.data?.devices || response.devices || []
 
@@ -68,6 +77,9 @@ export const useMyInventoryStore = defineStore('myInventory', () => {
       return []
     } finally {
       isLoading.value = false
+      if (showGlobalLoader && import.meta.client) {
+        hideLoader()
+      }
     }
   }
 

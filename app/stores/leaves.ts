@@ -22,39 +22,49 @@ export const useLeaveStore = defineStore('leaves', {
     },
 
     actions: {
-        async fetchLeaves() {
+        async fetchLeaves(showGlobalLoader = false, userId?: number | null) {
             this.error = null
-            const { isSuperUser } = useRoleAccess();
-            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
+            const toast = useToast()
+            const { showLoader, hideLoader } = useGlobalLoader()
+
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
             try {
                 let params: Record<string, any> = {}
-                if (isSuperUser.value && activeEmployee.value) {
-                    params.userid = selectedEmployeeId.value
+                if (userId) {
+                    params.userid = userId
                 }
                 const res = await useApi<LeaveListResponse>('/api/leaves/', { params })
                 this.requests = res.results
                 return res.results
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch leave requests')
-                const toast = useToast()
                 toast.add({
                     title: 'Error',
                     description: this.error,
                     color: 'error'
                 })
                 return []
+            } finally {
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
             }
         },
 
-        async fetchLeaveBalances() {
+        async fetchLeaveBalances(showGlobalLoader = false, userId?: number | null) {
             this.error = null
             const toast = useToast()
-            const { isSuperUser } = useRoleAccess();
-            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
+            const { showLoader, hideLoader } = useGlobalLoader()
+
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
             try {
                 let params: Record<string, any> = {}
-                if (isSuperUser.value && activeEmployee.value) {
-                    params.userid = selectedEmployeeId.value
+                if (userId) {
+                    params.userid = userId
                 }
                 const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/', { params })
                 if (res.error === 0) {
@@ -70,6 +80,10 @@ export const useLeaveStore = defineStore('leaves', {
                     color: 'error'
                 })
                 return {}
+            } finally {
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
             }
         },
 

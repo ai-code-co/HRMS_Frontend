@@ -52,16 +52,19 @@ export const useDashboardStore = defineStore('dashboard', {
     },
 
     actions: {
-        async fetchSummary() {
+        async fetchSummary(showGlobalLoader = false, userId?: number | null) {
             this.loading = true
             this.error = null
             const toast = useToast()
-            const { isSuperUser } = useRoleAccess();
-            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
+            const { showLoader, hideLoader } = useGlobalLoader()
+
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
             try {
                 let params: Record<string, any> = {}
-                if (isSuperUser.value && activeEmployee.value) {
-                    params.userid = selectedEmployeeId.value
+                if (userId) {
+                    params.userid = userId
                 }
                 const response = await useApi('/api/dashboard/summary/', { params })
                 this.dashboardData = response.data
@@ -76,6 +79,9 @@ export const useDashboardStore = defineStore('dashboard', {
                 return null
             } finally {
                 this.loading = false
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
             }
         },
         setDashboardData(data: DashboardData | null) {

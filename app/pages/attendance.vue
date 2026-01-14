@@ -21,8 +21,12 @@
 const attendanceStore = useAttendanceStore()
 const { selectedEmployeeId } = useEmployeeContext()
 
-const { data: attendanceData } = await useAsyncData('attendance', () => {
-    return attendanceStore.fetchAttendance()
+const hasInitialized = ref(false)
+
+const { data: attendanceData, pending } = await useAsyncData('attendance', () => {
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
+    return attendanceStore.fetchAttendance(showLoader, selectedEmployeeId.value)
 }, {
     watch: [selectedEmployeeId]
 })
@@ -42,6 +46,6 @@ function openDetails(day: any) {
 }
 
 function handleUpdateSuccess() {
-    attendanceStore.fetchAttendance()
+    attendanceStore.fetchAttendance(false, selectedEmployeeId.value)
 }
 </script>

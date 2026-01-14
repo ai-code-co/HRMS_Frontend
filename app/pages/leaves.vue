@@ -120,11 +120,14 @@ const isApplyModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const selectedLeave = ref<any>(null)
 const { selectedEmployeeId } = useEmployeeContext()
+const hasInitialized = ref(false)
 
 const { data: leaveData } = await useAsyncData('leave-data', async () => {
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
     const [requests, balances] = await Promise.all([
-        leaveStore.fetchLeaves(),
-        leaveStore.fetchLeaveBalances()
+        leaveStore.fetchLeaves(showLoader, selectedEmployeeId.value),
+        leaveStore.fetchLeaveBalances(showLoader, selectedEmployeeId.value)
     ])
     return { requests, balances }
 }, {

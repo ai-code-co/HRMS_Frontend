@@ -57,8 +57,12 @@ import { useDashboardStore } from '~/stores/dashboard';
 const { selectedEmployeeId } = useEmployeeContext()
 
 const dashboardStore = useDashboardStore();
+const hasInitialized = ref(false)
+
 const { data: dashboardData } = await useAsyncData('dashboard-data', () => {
-    return dashboardStore.fetchSummary()
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
+    return dashboardStore.fetchSummary(showLoader, selectedEmployeeId.value)
 }, {
     watch: [selectedEmployeeId],
 })

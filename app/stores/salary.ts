@@ -34,14 +34,17 @@ export const useSalaryStore = defineStore('salary', {
             state.records.find(r => r.id === state.selectedRecordId) || state.records[0] || null
     },
     actions: {
-        async fetchSalaryData() {
+        async fetchSalaryData(showGlobalLoader = false, userId?: number | null) {
             this.isLoading = true;
-            const { isSuperUser } = useRoleAccess();
-            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
+            const { showLoader, hideLoader } = useGlobalLoader()
+
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
             try {
                 let params: Record<string, any> = {}
-                if (isSuperUser.value && activeEmployee.value) {
-                    params.userid = selectedEmployeeId.value
+                if (userId) {
+                    params.userid = userId
                 }
                 const response = await useApi(`api/payroll/user-salary-info/`, { params });
                 this.annualCtc = response.data.annual_ctc;
@@ -82,6 +85,9 @@ export const useSalaryStore = defineStore('salary', {
                 return null;
             } finally {
                 this.isLoading = false;
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
             }
         },
 

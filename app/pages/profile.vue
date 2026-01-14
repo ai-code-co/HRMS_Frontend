@@ -8,8 +8,15 @@ import { tabs } from '~/utils/tabConfig'
 
 const employeeStore = useEmployeeStore()
 const { employee, loading } = storeToRefs(employeeStore)
+const { selectedEmployeeId } = useEmployeeContext()
+const hasInitialized = ref(false)
+
 const { data: employeeData } = await useAsyncData('employee', async () => {
-    return await employeeStore.fetchEmployee()
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
+    return await employeeStore.fetchEmployee(showLoader, selectedEmployeeId.value)
+}, {
+    watch: [selectedEmployeeId]
 })
 
 if (import.meta.client && employeeData.value) {

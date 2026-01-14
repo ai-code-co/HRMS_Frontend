@@ -123,12 +123,18 @@ import { HistoryIcon } from 'lucide-vue-next'
 import { useMyInventoryStore } from '~/stores/myInventory'
 
 const store = useMyInventoryStore()
+const { selectedEmployeeId } = useEmployeeContext()
 
 const searchQuery = ref('')
 const selectedId = ref<string | null>(null)
+const hasInitialized = ref(false)
 
 const { data: inventoryData } = await useAsyncData('inventory-fetch', () => {
-    return store.fetchInventory()
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
+    return store.fetchInventory(showLoader, selectedEmployeeId.value)
+}, {
+    watch: [selectedEmployeeId]
 })
 
 if (import.meta.client && inventoryData.value) {

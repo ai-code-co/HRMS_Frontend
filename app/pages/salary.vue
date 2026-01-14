@@ -104,9 +104,12 @@ import { useSalaryStore } from '@/stores/salary'
 
 const store = useSalaryStore()
 const { selectedEmployeeId } = useEmployeeContext()
+const hasInitialized = ref(false)
 
 const { data: salaryData } = await useAsyncData('salary', () => {
-    return store.fetchSalaryData()
+    const showLoader = hasInitialized.value
+    hasInitialized.value = true
+    return store.fetchSalaryData(showLoader, selectedEmployeeId.value)
 }, {
     watch: [selectedEmployeeId]
 })
