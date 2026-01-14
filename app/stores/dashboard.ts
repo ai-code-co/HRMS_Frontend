@@ -52,19 +52,23 @@ export const useDashboardStore = defineStore('dashboard', {
     },
 
     actions: {
-        async fetchSummary() {
+        async fetchSummary(showGlobalLoader = false, userId?: number | null) {
             this.loading = true
             this.error = null
             const toast = useToast()
+            const { showLoader, hideLoader } = useGlobalLoader()
+
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
             try {
-                const response = await useApi('/api/dashboard/summary/')
-                if (response.error === 0) {
-                    this.dashboardData = response.data
-                    return response.data
-                } else {
-                    this.error = 'Failed to fetch dashboard data'
-                    return null
+                let params: Record<string, any> = {}
+                if (userId) {
+                    params.userid = userId
                 }
+                const response = await useApi('/api/dashboard/summary/', { params })
+                this.dashboardData = response.data
+                return response.data
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch dashboard data')
                 toast.add({
@@ -75,6 +79,9 @@ export const useDashboardStore = defineStore('dashboard', {
                 return null
             } finally {
                 this.loading = false
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
             }
         },
         setDashboardData(data: DashboardData | null) {

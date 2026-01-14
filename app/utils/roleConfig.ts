@@ -21,10 +21,14 @@ export const navigationItems: NavigationItem[] = [
 ]
 
 export const canAccessNavItem = (item: NavigationItem, roleDetail: RoleDetail | null): boolean => {
+  const { isSuperUser } = useRoleAccess()
+  const { selectedEmployeeId } = useEmployeeContext()
   if (!roleDetail) return false
 
   if (!item.requiredRole) return true
-
+  if (isSuperUser.value && selectedEmployeeId.value) {
+    if (item.label === 'Holidays' || item.label === 'Inventory') return false
+  }
   return item.requiredRole.includes(roleDetail.role)
 }
 

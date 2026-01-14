@@ -76,9 +76,10 @@ export const useAttendanceStore = defineStore('attendance', () => {
         return true
     }
 
-    async function fetchAttendance(showGlobalLoader = false) {
+    async function fetchAttendance(showGlobalLoader = false, userId?: number | null) {
         loading.value = true
         const toast = useToast()
+
         if (showGlobalLoader && import.meta.client) {
             showLoader()
         }
@@ -99,6 +100,10 @@ export const useAttendanceStore = defineStore('attendance', () => {
                 }
             }
 
+            // Add userid param when provided (for superuser viewing other employees)
+            if (userId) {
+                params.userid = userId
+            }
             const response = await useApi(endpoint, { params })
 
             const newRecords: Record<string, any> = {}
