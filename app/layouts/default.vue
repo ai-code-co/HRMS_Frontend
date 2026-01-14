@@ -9,6 +9,14 @@ const isAuthRoute = computed(() => {
     '/reset-password'
   ].includes(route.path)
 })
+
+const isAuditRoute = computed(() => {
+  return route.path === '/audit'
+})
+
+const showSidebar = computed(() => {
+  return !isAuthRoute.value && !isAuditRoute.value
+})
 </script>
 
 <template>
@@ -24,11 +32,10 @@ const isAuthRoute = computed(() => {
       </div>
     </Transition>
 
-    <AppSidebar v-if="!isAuthRoute" />
+    <AppSidebar v-if="showSidebar" />
     <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
 
-      <AppHeader v-if="!isAuthRoute" />
-
+      <AppHeader v-if="showSidebar" />
       <main class="flex-1 overflow-y-auto p-4 md:p-8">
         <slot />
       </main>
