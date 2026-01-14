@@ -106,7 +106,7 @@ export const useEmployeeStore = defineStore('employee', {
 
                 const publicId = uploadResponse.public_id
 
-                const { data: updateResponse } = await useApi<Employee>('/api/employees/me/', {
+                const { data: updateResponse } = await useApi<{ data: Employee }>('/api/employees/me/', {
                     method: 'PATCH',
                     body: {
                         photo: publicId

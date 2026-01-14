@@ -79,6 +79,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
     async function fetchAttendance(showGlobalLoader = false) {
         loading.value = true
         const toast = useToast()
+        const { isSuperUser } = useRoleAccess();
+        const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
         if (showGlobalLoader && import.meta.client) {
             showLoader()
         }
@@ -99,6 +101,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
                 }
             }
 
+            if (isSuperUser.value && activeEmployee.value) {
+                params.userid = selectedEmployeeId.value
+            }
             const response = await useApi(endpoint, { params })
 
             const newRecords: Record<string, any> = {}
