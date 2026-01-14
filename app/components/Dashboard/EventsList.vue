@@ -20,7 +20,7 @@ const colorMap = {
             <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest">
                 {{ title }}
             </h3>
-            <UButton variant="link" color="primary" size="xs" :padded="false">See All</UButton>
+            <UButton to="/holidays" variant="link" color="primary" size="xs" :padded="false" class="whitespace-nowrap">See All</UButton>
         </div>
         <div class="divide-y divide-slate-50">
             <div v-for="(item, i) in items" :key="i"

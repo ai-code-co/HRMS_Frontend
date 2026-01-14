@@ -38,7 +38,7 @@
                     <h3 class="font-bold">Application History</h3>
                     <div
                         class="flex flex-wrap items-center gap-0 sm:gap-1.5 bg-slate-100/60 p-1 rounded-xl w-full md:w-fit border border-slate-200">
-                        <UButton v-for="f in ['All', 'Approved', 'Pending', 'Rejected']" :key="f" size="xs"
+                        <UButton v-for="f in ['All', 'Approved', 'Pending', 'Rejected', 'Cancelled']" :key="f" size="xs"
                             variant="ghost" :class="[
                                 'px-3 sm:px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',
                                 activeFilter === f ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'
