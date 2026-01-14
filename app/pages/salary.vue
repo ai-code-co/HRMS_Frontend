@@ -21,7 +21,7 @@
                                         <span>Statement Reference</span>
                                         <span class="w-1 h-1 rounded-full bg-slate-200" />
                                         <span class="uppercase tracking-widest">{{ store.selectedRecord.payslipId
-                                        }}</span>
+                                            }}</span>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-4">
@@ -43,7 +43,8 @@
                                     :value="`₹ ${store.selectedRecord.deductions.toLocaleString()}`" is-negative />
                                 <SalaryMetadataCard label="BANK" :value="store.selectedRecord.bankName"
                                     :sub-value="`Acc: ${store.selectedRecord.accNumber}`" />
-                                <SalaryMetadataCard label="STATUS" :value="store.selectedRecord.status || ''" highlight />
+                                <SalaryMetadataCard label="STATUS" :value="store.selectedRecord.status || ''"
+                                    highlight />
                             </div>
 
                             <div class="grid grid-cols-1 xl:grid-cols-2 gap-12">
@@ -102,9 +103,12 @@
 import { useSalaryStore } from '@/stores/salary'
 
 const store = useSalaryStore()
+const { selectedEmployeeId } = useEmployeeContext()
 
 const { data: salaryData } = await useAsyncData('salary', () => {
     return store.fetchSalaryData()
+}, {
+    watch: [selectedEmployeeId]
 })
 
 if (import.meta.client && salaryData.value) {

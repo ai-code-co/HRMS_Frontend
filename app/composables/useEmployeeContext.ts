@@ -36,7 +36,6 @@ export function useEmployeeContext() {
       })
 
       employeeLookupList.value = employees || []
-      console.log(employeeLookupList.value, 'employees list')
     } catch (err: any) {
       error.value = extractErrorMessage(err, 'Failed to fetch employee list')
       const toast = useToast()

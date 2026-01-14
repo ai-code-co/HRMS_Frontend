@@ -36,8 +36,14 @@ export const useSalaryStore = defineStore('salary', {
     actions: {
         async fetchSalaryData() {
             this.isLoading = true;
+            const { isSuperUser } = useRoleAccess();
+            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
             try {
-                const response = await useApi(`api/payroll/user-salary-info/`);
+                let params: Record<string, any> = {}
+                if (isSuperUser.value && activeEmployee.value) {
+                    params.userid = selectedEmployeeId.value
+                }
+                const response = await useApi(`api/payroll/user-salary-info/`, { params });
                 this.annualCtc = response.data.annual_ctc;
 
                 this.records = response.data.payslip_months.map((m: any) => ({

@@ -42,8 +42,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-8">
                     <DashboardDistributionChart :title="currentRole === 'admin' ? 'Team Distribution' : 'Leave Balance'"
                         :total="currentRole === 'admin' ? '1.2k' : dashboardStore.dashboardData?.leave_chart?.total_left"
-                        :sub="currentRole === 'admin' ? 'Total Staff' : 'leaves Left'"
-                        :data="distribution" />
+                        :sub="currentRole === 'admin' ? 'Total Staff' : 'leaves Left'" :data="distribution" />
 
                     <DashboardHighlightCard v-if="highlight" v-bind="highlight" />
                 </div>
@@ -55,10 +54,13 @@
 <script setup lang="ts">
 import { CalendarDays, UserCheck, Briefcase, Award } from 'lucide-vue-next';
 import { useDashboardStore } from '~/stores/dashboard';
+const { selectedEmployeeId } = useEmployeeContext()
 
 const dashboardStore = useDashboardStore();
 const { data: dashboardData } = await useAsyncData('dashboard-data', () => {
     return dashboardStore.fetchSummary()
+}, {
+    watch: [selectedEmployeeId],
 })
 
 if (import.meta.client && dashboardData.value) {

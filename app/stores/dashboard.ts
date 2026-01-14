@@ -56,15 +56,16 @@ export const useDashboardStore = defineStore('dashboard', {
             this.loading = true
             this.error = null
             const toast = useToast()
+            const { isSuperUser } = useRoleAccess();
+            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
             try {
-                const response = await useApi('/api/dashboard/summary/')
-                if (response.error === 0) {
-                    this.dashboardData = response.data
-                    return response.data
-                } else {
-                    this.error = 'Failed to fetch dashboard data'
-                    return null
+                let params: Record<string, any> = {}
+                if (isSuperUser.value && activeEmployee.value) {
+                    params.userid = selectedEmployeeId.value
                 }
+                const response = await useApi('/api/dashboard/summary/', { params })
+                this.dashboardData = response.data
+                return response.data
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch dashboard data')
                 toast.add({

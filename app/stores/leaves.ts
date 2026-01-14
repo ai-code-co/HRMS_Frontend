@@ -24,8 +24,14 @@ export const useLeaveStore = defineStore('leaves', {
     actions: {
         async fetchLeaves() {
             this.error = null
+            const { isSuperUser } = useRoleAccess();
+            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
             try {
-                const res = await useApi<LeaveListResponse>('/api/leaves/')
+                let params: Record<string, any> = {}
+                if (isSuperUser.value && activeEmployee.value) {
+                    params.userid = selectedEmployeeId.value
+                }
+                const res = await useApi<LeaveListResponse>('/api/leaves/', { params })
                 this.requests = res.results
                 return res.results
             } catch (err: any) {
@@ -43,8 +49,14 @@ export const useLeaveStore = defineStore('leaves', {
         async fetchLeaveBalances() {
             this.error = null
             const toast = useToast()
+            const { isSuperUser } = useRoleAccess();
+            const { activeEmployee, selectedEmployeeId } = useEmployeeContext()
             try {
-                const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/')
+                let params: Record<string, any> = {}
+                if (isSuperUser.value && activeEmployee.value) {
+                    params.userid = selectedEmployeeId.value
+                }
+                const res = await useApi<LeaveBalanceResponse>('/api/leaves/balance/', { params })
                 if (res.error === 0) {
                     this.balances = res.data
                     return res.data
