@@ -103,7 +103,7 @@ export const useEmployeeStore = defineStore('employee', {
             }
         },
 
-        async updateProfilePhoto(file: File) {
+        async updateProfilePhoto(file: File, userId?: number | null) {
             const toast = useToast()
             try {
                 const uploadFormData = new FormData()
@@ -117,12 +117,18 @@ export const useEmployeeStore = defineStore('employee', {
 
                 const publicId = uploadResponse.public_id
 
+                const params: Record<string, any> = {}
+                if (userId) {
+                    params.userid = userId
+                }
+
                 const { data: updateResponse } = await useApi<{ data: Employee }>('/api/employees/me/', {
                     method: 'PATCH',
                     body: {
                         photo: publicId
                     },
-                    credentials: 'include'
+                    credentials: 'include',
+                    params
                 })
                 await useAuth().initAuth()
                 if (updateResponse && this.employee) {
@@ -139,6 +145,113 @@ export const useEmployeeStore = defineStore('employee', {
                     color: 'error'
                 })
                 throw err
+            }
+        },
+
+        async updatePersonalDetails(data: Partial<Employee>, userId?: number | null) {
+            this.loading = true
+            this.error = null
+            const toast = useToast()
+            try {
+                const params: Record<string, any> = {}
+                if (userId) {
+                    params.userid = userId
+                }
+
+                const { data: updated } = await useApi<{ data: Employee }>('/api/employees/me/', {
+                    method: 'PATCH',
+                    body: data,
+                    credentials: 'include',
+                    params,
+                })
+
+                this.updateEmployee(updated)
+                toast.add({
+                    title: 'Success',
+                    description: 'Personal details updated successfully',
+                    color: 'success'
+                })
+                return updated
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to update personal details')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            } finally {
+                this.loading = false
+            }
+        },
+
+        async updateBankDetails(data: Record<string, any>, userId?: number | null) {
+            this.loading = true
+            this.error = null
+            const toast = useToast()
+            try {
+                const params: Record<string, any> = {}
+                if (userId) {
+                    params.userid = userId
+                }
+
+                const updated = await useApi<Employee>('/api/employees/update-bank/', {
+                    method: 'PATCH',
+                    body: data,
+                    credentials: 'include',
+                    params,
+                })
+
+                this.updateEmployee(updated)
+                toast.add({
+                    title: 'Success',
+                    description: 'Bank details updated successfully',
+                    color: 'success'
+                })
+                return updated
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to update bank details')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            } finally {
+                this.loading = false
+            }
+        },
+
+        async changePassword(oldPassword: string, newPassword: string, confirmPassword: string) {
+            this.loading = true
+            this.error = null
+            const toast = useToast()
+            try {
+                await useApi('/auth/change-password/', {
+                    method: 'POST',
+                    body: {
+                        old_password: oldPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword,
+                    },
+                    credentials: 'include',
+                })
+
+                toast.add({
+                    title: 'Success',
+                    description: 'Password updated successfully',
+                    color: 'success'
+                })
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to update password')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            } finally {
+                this.loading = false
             }
         }
     },

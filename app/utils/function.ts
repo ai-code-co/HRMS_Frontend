@@ -41,3 +41,34 @@ export function calculateTotalHours(clockIn: string, clockOut: string): string {
     const totalHours = hours + (minutes / 60)
     return totalHours.toFixed(1)
 }
+
+export function getStatusMeta(
+    submission: any,
+    baseLabel: string,
+    baseClass: string
+) {
+    if (!submission) return null
+
+    const status = submission.status?.toLowerCase() ?? ''
+
+    const map: Record<string, { text: string; labelClass: string }> = {
+        pending: {
+            text: `${baseLabel} Pending`,
+            labelClass: 'text-amber-700'
+        },
+        approved: {
+            text: `${baseLabel} Approved`,
+            labelClass: 'text-emerald-700'
+        },
+        rejected: {
+            text: `${baseLabel} Rejected`,
+            labelClass: 'text-rose-700'
+        }
+    }
+
+    return map[status] ?? {
+        text: baseLabel,
+        labelClass: baseClass
+    }
+}
+

@@ -87,6 +87,19 @@
                         </p>
                     </div>
                 </div>
+                <!-- Admin approval buttons -->
+                <div v-if="canApproveAttendance" class="flex gap-2 mt-4 pt-3 border-t border-slate-200">
+                    <UButton color="success" size="sm" class="flex-1" :loading="isApproving"
+                        @click="handleApproveAttendance('approved')">
+                        <Check :size="14" class="mr-1" />
+                        Approve
+                    </UButton>
+                    <UButton color="error" variant="outline" size="sm" class="flex-1" :loading="isApproving"
+                        @click="handleApproveAttendance('rejected')">
+                        <X :size="14" class="mr-1" />
+                        Reject
+                    </UButton>
+                </div>
             </div>
 
             <div v-if="leaveSubmission" :class="[leaveSubmissionStyles.container, 'p-4 border rounded-2xl']">
@@ -110,6 +123,19 @@
                         <p class="text-sm text-slate-700">{{ leaveSubmission.reason }}</p>
                     </div>
                 </div>
+                <!-- Admin approval buttons -->
+                <div v-if="canApproveLeave" class="flex gap-2 mt-4 pt-3 border-t border-slate-200">
+                    <UButton color="success" size="sm" class="flex-1" :loading="isApproving"
+                        @click="handleApproveLeave('Approved')">
+                        <Check :size="14" class="mr-1" />
+                        Approve
+                    </UButton>
+                    <UButton color="error" variant="outline" size="sm" class="flex-1" :loading="isApproving"
+                        @click="handleApproveLeave('Rejected')">
+                        <X :size="14" class="mr-1" />
+                        Reject
+                    </UButton>
+                </div>
             </div>
         </template>
         <template v-else>
@@ -131,7 +157,8 @@
                     </div>
                     <div>
                         <p class="text-[10px] text-slate-400 uppercase font-medium">Date</p>
-                        <p class="text-sm font-bold text-slate-700">{{ formatDateFromISO(day.full_date || day.date) }}</p>
+                        <p class="text-sm font-bold text-slate-700">{{ formatDateFromISO(day.full_date || day.date) }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -156,6 +183,19 @@
                         <p class="text-[10px] text-slate-400 uppercase font-medium">Reason</p>
                         <p class="text-sm text-slate-700">{{ leaveSubmission.reason }}</p>
                     </div>
+                </div>
+                <!-- Admin approval buttons -->
+                <div v-if="canApproveLeave" class="flex gap-2 mt-4 pt-3 border-t border-slate-200/70">
+                    <UButton color="success" variant="subtle" size="sm" class="flex-1 flex justify-center cursor-pointer"
+                        :loading="isApproving" @click="handleApproveLeave('Approved')">
+                        <Check :size="14" class="mr-1" />
+                        Approve
+                    </UButton>
+                    <UButton color="error" variant="soft" size="sm" class="flex-1 flex justify-center cursor-pointer"
+                        :loading="isApproving" @click="handleApproveLeave('Rejected')">
+                        <X :size="14" class="mr-1" />
+                        Reject
+                    </UButton>
                 </div>
             </div>
 
@@ -188,6 +228,19 @@
                         </p>
                     </div>
                 </div>
+                <!-- Admin approval buttons -->
+                <div v-if="canApproveAttendance" class="flex gap-2 mt-4 pt-3 border-t border-slate-200/70">
+                    <UButton color="success" variant="subtle" size="sm" class="flex-1 flex justify-center cursor-pointer"
+                        :loading="isApproving" @click="handleApproveAttendance('approved')">
+                        <Check :size="14" class="mr-1" />
+                        Approve
+                    </UButton>
+                    <UButton color="error" variant="soft" size="sm" class="flex-1 flex justify-center cursor-pointer"
+                        :loading="isApproving" @click="handleApproveAttendance('rejected')">
+                        <X :size="14" class="mr-1" />
+                        Reject
+                    </UButton>
+                </div>
             </div>
         </template>
         <div class="flex gap-3 mt-6">
@@ -216,7 +269,7 @@
 </template>
 
 <script setup lang="ts">
-import { Clock, ArrowRight, Fingerprint, FileText, PartyPopper } from 'lucide-vue-next'
+import { Clock, ArrowRight, Fingerprint, FileText, PartyPopper, Check, X } from 'lucide-vue-next'
 import { parseISO, isValid, format } from 'date-fns'
 import { Time } from '@internationalized/date'
 import { formatTimeFromISO, formatDateFromISO } from '~/utils/function'
@@ -225,6 +278,8 @@ import AttendanceModalUploadTimesheetContent from '~/components/Attendance/Modal
 
 const props = defineProps<{
     day: any | null
+    isViewingOther?: boolean
+    selectedEmployeeId?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -365,5 +420,55 @@ const closeTimesheetModal = () => {
 const handleTimesheetUploadSuccess = () => {
     isTimesheetModalOpen.value = false
     emit('update-success')
+}
+
+// Admin approval functionality
+const leaveStore = useLeaveStore()
+const isApproving = ref(false)
+
+const canApproveAttendance = computed(() => {
+    if (!props.isViewingOther) return false
+    const submission = manualAttendanceSubmission.value
+    return submission?.status?.toLowerCase() === 'pending' && submission?.id
+})
+
+const canApproveLeave = computed(() => {
+    if (!props.isViewingOther) return false
+    const submission = leaveSubmission.value
+    return submission?.status?.toLowerCase() === 'pending' && submission?.id
+})
+
+async function handleApproveAttendance(status: 'approved' | 'rejected') {
+    if (!manualAttendanceSubmission.value?.id) return
+
+    isApproving.value = true
+    try {
+        await attendanceStore.approveManualAttendance(
+            manualAttendanceSubmission.value.id,
+            status,
+            props.selectedEmployeeId
+        )
+        emit('update-success')
+    } catch {
+        // Error handled in store
+    } finally {
+        isApproving.value = false
+    }
+}
+
+async function handleApproveLeave(status: 'Approved' | 'Rejected') {
+    if (!leaveSubmission.value?.id) return
+
+    isApproving.value = true
+    try {
+        await leaveStore.updateLeave(leaveSubmission.value.id, status)
+        // Refetch attendance to update the calendar
+        await attendanceStore.fetchAttendance(false, props.selectedEmployeeId)
+        emit('update-success')
+    } catch {
+        // Error handled in store
+    } finally {
+        isApproving.value = false
+    }
 }
 </script>

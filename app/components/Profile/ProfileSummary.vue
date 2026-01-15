@@ -2,6 +2,7 @@
 import { Camera } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useEmployeeStore } from '~/stores/employee'
+import { useEmployeeContext } from '~/composables/useEmployeeContext'
 
 interface User {
     name: string
@@ -17,6 +18,7 @@ const props = defineProps<{
 }>()
 
 const employeeStore = useEmployeeStore()
+const { selectedEmployeeId } = useEmployeeContext()
 const toast = useToast()
 
 const name = computed(() => props.user?.name ?? '-')
@@ -48,7 +50,7 @@ const handleFileChange = async (event: Event) => {
         // Upload to server
         isUploading.value = true
         try {
-            await employeeStore.updateProfilePhoto(file)
+            await employeeStore.updateProfilePhoto(file, selectedEmployeeId.value)
             toast.add({
                 title: 'Success',
                 description: 'Profile photo updated successfully',
