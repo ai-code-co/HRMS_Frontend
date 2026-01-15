@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { useEmployeeStore } from '~/stores/employee'
 import { useRoleAccess } from '~/composables/useRoleAccess'
+import { useEmployeeContext } from '~/composables/useEmployeeContext'
 import type { SelectMenuItem } from '@nuxt/ui'
 const schema = z.object({
     first_name: z.string().min(1, 'First name required'),
@@ -68,9 +69,9 @@ const relationshipOptions = ref<SelectMenuItem[]>([
 type Schema = z.output<typeof schema>
 
 const employeeStore = useEmployeeStore()
-const { employee } = storeToRefs(employeeStore)
+const { employee, loading } = storeToRefs(employeeStore)
 const { isSuperUser } = useRoleAccess()
-const toast = useToast()
+const { selectedEmployeeId } = useEmployeeContext()
 
 const handleNumericKeyPress = (e: KeyboardEvent) => {
     const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter']
@@ -127,32 +128,14 @@ const changedFields = computed(() => {
 
 const hasChanges = computed(() => Object.keys(changedFields.value).length > 0)
 
-const loading = ref(false)
 const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
     if (!hasChanges.value) return
 
-    loading.value = true
     try {
-        const { data: updated } = await useApi('/api/employees/me/', {
-            method: 'PATCH',
-            body: changedFields.value,
-        })
-
-        employeeStore.updateEmployee(updated)
+        await employeeStore.updatePersonalDetails(changedFields.value, selectedEmployeeId.value)
         originalState.value = { ...state }
-        toast.add({
-            title: 'Success',
-            description: 'Personal details updated successfully',
-            color: 'success'
-        })
-    } catch (err: any) {
-        toast.add({
-            title: 'Error',
-            description: err?.data?.error || err?.message || 'Failed to update personal details',
-            color: 'error'
-        })
-    } finally {
-        loading.value = false
+    } catch {
+        // Error handling is done in the store
     }
 }
 </script>

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
+import { storeToRefs } from 'pinia'
 import { z } from 'zod'
 import { Eye, EyeOff } from 'lucide-vue-next'
 import type { FormSubmitEvent } from '#ui/types'
+import { useEmployeeStore } from '~/stores/employee'
 
 defineProps<{ policy: string }>()
 
-const toast = useToast();
+const employeeStore = useEmployeeStore()
+const { loading } = storeToRefs(employeeStore)
+
 const show = reactive({
     current: false,
     new: false,
@@ -18,8 +22,6 @@ const state = reactive({
     new_password: '',
     confirm_password: '',
 })
-
-const loading = ref(false)
 
 const schema = z.object({
     current_password: z.string().min(8, 'Minimum 8 characters'),
@@ -33,33 +35,15 @@ const schema = z.object({
 type Schema = z.output<typeof schema>
 
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
-    loading.value = true
     try {
-        await useApi('/auth/change-password/', {
-            method: 'POST',
-            body: {
-                old_password: event.data.current_password,
-                new_password: event.data.new_password,
-                confirm_password: event.data.confirm_password,
-
-            },
-        })
-        toast.add({
-            title: 'Password Updated',
-            description: 'Your password has been successfully updated.',
-            color: 'success'
-        });
+        await employeeStore.changePassword(
+            event.data.current_password,
+            event.data.new_password,
+            event.data.confirm_password
+        )
         Object.assign(state, { current_password: '', new_password: '', confirm_password: '' })
-    } catch (error) {
-        toast.add({
-            title: 'Error',
-            description: 'There was an error updating your password. Please try again.',
-            color: 'error'
-        });
-        throw error
-    }
-    finally {
-        loading.value = false
+    } catch {
+        // Error handling is done in the store
     }
 }
 </script>

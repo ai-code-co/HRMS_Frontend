@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { useEmployeeStore } from '~/stores/employee'
 import { useRoleAccess } from '~/composables/useRoleAccess'
+import { useEmployeeContext } from '~/composables/useEmployeeContext'
 
 const bankSchema = z.object({
     bank_name: z.string().min(1, 'Bank name is required'),
@@ -16,8 +17,10 @@ const bankSchema = z.object({
 type Schema = z.output<typeof bankSchema>
 
 const employeeStore = useEmployeeStore()
-const { employee } = storeToRefs(employeeStore)
+const { employee, loading } = storeToRefs(employeeStore)
 const { isEmployee } = useRoleAccess()
+const { selectedEmployeeId } = useEmployeeContext()
+const toast = useToast()
 
 const isReadOnly = computed(() => isEmployee.value)
 
@@ -28,41 +31,20 @@ const state = reactive({
     account_holder_name: employee.value?.account_holder_name ?? '',
 })
 
-const loading = ref(false)
-
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     if (isReadOnly.value) {
-        const toast = useToast()
         toast.add({
             title: 'Permission Denied',
             description: 'Only Admin and HR can update bank details',
-            color: 'orange'
+            color: 'warning'
         })
         return
     }
-    loading.value = true
-    try {
-        const updated = await useApi('/api/employees/update-bank/', {
-            method: 'PATCH',
-            body: event.data,
-        })
 
-        employeeStore.updateEmployee(updated)
-        const toast = useToast()
-        toast.add({
-            title: 'Success',
-            description: 'Bank details updated successfully',
-            color: 'green'
-        })
-    } catch (error: any) {
-        const toast = useToast()
-        toast.add({
-            title: 'Error',
-            description: error?.data?.error || error?.message || 'Failed to update bank details',
-            color: 'red'
-        })
-    } finally {
-        loading.value = false
+    try {
+        await employeeStore.updateBankDetails(event.data, selectedEmployeeId.value)
+    } catch {
+        // Error handling is done in the store
     }
 }
 </script>
