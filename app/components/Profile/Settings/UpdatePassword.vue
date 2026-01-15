@@ -52,7 +52,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     <UForm :schema="schema" :state="state" @submit="onSubmit" class="max-w-xl space-y-4">
 
         <UFormField label="Current Password" name="current_password">
-            <UInput v-model="state.current_password" :type="show.current ? 'text' : 'password'"
+            <UInput placeholder="Enter current password" v-model="state.current_password" :type="show.current ? 'text' : 'password'"
                 autocomplete="current-password" class="w-full">
                 <template #trailing>
                     <component :is="show.current ? EyeOff : Eye"
@@ -63,7 +63,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         </UFormField>
 
         <UFormField label="New Password" name="new_password">
-            <UInput v-model="state.new_password" :type="show.new ? 'text' : 'password'" autocomplete="new-password"
+            <UInput placeholder="Enter new password" v-model="state.new_password" :type="show.new ? 'text' : 'password'" autocomplete="new-password"
                 class="w-full">
                 <template #trailing>
                     <component :is="show.new ? EyeOff : Eye"
@@ -74,7 +74,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         </UFormField>
 
         <UFormField label="Confirm Password" name="confirm_password">
-            <UInput v-model="state.confirm_password" :type="show.confirm ? 'text' : 'password'"
+            <UInput placeholder="Confirm password" v-model="state.confirm_password" :type="show.confirm ? 'text' : 'password'"
                 autocomplete="new-password" class="w-full">
                 <template #trailing>
                     <component :is="show.confirm ? EyeOff : Eye"

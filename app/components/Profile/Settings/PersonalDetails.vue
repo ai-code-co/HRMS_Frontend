@@ -76,7 +76,6 @@ const { selectedEmployeeId } = useEmployeeContext()
 const handleNumericKeyPress = (e: KeyboardEvent) => {
     const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter']
     const isNumber = /^[0-9]$/.test(e.key)
-    
     if (!isNumber && !allowedKeys.includes(e.key)) {
         e.preventDefault()
     }
@@ -190,8 +189,12 @@ const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
                         <UInput v-model="state.phone" type="text" inputmode="numeric" pattern="[0-9]+" 
                             maxlength="10"
                             @keypress="handleNumericKeyPress"
-                            :disabled="!canEditPersonalInfo" class="w-full"
-                            placeholder="+91 XXXXX XXXXX" />
+                             :disabled="!canEditPersonalInfo" class="w-full"
+                            placeholder="+91 XXXXX XXXXX" >
+                            <template #leading>
+                                <span class="text-gray-500 select-none">+91</span>
+                            </template>
+                        </UInput>
                     </UFormField>
 
                     <UFormField name="alternate_phone" label="Alternate Phone">
@@ -199,7 +202,11 @@ const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
                             maxlength="10"
                             @keypress="handleNumericKeyPress"
                             :disabled="!canEditPersonalInfo" class="w-full"
-                            placeholder="+91 XXXXX XXXXX" />
+                            placeholder="+91 XXXXX XXXXX" 
+                            >
+                        <template #leading>
+                                <span class="text-gray-500 select-none">+91</span>
+                            </template></UInput>
                     </UFormField>
                 </div>
                 <h4 class="font-bold text-lg">Emergency Contact</h4>
@@ -219,8 +226,11 @@ const onSubmit = async (_event: FormSubmitEvent<Schema>) => {
                         <UInput v-model="state.emergency_phone" type="text" inputmode="numeric" pattern="[0-9]+"
                             maxlength="10"
                             @keypress="handleNumericKeyPress"
-                            :disabled="!canEditPersonalInfo" class="w-full"
-                            placeholder="+91 XXXXX XXXXX" />
+                            :disabled="!canEditPersonalInfo">
+                            <template #leading>
+                                <span class="text-gray-500 select-none">+91</span>
+                            </template>
+                        </UInput>
                     </UFormField>
                 </div>
             </section>
