@@ -1,9 +1,16 @@
 <template>
-    <div class="min-h-34 p-2 border-b border-r border-slate-300 cursor-pointer transition-colors flex flex-col" :class="[
-        !day.isCurrentMonth ? 'bg-slate-50/50' : '',
-        cellStyle,
-        !shouldShowRecord ? 'hover:bg-slate-100' : ''
-    ]">
+    <div class="min-h-34 p-2 border-b border-r border-slate-300 cursor-pointer transition-colors flex flex-col relative"
+        :class="[
+            !day.isCurrentMonth ? 'bg-slate-50/50' : '',
+            cellStyle,
+            !shouldShowRecord ? 'hover:bg-slate-100' : ''
+        ]">
+        <UTooltip v-if="showPendingIndicator" :text="pendingTooltipText">
+            <div class="absolute top-1 right-1 cursor-help">
+                <UIcon name="i-lucide-clipboard-clock" class="text-fuchsia-900 animate-pulse" size="20" />
+            </div>
+        </UTooltip>
+
         <div class="flex justify-between items-start mb-2">
             <span class="text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full" :class="[
                 day.isToday ? 'bg-indigo-600 text-white' : 'text-slate-800',
@@ -33,18 +40,14 @@
                 :class="DAY_TYPE_STYLES.MISSING_TIME.label">
                 {{ DAY_TYPE_STYLES.MISSING_TIME.displayLabel }}
             </div>
-            <div v-if="isAttendanceSubmitted">
-                <div class="text-xs font-bold text-center leading-tight"
-                    :class="DAY_TYPE_STYLES.MANUAL_ATTENDANCE.label">
-                    {{ DAY_TYPE_STYLES.MANUAL_ATTENDANCE.displayLabel }}:
-                    <span>
-                        {{ capitalize(isAttendanceSubmitted.status) || '' }}
-                    </span>
+            <div v-if="isAttendanceSubmitted && attendanceStatusMeta">
+                <div class="text-xs font-bold text-center leading-tight" :class="attendanceStatusMeta.labelClass">
+                    {{ attendanceStatusMeta.text }}
                 </div>
             </div>
-            <div v-if="isLeaveSubmitted">
-                <div class="text-xs font-bold text-center leading-tight" :class="DAY_TYPE_STYLES.LEAVE_APPLIED.label">
-                    {{ DAY_TYPE_STYLES.LEAVE_APPLIED.displayLabel }}
+            <div v-if="isLeaveSubmitted && leaveStatusMeta">
+                <div class="text-xs font-bold text-center leading-tight" :class="leaveStatusMeta.labelClass">
+                    {{ leaveStatusMeta.text }}
                 </div>
             </div>
         </div>
@@ -52,7 +55,8 @@
 </template>
 
 <script setup lang="ts">
-import { capitalize, formatTimeFromISO } from '~/utils/function'
+import { formatTimeFromISO } from '~/utils/function'
+import { getStatusMeta } from '~/utils/function';
 
 const props = defineProps<{
     day: {
@@ -63,6 +67,7 @@ const props = defineProps<{
         isFutureDay: boolean
         record: any
     }
+    isViewingOther?: boolean
 }>()
 
 const DAY_TYPE_STYLES = {
@@ -112,6 +117,23 @@ const DAY_TYPE_STYLES = {
         displayLabel: 'Leave Applied'
     },
 } as const
+
+const leaveStatusMeta = computed(() =>
+    getStatusMeta(
+        props.day.record?.leave_submission,
+        DAY_TYPE_STYLES.LEAVE_APPLIED.displayLabel,
+        DAY_TYPE_STYLES.LEAVE_APPLIED.label
+    )
+)
+
+const attendanceStatusMeta = computed(() =>
+    getStatusMeta(
+        props.day.record?.attendance_submission,
+        DAY_TYPE_STYLES.MANUAL_ATTENDANCE.displayLabel,
+        DAY_TYPE_STYLES.MANUAL_ATTENDANCE.label
+    )
+)
+
 
 const normalizedType = computed(() => {
     return props.day.record?.day_type?.toUpperCase().replace(/\s+/g, '_') || ''
@@ -171,5 +193,28 @@ const isMissingTime = computed(() => {
     if (props.day.isFutureDay) return false
     const r = props.day.record
     return !r.in_time || !r.out_time
+})
+
+// Show pending indicator for admin when viewing another employee's pending applications
+const hasPendingAttendance = computed(() => {
+    const submission = props.day.record?.attendance_submission
+    return submission?.status?.toLowerCase() === 'pending'
+})
+
+const hasPendingLeave = computed(() => {
+    const submission = props.day.record?.leave_submission
+    return submission?.status?.toLowerCase() === 'pending'
+})
+
+const showPendingIndicator = computed(() => {
+    if (!props.isViewingOther) return false
+    return hasPendingAttendance.value || hasPendingLeave.value
+})
+
+const pendingTooltipText = computed(() => {
+    const pending: string[] = []
+    if (hasPendingLeave.value) pending.push('Leave')
+    if (hasPendingAttendance.value) pending.push('Manual Attendance')
+    return `Pending: ${pending.join(', ')}`
 })
 </script>

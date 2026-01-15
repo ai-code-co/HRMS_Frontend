@@ -244,6 +244,36 @@ export const useAttendanceStore = defineStore('attendance', () => {
         }
     }
 
+    async function approveManualAttendance(
+        submissionId: number,
+        status: 'approved' | 'rejected',
+        userId?: number | null
+    ) {
+        const toast = useToast()
+        try {
+            await useApi(`/api/attendance/submission/${submissionId}/`, {
+                method: 'PATCH',
+                body: { status }
+            })
+
+            toast.add({
+                title: 'Success',
+                description: `Manual attendance ${status} successfully`,
+                color: 'success'
+            })
+
+            // Refetch attendance to update the calendar
+            await fetchAttendance(false, userId)
+        } catch (error: any) {
+            toast.add({
+                title: 'Error',
+                description: extractErrorMessage(error, `Failed to ${status} manual attendance`),
+                color: 'error'
+            })
+            throw error
+        }
+    }
+
     return {
         currentDate,
         viewMode,
@@ -258,6 +288,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
         prev,
         updateAttendance,
         submitTimesheet,
+        approveManualAttendance,
         isDayOpenable
     }
 })

@@ -7,7 +7,10 @@
             </template>
 
             <template #body>
-                <AttendanceModalDayDetailsContent :day="record" @update-success="handleUpdateSuccess" />
+                <AttendanceModalDayDetailsContent :day="record"
+                    :is-viewing-other="isViewingOther"
+                    :selected-employee-id="selectedEmployeeId"
+                    @update-success="handleUpdateSuccess" />
             </template>
         </UDrawer>
 
@@ -17,7 +20,10 @@
             </template>
 
             <template #body>
-                <AttendanceModalDayDetailsContent :day="record" @update-success="handleUpdateSuccess" class="w-full" />
+                <AttendanceModalDayDetailsContent :day="record"
+                    :is-viewing-other="isViewingOther"
+                    :selected-employee-id="selectedEmployeeId"
+                    @update-success="handleUpdateSuccess" class="w-full" />
             </template>
         </UModal>
     </template>
@@ -27,6 +33,8 @@
 const props = defineProps<{
     open: boolean
     record: any | null
+    isViewingOther?: boolean
+    selectedEmployeeId?: number | null
 }>()
 
 const emit = defineEmits<{

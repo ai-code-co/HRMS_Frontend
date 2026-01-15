@@ -126,7 +126,11 @@ export const useLeaveStore = defineStore('leaves', {
             this.loading = true
             this.error = null
             const toast = useToast()
+            let rejection_reason = 'Leave Rejected'
             const payload = { status }
+            if(status === 'Rejected') {
+                payload.rejection_reason = rejection_reason;
+            }
             try {
                 await useApi(`/api/leaves/${id}/`, {
                     method: 'PATCH',

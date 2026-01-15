@@ -10,16 +10,19 @@
             </div>
             <div class="grid grid-cols-3 sm:grid-cols-7 border-l border-slate-200" :key="attendanceStore.viewMode">
                 <AttendanceDayCell v-for="day in attendanceStore.calendarDays" :key="day.dateKey" :day="day"
+                    :is-viewing-other="isViewingOther"
                     @click="openDetails(day)" />
             </div>
         </main>
         <AttendanceModalDayDetailsOverlay v-model:open="isModalOpen" :record="selectedRecord"
+            :is-viewing-other="isViewingOther"
+            :selected-employee-id="selectedEmployeeId"
             @update-success="handleUpdateSuccess" />
     </div>
 </template>
 <script setup lang="ts">
 const attendanceStore = useAttendanceStore()
-const { selectedEmployeeId } = useEmployeeContext()
+const { selectedEmployeeId, isViewingOther } = useEmployeeContext()
 
 const hasInitialized = ref(false)
 
