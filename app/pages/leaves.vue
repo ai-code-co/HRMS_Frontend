@@ -6,11 +6,11 @@
                     <h2 class="text-2xl font-bold">Leave Overview</h2>
                     <p class="text-sm text-slate-400">Manage your allocations</p>
                 </div>
-                <UButton icon="i-lucide-plus" size="lg" class="hidden sm:flex rounded-lg cursor-pointer"
+                <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="lg" class="hidden sm:flex rounded-lg cursor-pointer"
                     @click="isApplyModalOpen = true">
                     Apply Leave
                 </UButton>
-                <UButton icon="i-lucide-plus" size="xl"
+                <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="xl"
                     class="sm:hidden fixed bottom-6 right-6 rounded-full shadow-lg z-50"
                     @click="isApplyModalOpen = true" />
             </div>
@@ -119,7 +119,7 @@ const { loading, leaveBalances, leaveRequests } = storeToRefs(leaveStore)
 const isApplyModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const selectedLeave = ref<any>(null)
-const { selectedEmployeeId } = useEmployeeContext()
+const { selectedEmployeeId, isViewingOther } = useEmployeeContext()
 const hasInitialized = ref(false)
 
 const { data: leaveData } = await useAsyncData('leave-data', async () => {
