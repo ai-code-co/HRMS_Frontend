@@ -6,17 +6,16 @@
                     <h2 class="text-2xl font-bold">Leave Overview</h2>
                     <p class="text-sm text-slate-400">Manage your allocations</p>
                 </div>
-                <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="lg" class="hidden sm:flex rounded-lg cursor-pointer"
-                    @click="isApplyModalOpen = true">
-                    Apply Leave
-                </UButton>
+                <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="lg"
+                    class="hidden sm:flex rounded-lg cursor-pointer" @click="isApplyModalOpen = true"
+                    title="Apply Leave" />
                 <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="xl"
                     class="sm:hidden fixed bottom-6 right-6 rounded-full shadow-lg z-50"
                     @click="isApplyModalOpen = true" />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div v-for="b in balances" :key="b.type"
-                    class="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm">
+                    class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
                     <div class="flex flex-col gap-4">
                         <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100"
                             :class="`text-${b.color}-600 bg-${b.color}-50`">
