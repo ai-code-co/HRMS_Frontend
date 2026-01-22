@@ -62,7 +62,7 @@ const handleAssignSubmit = async () => {
         isOpen.value = false;
     } catch (error) {
         const toast = useToast();
-        toast.add({ title: 'Error', description: 'Failed to assign device', color: 'red' });
+        toast.add({ title: 'Error', description: `Failed to assign ${props.item?.name} to ${selectedEmployee.value?.label}. Please try again.`, color: 'error' });
     } finally {
         assigning.value = false;
     }

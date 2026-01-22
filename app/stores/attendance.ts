@@ -12,6 +12,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     const viewMode = ref<'month' | 'week'>('month')
     const attendanceRecords = ref<Record<string, any>>({})
     const loading = ref(false)
+    const selectedEmployeeId = ref<number | null>(null)
     const { showLoader, hideLoader } = useGlobalLoader()
 
     const weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
@@ -77,6 +78,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
     }
 
     async function fetchAttendance(showGlobalLoader = false, userId?: number | null) {
+        // Update stored selectedEmployeeId if provided
+        if (userId !== undefined) {
+            selectedEmployeeId.value = userId
+        }
+
         loading.value = true
         const toast = useToast()
 
@@ -101,8 +107,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
             }
 
             // Add userid param when provided (for superuser viewing other employees)
-            if (userId) {
-                params.userid = userId
+            const effectiveUserId = userId !== undefined ? userId : selectedEmployeeId.value
+            if (effectiveUserId) {
+                params.userid = effectiveUserId
             }
             const response = await useApi(endpoint, { params })
 
@@ -274,6 +281,10 @@ export const useAttendanceStore = defineStore('attendance', () => {
         }
     }
 
+    function setSelectedEmployeeId(id: number | null) {
+        selectedEmployeeId.value = id
+    }
+
     return {
         currentDate,
         viewMode,
@@ -281,9 +292,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
         calendarDays,
         loading,
         headerLabel,
+        selectedEmployeeId,
         fetchAttendance,
         setAttendanceRecords,
         setViewMode,
+        setSelectedEmployeeId,
         next,
         prev,
         updateAttendance,

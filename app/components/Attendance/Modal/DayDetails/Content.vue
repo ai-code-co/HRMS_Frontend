@@ -48,15 +48,23 @@
                         </p>
                     </div>
 
-                    <span class="px-3 py-1.5 rounded-full text-[10px] font-bold" :class="day.seconds_actual_worked_time >= day.orignal_total_time
+                    <span class="px-3 py-1.5 rounded-full text-[10px] font-bold" :class="isGoalAchieved
                         ? 'bg-emerald-100 text-emerald-600'
                         : 'bg-rose-50 text-rose-500'">
-                        {{ day.seconds_actual_worked_time >= day.orignal_total_time ? 'Goal Achieved' : 'Goal Pending'
-                        }}
+                        {{ isGoalAchieved ? 'Goal Achieved' : 'Goal Pending' }}
                     </span>
                 </div>
-                <UProgress :modelValue="Math.min((day.seconds_actual_worked_time / day.orignal_total_time) * 100, 100)"
-                    :color="day.seconds_actual_worked_time >= day.orignal_total_time ? 'primary' : 'error'" />
+                <UProgress :modelValue="progressPercentage"
+                    :color="isGoalAchieved ? 'primary' : 'error'" />
+
+                <!-- Working Hours Updated Chip -->
+                <div v-if="isWorkingHoursUpdated"
+                    class="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-xl">
+                    <RefreshCw :size="14" class="text-indigo-600" />
+                    <span class="text-xs font-medium text-indigo-700">
+                        Working hours updated to {{ day.office_working_hours }} hrs
+                    </span>
+                </div>
             </div>
             <div v-if="manualAttendanceSubmission"
                 :class="[attendanceSubmissionStyles.container, 'p-4 border rounded-2xl']">
@@ -269,7 +277,7 @@
 </template>
 
 <script setup lang="ts">
-import { Clock, ArrowRight, Fingerprint, FileText, PartyPopper, Check, X } from 'lucide-vue-next'
+import { Clock, ArrowRight, Fingerprint, FileText, PartyPopper, Check, X, RefreshCw } from 'lucide-vue-next'
 import { parseISO, isValid, format } from 'date-fns'
 import { Time } from '@internationalized/date'
 import { formatTimeFromISO, formatDateFromISO } from '~/utils/function'
@@ -340,6 +348,45 @@ const leaveSubmissionStyles = computed(() => {
 
 const attendanceStore = useAttendanceStore()
 const toast = useToast()
+
+// Convert time string (HH:MM or HH:MM:SS) to seconds
+function timeStringToSeconds(timeStr: string | undefined | null): number {
+    if (!timeStr) return 0
+    const parts = timeStr.split(':')
+    if (parts.length < 2) return 0
+    const hours = parseInt(parts[0]) || 0
+    const minutes = parseInt(parts[1]) || 0
+    const seconds = parseInt(parts[2]) || 0
+    return hours * 3600 + minutes * 60 + seconds
+}
+
+// Convert total_time string (HH:MM:SS) to seconds for goal comparison
+const actualWorkedSeconds = computed(() => {
+    return timeStringToSeconds(props.day?.total_time || props.day?.total_hours)
+})
+
+// Convert office_working_hours (HH:MM) to seconds - this is the updated target
+const targetWorkingSeconds = computed(() => {
+    return timeStringToSeconds(props.day?.office_working_hours)
+})
+
+// Check if working hours have been updated by admin
+const isWorkingHoursUpdated = computed(() => {
+    const original = props.day?.orignal_total_time || 0
+    const updated = targetWorkingSeconds.value
+    return original > 0 && updated > 0 && original !== updated
+})
+
+const isGoalAchieved = computed(() => {
+    const target = targetWorkingSeconds.value
+    return target > 0 && actualWorkedSeconds.value >= target
+})
+
+const progressPercentage = computed(() => {
+    const target = targetWorkingSeconds.value
+    if (target <= 0) return 0
+    return Math.min((actualWorkedSeconds.value / target) * 100, 100)
+})
 
 watch(
     () => isEditing.value,

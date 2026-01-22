@@ -25,7 +25,7 @@ const upload = async (e: Event) => {
     <div class="flex flex-col md:flex-row items-center gap-8">
         <div class="w-44 h-44 rounded-full overflow-hidden border-4 border-slate-50 shadow-inner">
             <img :src="employee?.photo_url || `https://ui-avatars.com/api/?name=${employee?.first_name?.[0]}${employee?.last_name?.[0]}&background=random`"
-                class="w-full h-full object-cover" />
+                alt="Profile picture" class="w-full h-full object-cover" />
         </div>
 
         <div class="flex flex-col gap-4">

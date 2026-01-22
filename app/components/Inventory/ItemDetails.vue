@@ -32,6 +32,8 @@ const isEditMode = ref(false);
 const isAssignModalOpen = ref(false);
 const submitting = ref(false);
 const formRef = ref();
+const deleteConfirmOpen = ref(false);
+const deleting = ref(false);
 
 const state = reactive<Schema>({
   device_type: 0,
@@ -76,14 +78,14 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     await store.updateDevice(props.item.id, event.data);
 
     const toast = useToast();
-    toast.add({ title: 'Success', description: 'Device details updated successfully', color: 'green' });
+    toast.add({ title: 'Success', description: 'Device details updated successfully', color: 'success' });
     isEditMode.value = false;
   } catch (error: any) {
     const toast = useToast();
-    toast.add({ 
-      title: 'Error', 
-      description: error?.message || 'Failed to update device', 
-      color: 'red' 
+    toast.add({
+      title: 'Error',
+      description: `Failed to update ${props.item?.name}. ${error?.message || 'Please try again.'}`,
+      color: 'error'
     });
   } finally {
     submitting.value = false;
@@ -92,13 +94,32 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
 
 const handleDelete = () => {
-  // TODO: Implement delete functionality
-  const toast = useToast()
-  toast.add({
-    title: 'Delete',
-    description: 'Delete functionality coming soon',
-    color: 'amber'
-  })
+  deleteConfirmOpen.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!props.item?.id) return;
+
+  deleting.value = true;
+  try {
+    await store.deleteDevice(props.item.id);
+    const toast = useToast();
+    toast.add({
+      title: 'Success',
+      description: `${props.item?.name} has been deleted.`,
+      color: 'success'
+    });
+    deleteConfirmOpen.value = false;
+  } catch (error: any) {
+    const toast = useToast();
+    toast.add({
+      title: 'Error',
+      description: `Failed to delete ${props.item?.name}. ${error?.message || 'Please try again.'}`,
+      color: 'error'
+    });
+  } finally {
+    deleting.value = false;
+  }
 };
 
 const handleAssignmentSuccess = async () => {
@@ -218,5 +239,19 @@ const handleAssignmentSuccess = async () => {
     <Teleport to="body">
       <AssignDeviceModal v-model="isAssignModalOpen" :item="item" @success="handleAssignmentSuccess" />
     </Teleport>
+
+    <UIConfirmDialog
+      v-model:open="deleteConfirmOpen"
+      title="Delete Device"
+      :message="`Are you sure you want to delete ${item?.name}? This action cannot be undone.`"
+      confirm-label="Delete"
+      cancel-label="Cancel"
+      confirm-color="error"
+      icon="i-lucide-alert-triangle"
+      icon-bg="bg-red-100"
+      icon-color="text-red-600"
+      :loading="deleting"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>
