@@ -81,7 +81,7 @@
                         <div class="flex items-center p-3 gap-4">
                             <div
                                 class="w-16 h-16 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200">
-                                <img :src="getDocumentUrl(leave.doc_link_url)" class="w-full h-full object-cover" />
+                                <img :src="getDocumentUrl(leave.doc_link_url)" alt="Supporting document" class="w-full h-full object-cover" />
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-slate-900 truncate">Attachment Preview</p>
@@ -98,7 +98,7 @@
         <template #footer>
             <div class="flex w-full gap-3">
                 <UButton v-if="leave?.status === 'pending'" block color="error" variant="soft" icon="i-heroicons-trash"
-                    size="lg" class="flex-1 font-bold" @click="handleCancel">
+                    size="lg" class="flex-1 font-bold" :loading="cancelling" :disabled="cancelling" @click="handleCancel">
                     Cancel Request
                 </UButton>
                 <UButton v-else-if="leave?.status === 'cancelled'" block color="error" disabled variant="soft" size="lg"
@@ -111,6 +111,20 @@
             </div>
         </template>
     </UModal>
+
+    <UIConfirmDialog
+        v-model:open="cancelConfirmOpen"
+        title="Cancel Leave Request"
+        message="Are you sure you want to cancel this leave request? This action cannot be undone."
+        confirm-label="Yes, Cancel Request"
+        cancel-label="Keep Request"
+        confirm-color="error"
+        icon="i-heroicons-exclamation-triangle"
+        icon-bg="bg-amber-100"
+        icon-color="text-amber-600"
+        :loading="cancelling"
+        @confirm="confirmCancel"
+    />
 </template>
 
 <script setup lang="ts">
@@ -140,6 +154,9 @@ const modelOpen = computed({
     get: () => props.open,
     set: (value: boolean) => emit('update:open', value)
 })
+
+const cancelConfirmOpen = ref(false)
+const cancelling = ref(false)
 
 const close = () => {
     modelOpen.value = false
@@ -176,9 +193,16 @@ const getDocumentUrl = (docLink: string) => {
     return `https://res.cloudinary.com/dw5x6ozba/image/upload/${docLink}`
 }
 
-const handleCancel = async () => {
+const handleCancel = () => {
+    cancelConfirmOpen.value = true
+}
+
+const confirmCancel = async () => {
     if (props.leave) {
+        cancelling.value = true
         emit('cancel', props.leave.id)
+        cancelling.value = false
+        cancelConfirmOpen.value = false
         close()
     }
 }

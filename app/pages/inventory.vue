@@ -72,7 +72,7 @@
                             <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
                                 <div
                                     class="aspect-video rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group">
-                                    <img :src="selectedItem.image"
+                                    <img :src="selectedItem.image" :alt="selectedItem.name"
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                                 </div>
 

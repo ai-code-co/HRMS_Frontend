@@ -206,5 +206,27 @@ export const useInventoryStore = defineStore('inventory', {
                 throw err;
             }
         },
+
+        async deleteDevice(id: string | number) {
+            this.error = null;
+            try {
+                await useApi(`/api/inventory/devices/${id}/`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                // Remove device from local state
+                this.rawDevices = this.rawDevices.filter(d => d.id.toString() !== id.toString());
+                if (this.currentDeviceDetail?.id.toString() === id.toString()) {
+                    this.currentDeviceDetail = null;
+                }
+
+                // Refresh dashboard summary
+                await this.fetchDashboardSummary();
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to delete device');
+                throw err;
+            }
+        },
     },
 });
