@@ -17,6 +17,7 @@ export const navigationItems: NavigationItem[] = [
   { label: 'Salary', icon: 'i-lucide-dollar-sign', to: '/salary' },
   { label: 'Settings', icon: 'i-lucide-settings', to: '/settings', requiredRole: ['Admin', 'HR'] },
   { label: 'Inventory', icon: 'i-lucide-wrench', to: '/adminInventory', requiredRole: ['Admin', 'HR'] },
+  { label: 'Interview', icon: 'i-lucide-users', to: '/interview', requiredRole: ['Admin'] },
   { label: 'Holidays', icon: 'i-lucide-sun', to: '/holidays' },
 ]
 

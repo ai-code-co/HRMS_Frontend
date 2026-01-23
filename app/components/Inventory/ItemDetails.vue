@@ -236,9 +236,8 @@ const handleAssignmentSuccess = async () => {
         </div>
       </UForm>
     </div>
-    <Teleport to="body">
-      <AssignDeviceModal v-model="isAssignModalOpen" :item="item" @success="handleAssignmentSuccess" />
-    </Teleport>
+
+    <AssignDeviceModal v-model:open="isAssignModalOpen" :item="item" @success="handleAssignmentSuccess" />
 
     <UIConfirmDialog
       v-model:open="deleteConfirmOpen"

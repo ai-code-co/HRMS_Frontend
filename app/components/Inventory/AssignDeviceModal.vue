@@ -5,12 +5,13 @@ import { useInventoryStore } from '../../stores/inventory';
 import type { InventoryItem } from '../../types/inventory';
 
 const props = defineProps<{
-    modelValue: boolean; // For v-model binding of modal open state
+    open: boolean;
     item: InventoryItem | null;
 }>();
 
 const emit = defineEmits<{
-    (e: 'update:modelValue', value: boolean): void;
+    (e: 'update:open', value: boolean): void;
+    (e: 'close'): void;
     (e: 'success'): void;
 }>();
 
@@ -20,19 +21,19 @@ const inventoryStore = useInventoryStore();
 const assigning = ref(false);
 const selectedEmployee = ref<{ id: number; label: string } | null>(null);
 
-// Computes the open state for the UModal
-const isOpen = computed({
-    get: () => props.modelValue,
-    set: (value) => emit('update:modelValue', value),
+const modelOpen = computed({
+    get: () => props.open,
+    set: (value: boolean) => emit('update:open', value),
 });
 
-// Fetch employees when modal opens (handled via @open on UModal if supported, or watched props)
-// Since UModal doesn't have a simple @open, we can trigger fetch when isOpen becomes true
-// or just rely on the parent/button click. 
-// A cleaner way in Nuxt UI is to fetch when the component mounts or when `isOpen` becomes true.
-watch(isOpen, async (val) => {
-    if (val) {
-        selectedEmployee.value = null; // Reset selection
+const close = () => {
+    modelOpen.value = false;
+    emit('close');
+};
+
+watch(() => props.open, async (isOpen) => {
+    if (isOpen) {
+        selectedEmployee.value = null;
         if (employeeStore.employeesList.length === 0) {
             await employeeStore.fetchEmployees();
         }
@@ -46,8 +47,6 @@ const handleAssignSubmit = async () => {
     try {
         await inventoryStore.updateDevice(props.item.id, {
             employee: selectedEmployee.value.id,
-            // Add status update if your business logic requires it automatically
-            // status: 'assigned' 
         });
 
         const toast = useToast();
@@ -57,9 +56,8 @@ const handleAssignSubmit = async () => {
             color: 'success'
         });
 
-        // Refresh details in parent
         emit('success');
-        isOpen.value = false;
+        modelOpen.value = false;
     } catch (error) {
         const toast = useToast();
         toast.add({ title: 'Error', description: `Failed to assign ${props.item?.name} to ${selectedEmployee.value?.label}. Please try again.`, color: 'error' });
@@ -70,18 +68,21 @@ const handleAssignSubmit = async () => {
 </script>
 
 <template>
-    <UModal v-model="isOpen">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-6">
+    <UModal v-model:open="modelOpen" :overlay="true"
+        :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm', content: 'w-[90vw] sm:w-full sm:max-w-md' }">
+        <template #header>
+            <div class="flex items-center justify-between w-full">
                 <div>
-                    <h3 class="text-lg font-black text-slate-800">Assign Device</h3>
+                    <h3 class="text-lg font-semibold text-slate-800">Assign Device</h3>
                     <p class="text-xs text-slate-500 font-medium">
                         Assign <span class="font-bold text-slate-700">{{ item?.name }}</span> to an employee.
                     </p>
                 </div>
-                <UButton color="gray" variant="ghost" icon="i-lucide-x" class="-mr-2" @click="isOpen = false" />
+                <UButton icon="i-heroicons-x-mark" variant="ghost" class="rounded-full cursor-pointer" @click="close" />
             </div>
+        </template>
 
+        <template #body>
             <div class="space-y-4">
                 <UFormField label="Select Employee">
                     <USelectMenu v-model="selectedEmployee" :options="employeeStore.employeeOptions" searchable
@@ -107,11 +108,11 @@ const handleAssignSubmit = async () => {
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3 mt-8">
-                <UButton label="Cancel" color="gray" variant="ghost" @click="isOpen = false" />
-                <UButton label="Confirm Assignment" color="indigo" variant="solid" :loading="assigning"
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                <UButton label="Cancel" color="neutral" variant="ghost" @click="close" />
+                <UButton label="Confirm Assignment" color="primary" :loading="assigning"
                     :disabled="!selectedEmployee" @click="handleAssignSubmit" />
             </div>
-        </div>
+        </template>
     </UModal>
 </template>

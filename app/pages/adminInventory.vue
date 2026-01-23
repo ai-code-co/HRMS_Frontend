@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { ArrowLeft, ChevronRight } from 'lucide-vue-next';
+import { ChevronRight } from 'lucide-vue-next';
 import { useInventoryStore } from '../stores/inventory';
 import type { InventoryItem } from '../types/inventory';
 
@@ -18,81 +17,104 @@ const {
     inventoryItems,
     selectedDetailItem,
     totalDevices,
-    loadingDashboard,
-    loadingDevices,
-    loadingDetail
+    loadingDashboard
 } = storeToRefs(store);
 
 const route = useRoute();
 const router = useRouter();
 
-const view = ref<'dashboard' | 'list'>('dashboard');
-const selectedCategoryId = ref<string | null>(null);
+// Derive view state from URL - this ensures URL is the source of truth
+const view = computed(() => route.query.category ? 'list' : 'dashboard');
+const selectedCategoryId = computed(() => route.query.category as string | null);
 const selectedItemId = ref<string | undefined>(undefined);
 const isAddModalOpen = ref(false);
-
-const isMobileDetailOpen = ref(false);
+const hasInitialized = ref(false);
 
 const comments = ref([
     { id: '1', author: 'John Raven', text: 'All Good', date: '4th Aug 25', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sushmita' }
 ]);
 
-const { data: dashboardSummaryData } = await useAsyncData('dashboard-summary', async () => {
-    const data = await store.fetchDashboardSummary()
+// Fetch dashboard data and restore URL state if present (SSR-friendly)
+const { data: initialData } = await useAsyncData('admin-inventory-init', async () => {
+    const dashboardData = await store.fetchDashboardSummary();
 
-    const urlCategory = route.query.category as string | undefined
-    const urlDevice = route.query.device as string | undefined
+    const urlCategory = route.query.category as string | undefined;
+    const urlDevice = route.query.device as string | undefined;
+
+    let devicesData = null;
+    let deviceDetail = null;
+
     if (urlCategory) {
-        await restoreStateFromUrl(urlCategory, urlDevice)
-    }
-    return data
-})
+        devicesData = await store.fetchDevicesByType(urlCategory, false);
 
-if (import.meta.client && dashboardSummaryData.value) {
-    store.setDashboardData(dashboardSummaryData.value)
-}
-const restoreStateFromUrl = async (categoryId: string, deviceId?: string) => {
-    view.value = 'list';
-    selectedCategoryId.value = categoryId;
-
-    await store.fetchDevicesByType(categoryId);
-
-    if (deviceId) {
-        selectedItemId.value = deviceId;
-        isMobileDetailOpen.value = true;
-        await store.fetchDeviceDetail(deviceId);
-    } else {
-        isMobileDetailOpen.value = false;
-        if (inventoryItems.value.length > 0) {
-            const firstItem = inventoryItems.value[0];
-            selectedItemId.value = firstItem.id;
-            await store.fetchDeviceDetail(firstItem.id);
+        if (urlDevice) {
+            deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
+        } else if (devicesData && devicesData.length > 0) {
+            deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
         }
+    }
+
+    return {
+        dashboard: dashboardData,
+        devices: devicesData,
+        detail: deviceDetail,
+        selectedDevice: urlDevice || (devicesData?.[0]?.id?.toString())
+    };
+});
+
+// Set initial data from SSR
+if (import.meta.client) {
+    if (initialData.value) {
+        if (initialData.value.dashboard) {
+            store.setDashboardData(initialData.value.dashboard);
+        }
+        if (initialData.value.devices) {
+            store.setDevicesData(initialData.value.devices);
+        }
+        if (initialData.value.detail) {
+            store.setDeviceDetail(initialData.value.detail);
+        }
+        if (initialData.value.selectedDevice) {
+            selectedItemId.value = initialData.value.selectedDevice;
+        }
+    }
+    hasInitialized.value = true;
+}
+
+// Handle URL changes without showing loading states (smooth navigation)
+const navigateToCategory = async (categoryId: string, deviceId?: string) => {
+    // Fetch devices silently (no loading state)
+    const devices = await store.fetchDevicesByType(categoryId, false);
+
+    // Select device
+    const targetDeviceId = deviceId || devices?.[0]?.id?.toString();
+    if (targetDeviceId) {
+        selectedItemId.value = targetDeviceId;
+        await store.fetchDeviceDetail(targetDeviceId, false);
     }
 };
 
+// Watch for URL changes and navigate smoothly
 watch(() => route.query, async (newQuery, oldQuery) => {
+    if (!hasInitialized.value) return;
+
+    // Skip if this is the initial watch trigger (oldQuery is undefined)
+    // and we already have data from SSR
+    if (!oldQuery && inventoryItems.value.length > 0) return;
+
     if (!newQuery.category) {
-        view.value = 'dashboard';
-        selectedCategoryId.value = null;
         selectedItemId.value = undefined;
-        isMobileDetailOpen.value = false;
         return;
     }
 
     if (newQuery.category !== oldQuery?.category) {
-        await restoreStateFromUrl(newQuery.category as string, newQuery.device as string);
+        await navigateToCategory(newQuery.category as string, newQuery.device as string);
         return;
     }
 
-    if (newQuery.device !== oldQuery?.device) {
-        if (newQuery.device) {
-            selectedItemId.value = newQuery.device as string;
-            isMobileDetailOpen.value = true;
-            await store.fetchDeviceDetail(newQuery.device as string);
-        } else {
-            isMobileDetailOpen.value = false;
-        }
+    if (newQuery.device !== oldQuery?.device && newQuery.device) {
+        selectedItemId.value = newQuery.device as string;
+        await store.fetchDeviceDetail(newQuery.device as string, false);
     }
 });
 
@@ -105,13 +127,7 @@ const handleSelectItem = (item: InventoryItem) => {
 };
 
 const handleBack = () => {
-    if (isMobileDetailOpen.value) {
-        const newQuery = { ...route.query };
-        delete newQuery.device;
-        router.push({ query: newQuery });
-    } else {
-        router.push({ query: {} });
-    }
+    router.push({ query: {} });
 };
 </script>
 
@@ -122,35 +138,26 @@ const handleBack = () => {
             <div v-if="view === 'list'" class="h-16 px-4 md:px-6 flex items-center shrink-0 z-10">
                 <button @click="handleBack"
                     class="px-3 py-2 bg-slate-100 hover:bg-slate-200 w-fit rounded-xl text-[11px] font-bold text-slate-500 transition-all flex items-center gap-1">
-
-                    <ArrowLeft v-if="isMobileDetailOpen" :size="14" />
-                    <ChevronRight v-else :size="14" class="rotate-180" />
-
-                    <span>{{ isMobileDetailOpen ? 'Back to List' : 'Back to Dashboard' }}</span>
+                    <ChevronRight :size="14" class="rotate-180" />
+                    <span>Back to Dashboard</span>
                 </button>
             </div>
 
-            <main class="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full">
+            <main class="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full h-screen">
                 <DashboardView v-if="view === 'dashboard'" :categories="categories" :total-devices="totalDevices"
                     :loading="loadingDashboard" @select-category="handleSelectCategory"
                     @open-add-modal="isAddModalOpen = true" />
 
                 <div v-else class="flex h-full animate-fadeIn gap-6">
-                    <div :class="[
-                        'transition-all duration-300 ease-in-out h-full',
-                        isMobileDetailOpen ? 'hidden lg:block lg:w-80' : 'w-full lg:w-80'
-                    ]">
-                        <SidebarList :items="inventoryItems" :selected-id="selectedItemId" :loading="loadingDevices"
+                    <div class="w-80 h-full shrink-0 overflow-auto custom-scrollbar">
+                        <SidebarList :items="inventoryItems" :selected-id="selectedItemId" :loading="false"
                             @select="handleSelectItem" />
                     </div>
 
-                    <div :class="[
-                        'flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6',
-                        !isMobileDetailOpen ? 'hidden lg:block' : 'block'
-                    ]">
+                    <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
                         <section class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
                             <div class="flex flex-col xl:flex-row gap-10">
-                                <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" />
+                                <ItemDetails :item="selectedDetailItem" :loading="false" />
                                 <CommentSection :comments="comments" class="w-full xl:w-72 shrink-0" />
                             </div>
                         </section>

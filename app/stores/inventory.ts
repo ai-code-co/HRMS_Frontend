@@ -115,16 +115,19 @@ export const useInventoryStore = defineStore('inventory', {
             this.dashboardData = data;
         },
 
-        async fetchDevicesByType(typeId: string | number) {
-            this.loadingDevices = true;
-            this.rawDevices = [];
-            this.currentDeviceDetail = null;
+        async fetchDevicesByType(typeId: string | number, showLoading = true) {
+            if (showLoading) {
+                this.loadingDevices = true;
+                this.rawDevices = [];
+                this.currentDeviceDetail = null;
+            }
             const toast = useToast();
             try {
                 const response = await useApi<DeviceListApiResponse>(`/api/inventory/device-types/${typeId}/devices/`, { credentials: 'include' });
                 if (response.error === 0 && Array.isArray(response.data)) {
                     this.rawDevices = response.data;
                 }
+                return response.data || [];
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch devices');
                 toast.add({
@@ -132,17 +135,23 @@ export const useInventoryStore = defineStore('inventory', {
                     description: this.error,
                     color: 'error'
                 });
+                return [];
             } finally {
-                this.loadingDevices = false;
+                if (showLoading) {
+                    this.loadingDevices = false;
+                }
             }
         },
 
-        async fetchDeviceDetail(deviceId: string | number) {
-            this.loadingDetail = true;
+        async fetchDeviceDetail(deviceId: string | number, showLoading = true) {
+            if (showLoading) {
+                this.loadingDetail = true;
+            }
             const toast = useToast();
             try {
                 const response = await useApi<DeviceDetailApiObject>(`/api/inventory/devices/${deviceId}/`, { credentials: 'include' });
                 this.currentDeviceDetail = response;
+                return response;
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch device details');
                 this.currentDeviceDetail = null;
@@ -151,9 +160,20 @@ export const useInventoryStore = defineStore('inventory', {
                     description: this.error,
                     color: 'error'
                 });
+                return null;
             } finally {
-                this.loadingDetail = false;
+                if (showLoading) {
+                    this.loadingDetail = false;
+                }
             }
+        },
+
+        setDevicesData(devices: DeviceApiObject[]) {
+            this.rawDevices = devices;
+        },
+
+        setDeviceDetail(detail: DeviceDetailApiObject | null) {
+            this.currentDeviceDetail = detail;
         },
 
         async updateDevice(id: string | number, payload: Partial<any>) {
@@ -225,6 +245,59 @@ export const useInventoryStore = defineStore('inventory', {
                 await this.fetchDashboardSummary();
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to delete device');
+                throw err;
+            }
+        },
+
+        async createDevice(payload: {
+            device_type: number;
+            serial_number: string;
+            model_name: string;
+            brand: string;
+            status: string;
+            condition: string;
+            employee?: number | null;
+            purchase_date?: string;
+            purchase_price?: string;
+            warranty_expiry?: string;
+            notes?: string;
+            is_active: boolean;
+        }) {
+            this.error = null;
+            const toast = useToast();
+            try {
+                const apiPayload = {
+                    device_type: payload.device_type,
+                    serial_number: payload.serial_number,
+                    model_name: payload.model_name,
+                    brand: payload.brand,
+                    status: payload.status,
+                    condition: payload.condition,
+                    employee: payload.employee || null,
+                    purchase_date: payload.purchase_date || null,
+                    purchase_price: payload.purchase_price || null,
+                    warranty_expiry: payload.warranty_expiry || null,
+                    notes: payload.notes || '',
+                    is_active: payload.is_active,
+                };
+
+                const newDevice = await useApi<DeviceDetailApiObject>('/api/inventory/devices/', {
+                    method: 'POST',
+                    body: apiPayload,
+                    credentials: 'include'
+                });
+
+                // Refresh dashboard summary to update counts
+                await this.fetchDashboardSummary();
+
+                return newDevice;
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to create device');
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
                 throw err;
             }
         },
