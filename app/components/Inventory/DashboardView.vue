@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Download } from 'lucide-vue-next';
+import { ref } from 'vue';
 import {
   Laptop, Smartphone, MousePointer2, Zap, Monitor,
   Keyboard, AirVent, Lightbulb, Camera, CircleDashed,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-vue-next';
 import type { DeviceCategory } from '~/types/inventory';
 import StatusChart from './StatusChart.vue';
+import AddDeviceModal from './AddDeviceModal.vue';
 
 const props = defineProps<{
   categories: DeviceCategory[];
@@ -26,6 +27,8 @@ const icons: Record<string, any> = {
   Keyboard, AirVent, Lightbulb, Camera, Wifi, Headphones,
   CircleDashed // Fallback
 };
+
+const isAddDeviceModalOpen = ref(false);
 </script>
 
 <template>
@@ -40,15 +43,11 @@ const icons: Record<string, any> = {
           Total Devices: <span class="text-indigo-600">{{ totalDevices }}</span>
         </p>
       </div>
-      <!-- <div class="flex items-center gap-3">
-         <button class="px-5 py-3 bg-white border border-slate-100 rounded-2xl text-[13px] font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2">
-            <Download :size="16" />
-            Download Report
-         </button>
-         <button @click="emit('open-add-modal')" class="px-5 py-3 bg-[#4FC3A1] text-white rounded-xl text-[13px] font-bold hover:bg-[#3da688] transition-all shadow-lg shadow-emerald-100 flex items-center gap-2">
-            Add Device Type
-         </button>
-      </div> -->
+      <div class="flex items-center gap-3">
+        <UButton icon="i-lucide-plus" size="lg"
+          class="hidden sm:flex rounded-lg cursor-pointer" @click="isAddDeviceModalOpen = true"
+          title="Add Device" />
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -95,5 +94,8 @@ const icons: Record<string, any> = {
           :total="cat.working" />
       </div>
     </div>
+
+    <!-- Add Device Modal -->
+    <AddDeviceModal :open="isAddDeviceModalOpen" @update:open="isAddDeviceModalOpen = $event" @close="isAddDeviceModalOpen = false" />
   </div>
 </template>
