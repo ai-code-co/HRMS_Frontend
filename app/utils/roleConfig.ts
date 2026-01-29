@@ -28,7 +28,7 @@ export const canAccessNavItem = (item: NavigationItem, roleDetail: RoleDetail | 
 
   if (!item.requiredRole) return true
   if (isSuperUser.value && selectedEmployeeId.value) {
-    if (item.label === 'Holidays' || item.label === 'Inventory') return false
+    if (item.label === 'Holidays' || item.label === 'Inventory' || item.label === 'Interview') return false
   }
   return item.requiredRole.includes(roleDetail.role)
 }

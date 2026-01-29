@@ -1,8 +1,10 @@
 export type JobStatus = 'open' | 'closed'
 export type CandidateStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVIEWING'
-export type EvaluationRecommendation = 'STRONG_MATCH' | 'GOOD_MATCH' | 'PARTIAL_MATCH' | 'NO_MATCH'
+export type EvaluationRecommendation = 'STRONG_MATCH' | 'POTENTIAL_MATCH' | 'WEAK_MATCH'
 export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'PENDING' | 'USED'
 export type InviteApiStatus = 'PENDING' | 'USED'
+
+export type JobType = 'Remote' | 'Hybrid' | 'Onsite'
 
 export interface Job {
     id: string
@@ -10,12 +12,20 @@ export interface Job {
     description: string
     status: JobStatus
     created_at: string
+    openings?: number
+    applicants?: number
+    job_type?: JobType
+    experience?: string
 }
 
 export interface JobPayload {
     title: string
     description: string
     status: JobStatus
+    openings?: number
+    applicants?: number
+    job_type?: JobType
+    experience?: string
 }
 
 // Candidate from list endpoint

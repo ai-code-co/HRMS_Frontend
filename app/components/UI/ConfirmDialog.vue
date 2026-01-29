@@ -50,7 +50,7 @@ const handleConfirm = () => {
     }">
         <template #header>
             <div class="flex items-center gap-3 w-full">
-                <div :class="[iconBg, 'p-2 rounded-lg']">
+                <div :class="[iconBg, 'p-2 rounded-lg flex items-center']">
                     <UIcon :name="icon" :class="[iconColor, 'w-5 h-5']" />
                 </div>
                 <h3 class="text-lg font-bold text-slate-800">{{ title }}</h3>

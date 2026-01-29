@@ -17,12 +17,35 @@
                     </UFormField>
 
                     <UFormField label="Description" name="description">
-                        <UTextarea v-model="state.description" :rows="6" size="xl" placeholder="Enter job description"
+                        <UTextarea v-model="state.description" :rows="4" size="xl" placeholder="Enter job description"
                             class="w-full" color="secondary" variant="outline" />
                     </UFormField>
 
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <UFormField label="Openings" name="openings">
+                            <UInput v-model.number="state.openings" type="number" min="1" size="xl"
+                                placeholder="e.g. 3" color="secondary" variant="outline" />
+                        </UFormField>
+                        <UFormField label="Applicants" name="applicants">
+                            <UInput v-model.number="state.applicants" type="number" min="0" size="xl"
+                                placeholder="e.g. 12" color="secondary" variant="outline" />
+                        </UFormField>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <UFormField label="Job type" name="job_type">
+                            <USelectMenu v-model="state.job_type" :items="jobTypeOptions" size="xl"
+                                value-key="value" placeholder="Select job type" color="secondary" variant="outline"
+                                class="w-full" />
+                        </UFormField>
+                        <UFormField label="Experience" name="experience">
+                            <UInput v-model="state.experience" size="xl" placeholder="e.g. 2-5 years"
+                                color="secondary" variant="outline" />
+                        </UFormField>
+                    </div>
+
                     <UFormField label="Status" name="status">
-                        <USelectMenu v-model="state.status" :items="statusOptions" size="xl"
+                        <USelectMenu v-model="state.status" :items="statusOptions" size="xl" value-key="value"
                             placeholder="Select status" color="secondary" variant="outline" class="w-full" />
                     </UFormField>
                 </div>
@@ -40,9 +63,9 @@ import { ref, computed, watch } from 'vue'
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { useInterviewStore } from '~/stores/interview'
-import type { Job, JobStatus } from '~/types/interview'
+import type { Job, JobStatus, JobType } from '~/types/interview'
 
-const props = defineProps<{ 
+const props = defineProps<{
     open: boolean
     job: Job | null
 }>()
@@ -54,7 +77,11 @@ const toast = useToast()
 const jobSchema = z.object({
     title: z.string().min(1, 'Job title is required'),
     description: z.string().min(1, 'Job description is required'),
-    status: z.enum(['open', 'closed'], { required_error: 'Status is required' })
+    status: z.enum(['open', 'closed'], { required_error: 'Status is required' }),
+    openings: z.number().int().min(1).default(3),
+    applicants: z.number().int().min(0).default(0),
+    job_type: z.enum(['Remote', 'Hybrid', 'Onsite']).default('Remote'),
+    experience: z.string().min(1, 'Experience is required').default('2-5 years')
 })
 
 type JobFormSchema = z.output<typeof jobSchema>
@@ -62,12 +89,22 @@ type JobFormSchema = z.output<typeof jobSchema>
 const state = ref<JobFormSchema>({
     title: '',
     description: '',
-    status: 'open'
+    status: 'open',
+    openings: 3,
+    applicants: 0,
+    job_type: 'Remote',
+    experience: '2-5 years'
 })
 
 const statusOptions = [
     { label: 'Open', value: 'open' },
     { label: 'Closed', value: 'closed' }
+]
+
+const jobTypeOptions = [
+    { label: 'Remote', value: 'Remote' },
+    { label: 'Hybrid', value: 'Hybrid' },
+    { label: 'Onsite', value: 'Onsite' }
 ]
 
 const modelOpen = computed({
@@ -80,18 +117,25 @@ watch(() => props.job, (job) => {
         state.value = {
             title: job.title,
             description: job.description,
-            status: job.status
+            status: job.status,
+            openings: job.openings ?? 3,
+            applicants: job.applicants ?? 0,
+            job_type: (job.job_type ?? 'Remote') as JobType,
+            experience: job.experience ?? '2-5 years'
         }
     }
 }, { immediate: true })
 
 watch(() => props.open, (isOpen) => {
     if (!isOpen && props.job) {
-        // Reset form when modal closes
         state.value = {
             title: props.job.title,
             description: props.job.description,
-            status: props.job.status
+            status: props.job.status,
+            openings: props.job.openings ?? 3,
+            applicants: props.job.applicants ?? 0,
+            job_type: (props.job.job_type ?? 'Remote') as JobType,
+            experience: props.job.experience ?? '2-5 years'
         }
     }
 })
@@ -103,9 +147,17 @@ const close = () => {
 
 async function onSubmit(event: FormSubmitEvent<JobFormSchema>) {
     if (!props.job) return
-    
+
     try {
-        await interviewStore.updateJob(props.job.id, event.data)
+        await interviewStore.updateJob(props.job.id, {
+            title: event.data.title,
+            description: event.data.description,
+            status: event.data.status,
+            openings: event.data.openings,
+            applicants: event.data.applicants,
+            job_type: event.data.job_type,
+            experience: event.data.experience
+        })
         modelOpen.value = false
     } catch (err: any) {
         // Error is already handled in the store
