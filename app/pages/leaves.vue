@@ -77,13 +77,13 @@
                             </div>
 
                             <!-- Desktop/Tablet: Full Status Badge -->
-                            <div v-if="true" :class="{
+                            <UBadge v-if="true" :class="{
                                 'bg-emerald-50 text-emerald-600': r.status === 'approved',
                                 'bg-amber-50 text-amber-600': r.status === 'pending',
                                 'bg-rose-50 text-rose-600': r.status === 'rejected' || r.status === 'cancelled',
                             }" class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase hidden sm:block">
                                 {{ r.status }}
-                            </div>
+                            </UBadge>
 
                             <!-- Mobile: Status Dot -->
                             <div v-if="true" class="flex sm:hidden items-center gap-2">
