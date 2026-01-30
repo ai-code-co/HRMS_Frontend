@@ -13,7 +13,7 @@ export interface SalaryRecord {
     netPaid: number
     gross: number
     deductions: number
-    status: 'Paid' | 'Processing' | 'Failed'
+    status: 'Paid' | 'Processing' | 'Failed' | 'On Hold'
     paymentDate: string
     payslipId: string
     bankName: string
@@ -22,16 +22,85 @@ export interface SalaryRecord {
     deductions_list: BreakdownItem[]
 }
 
+export interface SalaryStructure {
+    basic: number
+    hra: number
+    conveyance: number
+    special: number
+    pf: number
+    tax: number
+    professionalTax: number
+    insurance: number
+}
+
+export interface EmployeeDisbursement {
+    id: string
+    name: string
+    avatar: string
+    designation: string
+    netPaid: number
+    status: 'Paid' | 'Processing' | 'Failed' | 'On Hold'
+    paymentDate: string
+}
+
+export interface OrgPayrollStats {
+    monthlyPayroll: number
+    monthlyPayrollTrend: number
+    totalDeductions: number
+    deductionsTrend: number
+    paidEmployees: number
+    paidEmployeesTrend: number
+    totalEmployees: number
+    processingCount: number
+    processingTrend: number
+}
+
+export interface CostDistribution {
+    coreSalaries: number
+    bonuses: number
+    misc: number
+    budgetUsed: number
+}
+
+export interface ComplianceStatus {
+    verifiedPercent: number
+    pendingVerification: number
+}
+
 export const useSalaryStore = defineStore('salary', {
     state: () => ({
         records: [] as SalaryRecord[],
         selectedRecordId: '',
         annualCtc: 0,
-        isLoading: false
+        isLoading: false,
+        // Admin/Org state
+        orgStats: null as OrgPayrollStats | null,
+        costDistribution: null as CostDistribution | null,
+        complianceStatus: null as ComplianceStatus | null,
+        recentDisbursements: [] as EmployeeDisbursement[],
+        salaryStructure: {
+            basic: 8500,
+            hra: 3200,
+            conveyance: 1200,
+            special: 1300,
+            pf: 450,
+            tax: 1000,
+            professionalTax: 200,
+            insurance: 100
+        } as SalaryStructure
     }),
     getters: {
         selectedRecord: (state): SalaryRecord | null =>
-            state.records.find(r => r.id === state.selectedRecordId) || state.records[0] || null
+            state.records.find(r => r.id === state.selectedRecordId) || state.records[0] || null,
+        grossEarnings: (state): number =>
+            state.salaryStructure.basic + state.salaryStructure.hra +
+            state.salaryStructure.conveyance + state.salaryStructure.special,
+        totalDeductions: (state): number =>
+            state.salaryStructure.pf + state.salaryStructure.tax +
+            state.salaryStructure.professionalTax + state.salaryStructure.insurance,
+        netSalary(): number {
+            return this.grossEarnings - this.totalDeductions
+        }
     },
     actions: {
         async fetchSalaryData(showGlobalLoader = false, userId?: number | null) {
@@ -129,6 +198,101 @@ export const useSalaryStore = defineStore('salary', {
                     accNumber: data.bank_details?.masked_account_number || 'N/A',
                     earnings: data.earnings_breakdown,
                     deductions_list: data.deductions_breakdown
+                };
+            }
+        },
+
+        async fetchOrgPayrollData(showGlobalLoader = false) {
+            this.isLoading = true;
+            const { showLoader, hideLoader } = useGlobalLoader()
+
+            if (showGlobalLoader && import.meta.client) {
+                showLoader()
+            }
+
+            try {
+                // Mock data for organization payroll stats
+                // Replace with actual API call when available
+                this.orgStats = {
+                    monthlyPayroll: 1420000,
+                    monthlyPayrollTrend: 2.4,
+                    totalDeductions: 218000,
+                    deductionsTrend: 0.8,
+                    paidEmployees: 1142,
+                    paidEmployeesTrend: 12,
+                    totalEmployees: 1248,
+                    processingCount: 106,
+                    processingTrend: -4
+                };
+
+                this.costDistribution = {
+                    coreSalaries: 72,
+                    bonuses: 18,
+                    misc: 10,
+                    budgetUsed: 1400000
+                };
+
+                this.complianceStatus = {
+                    verifiedPercent: 98.4,
+                    pendingVerification: 42
+                };
+
+                return {
+                    orgStats: this.orgStats,
+                    costDistribution: this.costDistribution,
+                    complianceStatus: this.complianceStatus
+                };
+            } catch (error: any) {
+                const toast = useToast()
+                toast.add({
+                    title: 'Error',
+                    description: extractErrorMessage(error, 'Failed to fetch organization payroll data'),
+                    color: 'error'
+                })
+                return null;
+            } finally {
+                this.isLoading = false;
+                if (showGlobalLoader && import.meta.client) {
+                    hideLoader()
+                }
+            }
+        },
+
+        setOrgPayrollData(data: any) {
+            if (data?.orgStats) this.orgStats = data.orgStats;
+            if (data?.costDistribution) this.costDistribution = data.costDistribution;
+            if (data?.complianceStatus) this.complianceStatus = data.complianceStatus;
+        },
+
+        updateSalaryStructure(structure: SalaryStructure) {
+            this.salaryStructure = { ...structure };
+        },
+
+        setSalaryStructureForEmployee(employeeId: number | null) {
+            // Set different structures based on employee
+            // This can be replaced with API call to get actual structure
+            if (employeeId) {
+                // Mock different structure for specific employees
+                this.salaryStructure = {
+                    basic: 10500,
+                    hra: 4200,
+                    conveyance: 1500,
+                    special: 1700,
+                    pf: 550,
+                    tax: 1200,
+                    professionalTax: 250,
+                    insurance: 150
+                };
+            } else {
+                this.salaryStructure = {
+                    basic: 8500,
+                    hra: 3200,
+                    conveyance: 1200,
+                    special: 1300,
+                    pf: 450,
+                    tax: 1000,
+                    professionalTax: 200,
+                    insurance: 100
                 };
             }
         }
