@@ -23,9 +23,17 @@
 
                         <div v-for="(email, index) in emailFields" :key="index" class="flex items-center gap-2">
                             <UFormField :name="`email_${index}`" class="w-full">
-                                <UInput v-model="emailFields[index]" type="email" size="xl"
-                                    placeholder="Enter candidate email" color="secondary" variant="outline"
-                                    :class="{ 'border-red-300': emailErrors[index] }" class="w-full"/>
+                                <UInput
+                                    :model-value="emailFields[index]"
+                                    type="email"
+                                    size="xl"
+                                    placeholder="Enter candidate email"
+                                    color="secondary"
+                                    variant="outline"
+                                    :class="{ 'border-red-300': emailErrors[index] }"
+                                    class="w-full"
+                                    @update:model-value="updateEmailField(index, $event)"
+                                />
                             </UFormField>
                             <UButton v-if="emailFields.length > 1" icon="i-lucide-x" size="sm" color="error" variant="ghost"
                                 @click="removeEmailField(index)" class="cursor-pointer shrink-0" />
@@ -38,7 +46,7 @@
                             description="Upload a CSV file containing email addresses. Emails will be extracted and added to the list.">
                             <div v-if="!csvFile" class="relative">
                                 <UInput type="file" icon="i-heroicons-paper-clip" accept=".csv" @change="handleCsvUpload"
-                                    size="xl" color="secondary" variant="outline" />
+                                    size="xl" color="secondary" variant="outline" class="cursor-pointer" />
                             </div>
                             <div v-else class="space-y-2">
                                 <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
@@ -138,9 +146,9 @@ const modelOpen = computed({
     set: (value: boolean) => emit('update:open', value)
 })
 
-// Computed total emails count
+// Computed total emails count (depends on emailFields so it updates when fields change)
 const totalEmailsCount = computed(() => {
-    const validManualEmails = emailFields.value.filter(email => email.trim() && emailRegex.test(email.trim()))
+    const validManualEmails = emailFields.value.filter(email => typeof email === 'string' && email.trim() && emailRegex.test(email.trim()))
     return validManualEmails.length + selectedCsvEmails.value.length
 })
 
@@ -153,13 +161,21 @@ const getAllValidEmails = (): string[] => {
 }
 
 const addEmailField = () => {
-    emailFields.value.push('')
+    emailFields.value = [...emailFields.value, '']
+}
+
+const updateEmailField = (index: number, value: string) => {
+    const next = [...emailFields.value]
+    next[index] = value
+    emailFields.value = next
 }
 
 const removeEmailField = (index: number) => {
     if (emailFields.value.length > 1) {
-        emailFields.value.splice(index, 1)
-        delete emailErrors.value[index]
+        emailFields.value = emailFields.value.filter((_, i) => i !== index)
+        const nextErrors = { ...emailErrors.value }
+        delete nextErrors[index]
+        emailErrors.value = nextErrors
     }
 }
 

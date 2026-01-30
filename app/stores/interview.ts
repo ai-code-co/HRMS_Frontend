@@ -239,6 +239,46 @@ export const useInterviewStore = defineStore('interview', {
             this.selectedCandidate = null
         },
 
+
+        async updateCandidateStatus(
+            candidateId: string,
+            payload: { status: 'APPROVED' | 'REJECTED' | 'PENDING'; customMessage?: string }
+        ) {
+            this.error = null
+            const toast = useToast()
+
+            const body: { status: string; customMessage?: string } = {
+                status: payload.status
+            }
+            if (payload.customMessage?.trim()) {
+                body.customMessage = payload.customMessage.trim()
+            }
+
+            try {
+                await useInterviewApi(`/api/candidates/${candidateId}/status`, {
+                    method: 'PUT',
+                    body
+                })
+                if (this.selectedCandidate?.id === candidateId) {
+                    await this.fetchCandidateById(candidateId)
+                }
+                const statusLabel = payload.status.charAt(0) + payload.status.slice(1).toLowerCase()
+                toast.add({
+                    title: 'Success',
+                    description: `Candidate status updated to ${statusLabel}. Relevant email will be sent.`,
+                    color: 'success'
+                })
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to update candidate status')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            }
+        },
+
         // ============ INVITES ============
 
         async fetchInvites(showGlobalLoader = false) {
@@ -275,22 +315,30 @@ export const useInterviewStore = defineStore('interview', {
             this.loading = true
             this.error = null
             const toast = useToast()
+            const emails = payload.emails.filter(Boolean).map(e => e.trim())
+
+            if (emails.length === 0) {
+                this.loading = false
+                return []
+            }
 
             try {
-                // Send invites for each email
-                const responses: InviteApi[] = []
-                for (const email of payload.emails) {
+                let responses: InviteApi[] = []
+
+                if (emails.length === 1) {
                     const response = await useInterviewApi<InviteApi>('/api/invites', {
                         method: 'POST',
-                        body: {
-                            email,
-                            issued_by: payload.issued_by
-                        }
+                        body: { email: emails[0] }
                     })
-                    responses.push(response)
+                    responses = [response]
+                } else {
+                    const response = await useInterviewApi<InviteApi[]>('/api/invites/bulk', {
+                        method: 'POST',
+                        body: { emails }
+                    })
+                    responses = Array.isArray(response) ? response : [response]
                 }
 
-                // Add all new invites to the list
                 this.invites.unshift(...responses)
 
                 toast.add({

@@ -42,13 +42,12 @@
                         </UButton>
                     </div>
 
-                    <UButton :icon="currentTabAction.icon" size="lg"
+                    <UButton v-if="activeTab !== 'candidates'" :icon="currentTabAction.icon" size="lg"
                         class="hidden sm:flex rounded-lg cursor-pointer" @click="handleAddAction">
                         {{ currentTabAction.label }}
                     </UButton>
-                    <UButton :icon="currentTabAction.icon" size="xl"
-                        class="sm:hidden fixed bottom-6 right-6 rounded-full shadow-lg z-50"
-                        @click="handleAddAction" />
+                    <UButton v-if="activeTab !== 'candidates'" :icon="currentTabAction.icon" size="xl"
+                        class="sm:hidden fixed bottom-6 right-6 rounded-full shadow-lg z-50" @click="handleAddAction" />
                 </div>
 
                 <!-- Loading State -->
@@ -64,7 +63,7 @@
                         <p class="text-sm font-medium">No jobs found</p>
                     </div>
 
-                    <div v-else v-for="job in jobs" :key="job.id"
+                    <div v-else v-for="job in jobs" :key="job.id" @click="handleViewJob(job.id)"
                         class="bg-white border border-slate-200 p-5 rounded-[1.5rem] flex justify-between items-center cursor-pointer transition-all hover:border-indigo-300 hover:shadow-md">
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-1">
@@ -82,8 +81,6 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <UButton icon="i-lucide-edit" color="primary" variant="ghost" size="xs"
-                                @click.stop="handleEditJob(job)" />
                             <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
                                 @click.stop="handleDeleteJob(job.id)" />
                         </div>
@@ -113,7 +110,6 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="text-xs text-slate-400">{{ formatDate(candidate.created_at) }}</span>
-                            <UButton icon="i-lucide-eye" color="primary" variant="ghost" size="xs" />
                         </div>
                     </div>
                 </div>
@@ -161,29 +157,42 @@
 
         <!-- Modals -->
         <AddJobModal v-model:open="isAddJobModalOpen" @close="isAddJobModalOpen = false" />
-        <EditJobModal v-model:open="isEditJobModalOpen" :job="selectedJob" @close="handleCloseEditModal" />
         <SendInviteModal v-model:open="isSendInviteModalOpen" @close="isSendInviteModalOpen = false" />
+        <ConfirmDialog v-model:open="deleteConfirmOpen" title="Delete Job"
+            message="Are you sure you want to delete this job? This action cannot be undone." confirm-label="Delete"
+            cancel-label="Cancel" confirm-color="error" :loading="deletingJob" @confirm="handleConfirmDeleteJob"
+            @cancel="handleCancelDeleteJob" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useInterviewStore } from '~/stores/interview'
-import type { InviteStatus, Job } from '~/types/interview'
+import type { InviteStatus } from '~/types/interview'
 import AddJobModal from '~/components/Interview/Modal/AddJobModal.vue'
-import EditJobModal from '~/components/Interview/Modal/EditJobModal.vue'
 import SendInviteModal from '~/components/Interview/Modal/SendInviteModal.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
+const route = useRoute()
 const interviewStore = useInterviewStore()
 const router = useRouter()
 const { jobsList: jobs, candidatesList: candidates, invitesList: invites, isLoading: loading } = storeToRefs(interviewStore)
 
+const validTabs = ['jobs', 'candidates', 'invites'] as const
 const activeTab = ref<'jobs' | 'candidates' | 'invites'>('jobs')
+
+// Restore tab from query when navigating back from candidate/job page
+watch(() => route.query.tab, (tab) => {
+    if (tab && validTabs.includes(tab as any)) {
+        activeTab.value = tab as 'jobs' | 'candidates' | 'invites'
+    }
+}, { immediate: true })
 const hasInitialized = ref(false)
 const isAddJobModalOpen = ref(false)
-const isEditJobModalOpen = ref(false)
 const isSendInviteModalOpen = ref(false)
-const selectedJob = ref<Job | null>(null)
+const deleteConfirmOpen = ref(false)
+const jobToDeleteId = ref<string | null>(null)
+const deletingJob = ref(false)
 
 const tabs = [
     { key: 'jobs', label: 'Jobs' },
@@ -264,24 +273,39 @@ const handleAddAction = () => {
     }
 }
 
-const handleEditJob = (job: Job) => {
-    selectedJob.value = job
-    isEditJobModalOpen.value = true
+const handleDeleteJob = (jobId: string) => {
+    jobToDeleteId.value = jobId
+    deleteConfirmOpen.value = true
 }
 
-const handleCloseEditModal = () => {
-    isEditJobModalOpen.value = false
-    selectedJob.value = null
-}
-
-const handleDeleteJob = async (jobId: string) => {
-    if (confirm('Are you sure you want to delete this job?')) {
-        await interviewStore.deleteJob(jobId)
+const handleConfirmDeleteJob = async () => {
+    if (!jobToDeleteId.value) return
+    deletingJob.value = true
+    try {
+        await interviewStore.deleteJob(jobToDeleteId.value)
+        deleteConfirmOpen.value = false
+        jobToDeleteId.value = null
+    } finally {
+        deletingJob.value = false
     }
 }
 
-const handleViewCandidate = async (candidateId: string) => {
-    router.push(`/candidates/${candidateId}`)
+const handleCancelDeleteJob = () => {
+    jobToDeleteId.value = null
+}
+
+const handleViewJob = (jobId: string) => {
+    router.push({ path: `/jobs/${jobId}`, query: { tab: activeTab.value } }).catch((err) => {
+        if (err?.name === 'NavigationDuplicated' || err?.name === 'NavigationAborted') return
+        console.error('Navigation failed:', err)
+    })
+}
+
+const handleViewCandidate = (candidateId: string) => {
+    router.push({ path: `/candidates/${candidateId}`, query: { tab: activeTab.value } }).catch((err) => {
+        if (err?.name === 'NavigationDuplicated' || err?.name === 'NavigationAborted') return
+        console.error('Navigation failed:', err)
+    })
 }
 
 const formatDate = (dateString: string) => {
