@@ -8,8 +8,7 @@
             <SalaryStatCard label="Total Deductions" :value="formatCurrency(store.orgStats?.totalDeductions || 0)"
                 :trend="store.orgStats?.deductionsTrend" sub="Tax & Benefits" icon="i-lucide-arrow-down-right"
                 color="rose" />
-            <SalaryStatCard label="Paid Employees"
-                :value="`${store.orgStats?.paidEmployees?.toLocaleString() || 0}`"
+            <SalaryStatCard label="Paid Employees" :value="`${store.orgStats?.paidEmployees?.toLocaleString() || 0}`"
                 :trend="store.orgStats?.paidEmployeesTrend"
                 :sub="`of ${store.orgStats?.totalEmployees?.toLocaleString() || 0} total`" icon="i-lucide-users"
                 color="emerald" />
@@ -29,7 +28,6 @@
                                     Status of the most recent organization-wide payouts.
                                 </p>
                             </div>
-                            <UButton variant="link" color="primary" size="sm">View All</UButton>
                         </div>
                     </template>
 
@@ -47,7 +45,7 @@
                 <!-- Cost Distribution -->
                 <SalaryCostDistribution :core-salaries="store.costDistribution?.coreSalaries || 72"
                     :bonuses="store.costDistribution?.bonuses || 18" :misc="store.costDistribution?.misc || 10"
-                    :budget-used="store.costDistribution?.budgetUsed || 1400000" class="h-full"/>
+                    :budget-used="store.costDistribution?.budgetUsed || 1400000" class="h-full" />
 
                 <!-- Compliance Status -->
                 <!-- <UCard class="bg-indigo-600 border-0" :ui="{ body: 'p-6' }">
@@ -76,7 +74,7 @@
 import { useSalaryStore } from '@/stores/salary'
 
 const store = useSalaryStore()
-const { selectEmployee, employeeLookupList } = useEmployeeContext()
+const { employeeLookupList } = useEmployeeContext()
 
 // Generate mock employees from lookup list
 const employees = computed(() => {
@@ -94,7 +92,7 @@ const employees = computed(() => {
 })
 
 const handleSelectEmployee = (id: string) => {
-    selectEmployee(parseInt(id))
+    navigateTo(`/employeSalary/${id}`)
 }
 
 const formatCurrency = (value: number) => {

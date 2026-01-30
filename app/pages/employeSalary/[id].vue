@@ -1,13 +1,11 @@
 <template>
     <div class="flex flex-col h-full bg-[#F8FAFC]">
-        <SalaryAdminHeader v-if="isSuperUser" />
-        <SalaryHeader v-else :annualCtc="store.annualCtc" />
+        <!-- Employee Context Header (Admin viewing specific employee) -->
+        <SalaryEmployeeContextHeader v-if="activeEmployee" @edit="isEditModalOpen = true" />
 
         <div class="flex-1 overflow-y-auto custom-scrollbar">
-            <SalaryAdminOrgView v-if="isSuperUser" />
-
-            <!-- Own payroll view (regular user) -->
-            <div v-else class="flex flex-col lg:flex-row p-4 md:p-8 gap-8">
+            <!-- Staff/Employee Payroll View -->
+            <div class="flex flex-col lg:flex-row p-4 md:p-8 gap-8">
                 <aside class="w-full lg:w-88 space-y-4 overflow-y-auto custom-scrollbar shrink-0">
                     <div class="flex items-center gap-2 mb-2 ml-2">
                         <UIcon name="i-lucide-history" class="w-3.5 h-3.5 text-slate-400" />
@@ -122,33 +120,52 @@
                 </main>
             </div>
         </div>
+
+        <!-- Edit Salary Modal -->
+        <SalaryEditSalaryModal v-model:open="isEditModalOpen" :initial-structure="store.salaryStructure"
+            :employee-name="activeEmployee?.full_name || ''" @save="handleSaveStructure" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { useSalaryStore } from '@/stores/salary'
+import { useSalaryStore, type SalaryStructure } from '@/stores/salary'
 
+const route = useRoute()
 const store = useSalaryStore()
-const { isSuperUser } = useRoleAccess()
-const hasInitialized = ref(false)
+const { selectEmployee, activeEmployee, fetchEmployeeLookupList } = useEmployeeContext()
+const isEditModalOpen = ref(false)
 
-const { data: salaryData } = await useAsyncData('salary', () => {
-    const showLoader = hasInitialized.value
-    hasInitialized.value = true
-    return store.fetchSalaryData(showLoader)
+const employeeId = computed(() => {
+    const id = route.params.id
+    if (typeof id !== 'string') return null
+    const num = parseInt(id, 10)
+    return Number.isNaN(num) ? null : num
 })
+
+// Ensure we're viewing this employee and lookup list is available
+await fetchEmployeeLookupList()
+if (employeeId.value) {
+    selectEmployee(employeeId.value)
+}
+
+// Fetch salary data for this employee
+const { data: salaryData } = await useAsyncData(
+    () => `salary-employee-${String(route.params.id)}`,
+    () => store.fetchSalaryData(false, employeeId.value ?? undefined),
+    { watch: [() => route.params.id] }
+)
 
 if (import.meta.client && salaryData.value) {
     store.setSalaryData(salaryData.value)
 }
 
-if (isSuperUser.value) {
-    const { data: orgData } = await useAsyncData('salary-org', () =>
-        store.fetchOrgPayrollData(false)
-    )
-    if (import.meta.client && orgData.value) {
-        store.setOrgPayrollData(orgData.value)
-    }
+// Set salary structure for this employee
+watch(employeeId, (id) => {
+    store.setSalaryStructureForEmployee(id)
+}, { immediate: true })
+
+const handleSaveStructure = (structure: SalaryStructure) => {
+    store.updateSalaryStructure(structure)
 }
 </script>
 

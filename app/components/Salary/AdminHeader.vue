@@ -1,9 +1,9 @@
 <template>
     <header
-        class="px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 bg-white/50 backdrop-blur-sm sticky top-0 z-20">
+        class="px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 bg-white/50 backdrop-blur-sm sticky top-0 z-20 rounded-xl">
         <div>
             <div class="flex items-center gap-3 mb-1">
-                <div class="p-2 bg-indigo-600 rounded-xl text-white shadow-sm">
+                <div class="p-2 bg-indigo-600 rounded-xl text-white shadow-sm flex">
                     <UIcon name="i-lucide-banknote" class="w-5 h-5" />
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Organization Payroll</h2>
