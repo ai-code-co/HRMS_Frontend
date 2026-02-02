@@ -3,10 +3,12 @@ import type {
     InventoryApiResponse,
     DeviceListApiResponse,
     DeviceDetailApiObject,
+    DeviceCommentsApiResponse,
     InventoryItem,
     DeviceCategory,
     InventoryDashboardData,
-    DeviceApiObject
+    DeviceApiObject,
+    Comment
 } from '../types/inventory';
 import { extractErrorMessage } from '~/composables/useErrorMessage';
 
@@ -34,6 +36,9 @@ export const useInventoryStore = defineStore('inventory', {
         loadingDevices: false,
         currentDeviceDetail: null as DeviceDetailApiObject | null,
         loadingDetail: false,
+
+        deviceComments: [] as Comment[],
+        loadingComments: false,
 
         error: null as string | null,
     }),
@@ -174,6 +179,61 @@ export const useInventoryStore = defineStore('inventory', {
 
         setDeviceDetail(detail: DeviceDetailApiObject | null) {
             this.currentDeviceDetail = detail;
+        },
+
+        async unassignDevice(deviceId: string | number): Promise<{ message: string } | null> {
+            const toast = useToast();
+            try {
+                const res = await useApi<{ error: number; data: { message: string } }>(
+                    `/api/inventory/devices/${deviceId}/unassign/`,
+                    { method: 'POST', credentials: 'include' }
+                );
+                if (res?.error === 0 && res?.data?.message) {
+                    toast.add({
+                        title: 'Success',
+                        description: res.data.message,
+                        color: 'success'
+                    });
+                    return res.data;
+                }
+                return null;
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to unassign device');
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
+                return null;
+            }
+        },
+
+        async fetchDeviceComments(deviceId: string | number | undefined): Promise<Comment[]> {
+            if (deviceId === undefined || deviceId === null || deviceId === '') {
+                this.deviceComments = [];
+                return [];
+            }
+            this.loadingComments = true;
+            try {
+                const res = await useApi<DeviceCommentsApiResponse>(
+                    `/api/inventory/devices/${deviceId}/comments/`,
+                    { credentials: 'include' }
+                );
+                const list = res?.data ?? [];
+                this.deviceComments = list.map((c) => ({
+                    id: String(c.id),
+                    author: c.employee_name,
+                    text: c.comment,
+                    date: c.formatted_date,
+                    avatar: c.photo_url || '',
+                }));
+                return this.deviceComments;
+            } catch {
+                this.deviceComments = [];
+                return [];
+            } finally {
+                this.loadingComments = false;
+            }
         },
 
         async updateDevice(id: string | number, payload: Partial<any>) {

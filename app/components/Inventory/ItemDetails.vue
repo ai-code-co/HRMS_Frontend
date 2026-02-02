@@ -34,6 +34,8 @@ const submitting = ref(false);
 const formRef = ref();
 const deleteConfirmOpen = ref(false);
 const deleting = ref(false);
+const unassignConfirmOpen = ref(false);
+const unassigning = ref(false);
 
 const state = reactive<Schema>({
   device_type: 0,
@@ -128,6 +130,25 @@ const handleAssignmentSuccess = async () => {
     await store.fetchDeviceDetail(props.item.id);
   }
 };
+
+const handleUnassign = () => {
+  unassignConfirmOpen.value = true;
+};
+
+const confirmUnassign = async () => {
+  if (!props.item?.id) return;
+
+  unassigning.value = true;
+  try {
+    const result = await store.unassignDevice(props.item.id);
+    if (result) {
+      unassignConfirmOpen.value = false;
+      await store.fetchDeviceDetail(props.item!.id);
+    }
+  } finally {
+    unassigning.value = false;
+  }
+};
 </script>
 
 <template>
@@ -220,7 +241,9 @@ const handleAssignmentSuccess = async () => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="flex justify-end pt-6">
+        <div class="flex justify-between pt-6">
+          <UButton v-if="item.assignedTo" label="Unassign Device" icon="i-lucide-user-minus" variant="soft" size="xs"
+            class="font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider" @click="handleUnassign" />
           <div class="flex items-center gap-2">
             <!-- Only show Delete in Edit Mode or if not editing? Usually always visible or in edit mode. -->
             <!-- Toggle between Edit and Save buttons -->
@@ -251,6 +274,20 @@ const handleAssignmentSuccess = async () => {
       icon-color="text-red-600"
       :loading="deleting"
       @confirm="confirmDelete"
+    />
+
+    <UIConfirmDialog
+      v-model:open="unassignConfirmOpen"
+      title="Unassign Device"
+      :message="`This device is currently assigned to ${item?.assignedTo ?? 'an employee'}. Unassign it?`"
+      confirm-label="Unassign"
+      cancel-label="Cancel"
+      confirm-color="warning"
+      icon="i-lucide-user-minus"
+      icon-bg="bg-amber-100"
+      icon-color="text-amber-600"
+      :loading="unassigning"
+      @confirm="confirmUnassign"
     />
   </div>
 </template>

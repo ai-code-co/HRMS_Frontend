@@ -30,9 +30,6 @@ const selectedItemId = ref<string | undefined>(undefined);
 const isAddModalOpen = ref(false);
 const hasInitialized = ref(false);
 
-const comments = ref([
-    { id: '1', author: 'John Raven', text: 'All Good', date: '4th Aug 25', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sushmita' }
-]);
 
 // Fetch dashboard data and restore URL state if present (SSR-friendly)
 const { data: initialData } = await useAsyncData('admin-inventory-init', async () => {
@@ -158,7 +155,7 @@ const handleBack = () => {
                         <section class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
                             <div class="flex flex-col xl:flex-row gap-10">
                                 <ItemDetails :item="selectedDetailItem" :loading="false" />
-                                <CommentSection :comments="comments" class="w-full xl:w-72 shrink-0" />
+                                <CommentSection :device-id="selectedItemId" class="w-full xl:w-72 shrink-0" />
                             </div>
                         </section>
                         <DocumentSection />

@@ -80,6 +80,24 @@ export interface Comment {
   date: string;
   avatar: string;
 }
+
+/** API response shape for GET /api/inventory/devices/{id}/comments/ */
+export interface DeviceCommentApi {
+  id: number;
+  device: number;
+  employee: number;
+  employee_name: string;
+  employee_photo: string;
+  photo_url: string;
+  comment: string;
+  created_at: string;
+  formatted_date: string;
+}
+
+export interface DeviceCommentsApiResponse {
+  error: number;
+  data: DeviceCommentApi[];
+}
 // --- NEW: Device Detail Types ---
 export interface DeviceDetailApiObject {
   id: number;
