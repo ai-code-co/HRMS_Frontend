@@ -81,7 +81,6 @@ export interface Comment {
   avatar: string;
 }
 
-/** API response shape for GET /api/inventory/devices/{id}/comments/ */
 export interface DeviceCommentApi {
   id: number;
   device: number;
