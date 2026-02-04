@@ -6,9 +6,32 @@
                     <h2 class="text-2xl font-bold">Leave Overview</h2>
                     <p class="text-sm text-slate-400">Manage your allocations</p>
                 </div>
-                <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="lg"
-                    class="hidden sm:flex rounded-lg cursor-pointer" @click="isApplyModalOpen = true"
-                    title="Apply Leave" />
+                <div class="flex items-center gap-3">
+                    <!-- Employee Leave Overview Button (Admin/HR only) -->
+                    <UButton v-if="isSuperUser && !isViewingOther" icon="i-lucide-users"
+                        label="Leave Overview" size="lg" color="primary" variant="soft"
+                        class="hidden sm:flex rounded-lg cursor-pointer" @click="isBalancesModalOpen = true" />
+                    <!-- Pending Approvals Button (Admin/HR only) -->
+                    <UButton v-if="isSuperUser && !isViewingOther" icon="i-lucide-inbox"
+                        :label="`Pending (${pendingCount})`" size="lg" color="warning" variant="soft"
+                        class="hidden sm:flex rounded-lg cursor-pointer" @click="isPendingModalOpen = true" />
+                    <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="lg"
+                        class="hidden sm:flex rounded-lg cursor-pointer" @click="isApplyModalOpen = true"
+                        title="Apply Leave" />
+                </div>
+                <!-- Mobile: Employee Leave Overview FAB for Admin -->
+                <UButton v-if="isSuperUser && !isViewingOther" icon="i-lucide-users" size="xl" color="primary"
+                    class="sm:hidden fixed bottom-34 right-6 rounded-full shadow-lg z-50"
+                    @click="isBalancesModalOpen = true" />
+                <!-- Mobile: Pending Approvals FAB for Admin -->
+                <UButton v-if="isSuperUser && !isViewingOther" icon="i-lucide-inbox" size="xl" color="warning"
+                    class="sm:hidden fixed bottom-20 right-6 rounded-full shadow-lg z-50"
+                    @click="isPendingModalOpen = true">
+                    <UBadge v-if="pendingCount > 0" color="error" size="xs"
+                        class="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center">
+                        {{ pendingCount }}
+                    </UBadge>
+                </UButton>
                 <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="xl"
                     class="sm:hidden fixed bottom-6 right-6 rounded-full shadow-lg z-50"
                     @click="isApplyModalOpen = true" />
@@ -94,7 +117,7 @@
                                 }" class="w-2 h-2 rounded-full"></div>
                             </div>
 
-                            <UButton v-if="r.status === 'pending'" @click.stop="cancelLeave(r.id)"
+                            <UButton v-if="r.status === 'pending' && !isViewingOther" @click.stop="cancelLeave(r.id)"
                                 class="cursor-pointer rounded-full px-1.5 sm:px-2.5" color="error">
                                 <UIcon name="i-lucide-x" />
                             </UButton>
@@ -102,10 +125,16 @@
                     </div>
                 </div>
             </section>
+            <LeaveModalApplyLeave v-model:open="isApplyModalOpen" class="w-full" />
+            <LeaveModalViewLeave v-model:open="isViewModalOpen" :leave="selectedLeave" @cancel="handleLeaveCancel"
+                class="w-full" />
+
+            <!-- Pending Approvals Modal (Admin/HR only) -->
+            <LeaveModalPendingApprovals v-if="isSuperUser" v-model:open="isPendingModalOpen" />
+
+            <!-- Employee Leave Balances Modal (Admin/HR only) -->
+            <LeaveModalEmployeeBalances v-if="isSuperUser" v-model:open="isBalancesModalOpen" />
         </main>
-        <LeaveModalApplyLeave v-model:open="isApplyModalOpen" class="w-full" />
-        <LeaveModalViewLeave v-model:open="isViewModalOpen" :leave="selectedLeave" @cancel="handleLeaveCancel"
-            class="w-full" />
     </div>
 </template>
 
@@ -114,21 +143,37 @@ import { useLeaveStore } from '~/stores/leaves'
 import { storeToRefs } from 'pinia'
 
 const leaveStore = useLeaveStore()
-const { loading, leaveBalances, leaveRequests } = storeToRefs(leaveStore)
+const { loading, leaveBalances, leaveRequests, pendingLeaveCount } = storeToRefs(leaveStore)
 const isApplyModalOpen = ref(false)
 const isViewModalOpen = ref(false)
+const isPendingModalOpen = ref(false)
+const isBalancesModalOpen = ref(false)
 const selectedLeave = ref<any>(null)
 const { selectedEmployeeId, isViewingOther } = useEmployeeContext()
+const { isSuperUser } = useRoleAccess()
 const hasInitialized = ref(false)
 
+// Pending count for admin badge
+const pendingCount = computed(() => pendingLeaveCount.value)
+
+// Fetch data - always fetch personal leaves, plus pending count for admins
 const { data: leaveData } = await useAsyncData('leave-data', async () => {
     const showLoader = hasInitialized.value
     hasInitialized.value = true
+
+    // Fetch personal leaves (or selected employee's leaves)
     const [requests, balances] = await Promise.all([
         leaveStore.fetchLeaves(showLoader, selectedEmployeeId.value),
         leaveStore.fetchLeaveBalances(showLoader, selectedEmployeeId.value)
     ])
-    return { requests, balances }
+
+    // For superusers, also fetch pending count
+    let pendingCount = 0
+    if (isSuperUser.value && !selectedEmployeeId.value) {
+        pendingCount = await leaveStore.fetchPendingCount()
+    }
+
+    return { requests, balances, pendingCount }
 }, {
     watch: [selectedEmployeeId]
 })
