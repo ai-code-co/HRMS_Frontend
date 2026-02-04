@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch, computed } from 'vue';
 import { number, z } from 'zod';
 import type { FormSubmitEvent } from '#ui/types';
 import type { InventoryItem } from '../../types/inventory';
 import { useInventoryStore } from '../../stores/inventory';
 import { useEmployeeStore } from '../../stores/employee';
 import AssignDeviceModal from './AssignDeviceModal.vue';
+import DocumentSection from './DocumentSection.vue';
 
 const props = defineProps<{
   item: InventoryItem | null;
@@ -36,6 +37,7 @@ const deleteConfirmOpen = ref(false);
 const deleting = ref(false);
 const unassignConfirmOpen = ref(false);
 const unassigning = ref(false);
+const isDocumentModalOpen = ref(false);
 
 const state = reactive<Schema>({
   device_type: 0,
@@ -47,6 +49,8 @@ const state = reactive<Schema>({
   serial_number: '',
   internalSerial: '',
 });
+
+const isDeviceAssigned = computed(() => Boolean(props.item?.assignedTo));
 
 watch(() => props.item, (newItem) => {
   if (newItem) {
@@ -186,8 +190,15 @@ const confirmUnassign = async () => {
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {{ item.id }}</p>
         </div>
         <div class="flex items-center gap-2">
-          <UButton label="Assign Device" icon="i-lucide-user-plus" variant="soft" size="xs"
-            class="font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider" @click="isAssignModalOpen = true" />
+          <UButton
+            :label="isDeviceAssigned ? 'Unassign Device' : 'Assign Device'"
+            :icon="isDeviceAssigned ? 'i-lucide-user-minus' : 'i-lucide-user-plus'"
+            variant="soft"
+            color="primary"
+            size="xs"
+            class="font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider"
+            @click="isDeviceAssigned ? handleUnassign() : (isAssignModalOpen = true)"
+          />
           <UButton icon="i-lucide-trash-2" color="error" variant="soft" size="xs"
             class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider" @click="handleDelete" />
         </div>
@@ -241,26 +252,35 @@ const confirmUnassign = async () => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="flex justify-between pt-6">
-          <UButton v-if="item.assignedTo" label="Unassign Device" icon="i-lucide-user-minus" variant="soft" size="xs"
-            class="font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider" @click="handleUnassign" />
-          <div class="flex items-center gap-2">
+        <div class="flex justify-end pt-6 gap-2 flex-wrap md:flex-nowrap">
+          <UButton
+            label="Upload New Document"
+            icon="i-lucide-upload"
+            variant="soft"
+            color="primary"
+            size="md"
+            class="font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider w-full md:flex-1 justify-center"
+            @click="isDocumentModalOpen = true"
+          />
+          <div class="flex items-center gap-2 flex-wrap md:flex-nowrap">
             <!-- Only show Delete in Edit Mode or if not editing? Usually always visible or in edit mode. -->
             <!-- Toggle between Edit and Save buttons -->
             <UButton v-if="!isEditMode" label="Edit" size="xs" variant="subtle"
-              class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider" @click="isEditMode = true" />
+              class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto"
+              @click="isEditMode = true" />
 
             <UButton v-else type="submit" label="Save" size="xs" variant="subtle" :loading="submitting"
-              class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider " />
+              class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto" />
 
-            <UButton v-if="isEditMode" label="Cancel" size="xs" variant="ghost" class="font-bold uppercase px-5 py-2.5"
-              @click="isEditMode = false" />
+            <UButton v-if="isEditMode" label="Cancel" size="xs" variant="ghost"
+              class="font-bold uppercase px-5 py-2.5 w-full md:w-auto" @click="isEditMode = false" />
           </div>
         </div>
       </UForm>
     </div>
 
     <AssignDeviceModal v-model:open="isAssignModalOpen" :item="item" @success="handleAssignmentSuccess" />
+    <DocumentSection v-model:open="isDocumentModalOpen" />
 
     <UIConfirmDialog
       v-model:open="deleteConfirmOpen"
@@ -282,10 +302,10 @@ const confirmUnassign = async () => {
       :message="`This device is currently assigned to ${item?.assignedTo ?? 'an employee'}. Unassign it?`"
       confirm-label="Unassign"
       cancel-label="Cancel"
-      confirm-color="warning"
+      confirm-color="primary"
       icon="i-lucide-user-minus"
-      icon-bg="bg-amber-100"
-      icon-color="text-amber-600"
+      icon-bg="bg-blue-100"
+      icon-color="text-blue-600"
       :loading="unassigning"
       @confirm="confirmUnassign"
     />

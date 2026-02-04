@@ -29,8 +29,13 @@ export const useEmployeeStore = defineStore('employee', {
                 id: emp.id,
                 label: `${emp.full_name} (${emp.employee_id})`,
                 value: emp.id,
-                avatar: emp.photo,
-                designation: emp.designation_name
+                name: emp.full_name,
+                employeeId: emp.employee_id,
+                designation: (emp as any).designation_name ?? emp.designation_detail?.name ?? '',
+                avatar: {
+                    src: (emp as any).photo_url ?? emp.photo ?? undefined,
+                    alt: emp.full_name
+                }
             }));
         },
 

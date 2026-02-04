@@ -46,7 +46,7 @@ const handleConfirm = () => {
 <template>
     <UModal v-model:open="modelOpen" :overlay="true" :ui="{
         overlay: 'bg-slate-900/40 backdrop-blur-sm',
-        content: 'sm:max-w-md'
+        content: 'w-[90vw] sm:w-full sm:max-w-xl'
     }">
         <template #header>
             <div class="flex items-center gap-3 w-full">
