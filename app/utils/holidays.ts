@@ -17,3 +17,8 @@ export function formatShortDate(dateStr: string): string {
     const day = d.getDate().toString().padStart(2, '0')
     return `${month} ${day}`
 }
+
+/** Show "Restricted" when holiday is restricted, otherwise "Public". */
+export function getPublicRestrictedLabel(holiday: { is_restricted?: boolean }): 'Public' | 'Restricted' {
+    return holiday?.is_restricted === true ? 'Restricted' : 'Public'
+}
