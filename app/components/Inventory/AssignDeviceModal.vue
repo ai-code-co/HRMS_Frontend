@@ -19,7 +19,7 @@ const employeeStore = useEmployeeStore();
 const inventoryStore = useInventoryStore();
 
 const assigning = ref(false);
-const selectedEmployee = ref<{ id: number; label: string } | null>(null);
+const selectedEmployee = ref<{ id: number; label: string; name?: string; employeeId?: string; designation?: string; avatar?: { src?: string; alt?: string } } | null>(null);
 
 const modelOpen = computed({
     get: () => props.open,
@@ -47,6 +47,7 @@ const handleAssignSubmit = async () => {
     try {
         await inventoryStore.updateDevice(props.item.id, {
             employee: selectedEmployee.value.id,
+            device_type: props.item.type,
         });
 
         const toast = useToast();
@@ -69,7 +70,7 @@ const handleAssignSubmit = async () => {
 
 <template>
     <UModal v-model:open="modelOpen" :overlay="true"
-        :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm', content: 'w-[90vw] sm:w-full sm:max-w-md' }">
+        :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm', content: 'w-[90vw] sm:w-full sm:max-w-xl' }">
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <div>
@@ -84,14 +85,20 @@ const handleAssignSubmit = async () => {
 
         <template #body>
             <div class="space-y-4">
-                <UFormField label="Select Employee">
-                    <USelectMenu v-model="selectedEmployee" :options="employeeStore.employeeOptions" searchable
-                        placeholder="Search employee..." option-attribute="label" :loading="employeeStore.loading"
-                        class="w-full">
+                <UFormField label="SELECT EMPLOYEE" class="[&_label]:text-[10px] [&_label]:font-black [&_label]:text-slate-400 [&_label]:uppercase [&_label]:tracking-widest">
+                    <USelectMenu v-model="selectedEmployee" :items="employeeStore.employeeOptions" searchable
+                        placeholder="Type a command or search..." option-attribute="label"
+                        :loading="employeeStore.loading" class="w-full">
                         <template #option="{ option }">
-                            <div class="flex flex-col">
-                                <span class="font-medium text-slate-700">{{ option.label }}</span>
-                                <span class="text-[10px] text-slate-400">{{ option.designation }}</span>
+                            <div class="flex items-center gap-3 w-full min-w-0">
+                                <UAvatar :src="option.avatar?.src" :alt="option.name" size="sm" class="shrink-0"
+                                    :ui="{ rounded: 'rounded-full' }" />
+                                <div class="flex flex-col min-w-0 flex-1">
+                                    <span class="font-medium text-slate-700 truncate">{{ option.name }}</span>
+                                    <span class="text-[10px] text-slate-400">
+                                        {{ option.employeeId }}{{ option.designation ? ` · ${option.designation}` : '' }}
+                                    </span>
+                                </div>
                             </div>
                         </template>
                     </USelectMenu>
