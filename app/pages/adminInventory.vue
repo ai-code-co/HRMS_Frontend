@@ -7,8 +7,8 @@ import type { InventoryItem } from '../types/inventory';
 import DashboardView from '../components/Inventory/DashboardView.vue';
 import SidebarList from '../components/Inventory/SidebarList.vue';
 import ItemDetails from '../components/Inventory/ItemDetails.vue';
+import DocumentsCard from '../components/Inventory/DocumentsCard.vue';
 import CommentSection from '../components/Inventory/CommentSection.vue';
-import DocumentSection from '../components/Inventory/DocumentSection.vue';
 import AddTypeModal from '../components/Inventory/AddTypeModal.vue';
 
 const store = useInventoryStore();
@@ -152,13 +152,17 @@ const handleBack = () => {
                     </div>
 
                     <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
-                        <section class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
-                            <div class="flex flex-col xl:flex-row gap-10">
-                                <ItemDetails :item="selectedDetailItem" :loading="false" />
-                                <CommentSection :device-id="selectedItemId" class="w-full xl:w-72 shrink-0" />
+                        <section class="flex flex-col gap-10">
+                            <div class="flex flex-col xl:flex-row gap-6">
+                                <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                                    <ItemDetails :item="selectedDetailItem" :loading="false" />
+                                </div>
+                                <DocumentsCard />
+                            </div>
+                            <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                                <CommentSection :device-id="selectedItemId" class="w-full" />
                             </div>
                         </section>
-                        <DocumentSection />
                     </div>
                 </div>
             </main>
