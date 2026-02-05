@@ -19,9 +19,19 @@
                             : dashboardStore.performanceWidget?.message }}
                     </p>
                 </div>
-                <div class="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <CalendarDays class="text-indigo-500" :size="20" />
-                    <span class="text-sm font-bold text-slate-600">{{ displayDate }}</span>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
+                        <CalendarDays class="text-indigo-500" :size="20" />
+                        <span class="text-sm font-bold text-slate-600">{{ displayDate }}</span>
+                    </div>
+                    <button
+                        v-if="canCreateEmployee"
+                        class="hidden sm:flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 text-sm font-bold cursor-pointer"
+                        @click="openAddEmployeeModal"
+                    >
+                        <UserPlus :size="18" />
+                        Add Employee
+                    </button>
                 </div>
             </div>
 
@@ -48,13 +58,17 @@
                 </div>
             </div>
         </div>
+
+        <DashboardAddEmployeeModal v-model:open="isAddEmployeeModalOpen" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { CalendarDays, UserCheck, Briefcase, Award } from 'lucide-vue-next';
+import { CalendarDays, UserCheck, Briefcase, Award, UserPlus } from 'lucide-vue-next';
 import { useDashboardStore } from '~/stores/dashboard';
 const { selectedEmployeeId } = useEmployeeContext()
+const { hasPermission } = useAuth()
+const canCreateEmployee = computed(() => hasPermission('can_create_employees'))
 
 const dashboardStore = useDashboardStore();
 const hasInitialized = ref(false)
@@ -147,4 +161,9 @@ const highlight = computed(() => {
         action: 'View Stats'
     };
 });
+
+const isAddEmployeeModalOpen = ref(false)
+const openAddEmployeeModal = () => {
+    isAddEmployeeModalOpen.value = true
+}
 </script>

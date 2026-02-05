@@ -186,3 +186,32 @@ export interface EmployeeListResponse {
     count: number;
     results: Employee[];
 }
+
+export interface CreateEmployeeForm {
+    first_name: string
+    last_name: string
+    department: number | undefined
+    designation: string
+    date_of_birth: string
+    gender: string
+    blood_group: string
+    marital_status: string
+    phone: string
+    alternate_phone: string
+    email: string
+    address_line1: string
+    address_line2: string
+    city: string
+    state: string
+    country: string
+    postal_code: string
+    address_line1_2: string
+    address_line2_2: string
+    city_2: string
+    state_2: string
+    country_2: string
+    postal_code_2: string
+    emergency_contact_name: string
+    emergency_contact_relationship: string
+    emergency_phone: string
+}

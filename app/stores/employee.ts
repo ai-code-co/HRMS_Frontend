@@ -253,6 +253,37 @@ export const useEmployeeStore = defineStore('employee', {
             } finally {
                 this.loading = false
             }
+        },
+
+        async createEmployee(data: Partial<Employee>) {
+            this.loading = true
+            this.error = null
+            const toast = useToast()
+            try {
+                const created = await useApi<Employee>('/api/employees/', {
+                    method: 'POST',
+                    body: data,
+                    credentials: 'include',
+                })
+
+                this.employeesList.push(created)
+                toast.add({
+                    title: 'Success',
+                    description: 'Employee created successfully',
+                    color: 'success'
+                })
+                return created
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to create employee')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            } finally {
+                this.loading = false
+            }
         }
     },
 })
