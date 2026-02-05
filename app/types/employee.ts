@@ -55,6 +55,16 @@ export interface EmergencyContact {
     updated_by?: number | null
 }
 
+export interface EmergencyContactCreate {
+    name: string
+    relationship: string
+    phone: string
+    alternate_phone?: string
+    email?: string
+    address?: string
+    is_primary?: boolean
+}
+
 export interface Education {
     id: number
     level: string
@@ -185,4 +195,81 @@ export interface Employee {
 export interface EmployeeListResponse {
     count: number;
     results: Employee[];
+}
+
+export interface EmployeeCreateUpdate {
+    user?: number | null
+    first_name: string
+    middle_name?: string
+    last_name: string
+    date_of_birth?: string | null
+    gender?: string
+    marital_status?: string
+    nationality?: string
+    blood_group?: string
+    photo?: string | null
+    email: string
+    phone: string
+    alternate_phone?: string
+    address_line1?: string
+    address_line2?: string
+    city?: string
+    state?: string
+    country?: string
+    postal_code?: string
+    address_line1_2?: string
+    address_line2_2?: string
+    city_2?: string
+    state_2?: string
+    country_2?: string
+    postal_code_2?: string
+    role?: number | null
+    department: number
+    designation: number
+    reporting_manager?: number | null
+    employee_type?: string
+    employment_status?: string
+    joining_date?: string | null
+    probation_end_date?: string | null
+    confirmation_date?: string | null
+    work_location?: string
+    pan_number?: string | null
+    aadhar_number?: string | null
+    passport_number?: string | null
+    driving_license?: string | null
+    bank_name?: string
+    account_number?: string
+    ifsc_code?: string
+    account_holder_name?: string
+    is_active?: boolean
+    emergency_contacts?: EmergencyContactCreate[]
+}
+
+export interface CreateEmployeeForm {
+    first_name: string
+    last_name: string
+    department: number | undefined
+    designation: string
+    date_of_birth: string
+    gender: string
+    blood_group: string
+    marital_status: string
+    phone: string
+    alternate_phone: string
+    email: string
+    address_line1: string
+    address_line2: string
+    city: string
+    state: string
+    country: string
+    postal_code: string
+    address_line1_2: string
+    address_line2_2: string
+    city_2: string
+    state_2: string
+    country_2: string
+    postal_code_2: string
+    emergency_contact_name: string
+    emergency_contact_relationship: string
+    emergency_phone: string
 }
