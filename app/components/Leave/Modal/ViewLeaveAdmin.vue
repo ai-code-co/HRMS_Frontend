@@ -21,28 +21,46 @@
 
         <template #body>
             <div v-if="leave" class="space-y-6 px-2 lg:px-4">
-                <!-- Employee Info -->
-                <div class="flex items-center gap-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                    <div class="w-14 h-14 rounded-full bg-indigo-200 flex items-center justify-center flex-shrink-0">
-                        <span class="text-indigo-700 font-bold text-lg">{{ getInitials(leave.employee_name) }}</span>
+                <!-- Employee Info (only if available) -->
+                <div v-if="leave.employee_name" class="flex items-center gap-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                    <div class="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-indigo-200">
+                        <img v-if="leave.employee_photo"
+                            :src="getPhotoUrl(leave.employee_photo)"
+                            :alt="leave.employee_name"
+                            class="w-full h-full object-cover" />
+                        <div v-else class="w-full h-full bg-indigo-200 flex items-center justify-center">
+                            <span class="text-indigo-700 font-bold text-lg">{{ getInitials(leave.employee_name) }}</span>
+                        </div>
                     </div>
                     <div>
                         <p class="font-bold text-lg text-slate-900">{{ leave.employee_name }}</p>
-                        <p class="text-sm text-slate-500">Employee</p>
+                        <p v-if="leave.employee_id" class="text-xs text-slate-500">{{ leave.employee_id }}</p>
                     </div>
                 </div>
 
                 <!-- Leave Type & Status -->
-                <div class="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border"
+                    :class="leave.is_restricted ? 'bg-purple-50 border-purple-100' : 'bg-slate-50 border-slate-100'">
                     <div>
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Leave Type</p>
-                        <p class="text-lg font-bold text-slate-800">{{ leave.type }}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-lg font-bold text-slate-800">{{ leave.type }}</p>
+                            <UBadge v-if="leave.is_restricted" color="secondary" class="bg-purple-100 text-purple-700" variant="soft" size="xs">RH</UBadge>
+                        </div>
+                        <p v-if="leave.day_status" class="text-xs text-slate-500 mt-1">{{ leave.day_status }}</p>
                     </div>
                     <div class="text-left">
                         <UBadge :color="statusColor.badge" variant="subtle" class="capitalize px-3 py-1">
                             {{ leave.status }}
                         </UBadge>
                     </div>
+                </div>
+
+                <!-- Restricted Holiday Info -->
+                <div v-if="leave.restricted_holiday_details" class="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                    <p class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1">Restricted Holiday</p>
+                    <p class="text-sm font-bold text-purple-800">{{ leave.restricted_holiday_details.name }}</p>
+                    <p class="text-xs text-purple-600">{{ formatDateFromISO(leave.restricted_holiday_details.date) }}</p>
                 </div>
 
                 <!-- Dates -->
@@ -152,7 +170,16 @@ interface Leave {
     appliedDate: string
     reason: string
     doc_link_url?: string
-    employee_name: string
+    employee_name?: string
+    employee_photo?: string | null
+    employee_id?: string
+    day_status?: string
+    is_restricted?: boolean
+    restricted_holiday_details?: {
+        id: number
+        name: string
+        date: string
+    } | null
 }
 
 const props = defineProps<{
@@ -172,7 +199,7 @@ const close = () => {
     emit('close')
 }
 
-const statusColor = computed(() => {
+const statusColor = computed((): { bg: string; text: string; badge: 'success' | 'warning' | 'error' | 'info' } => {
     switch (props.leave?.status) {
         case 'approved':
             return { bg: 'bg-emerald-200', text: 'text-emerald-600', badge: 'success' }
@@ -211,5 +238,11 @@ const getInitials = (name: string) => {
         .join('')
         .toUpperCase()
         .slice(0, 2)
+}
+
+const getPhotoUrl = (photo: string | null) => {
+    if (!photo) return ''
+    if (photo.startsWith('http')) return photo
+    return `https://res.cloudinary.com/dhlyvqdoi/image/upload/${photo}`
 }
 </script>

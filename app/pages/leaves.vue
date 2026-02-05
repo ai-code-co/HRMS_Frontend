@@ -13,7 +13,7 @@
                         class="hidden sm:flex rounded-lg cursor-pointer" @click="isBalancesModalOpen = true" />
                     <!-- Pending Approvals Button (Admin/HR only) -->
                     <UButton v-if="isSuperUser && !isViewingOther" icon="i-lucide-inbox"
-                        :label="`Pending (${pendingCount})`" size="lg" color="warning" variant="soft"
+                        :label="`Pending (${pendingLeaveCount})`" size="lg" color="warning" variant="soft"
                         class="hidden sm:flex rounded-lg cursor-pointer" @click="isPendingModalOpen = true" />
                     <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="lg"
                         class="hidden sm:flex rounded-lg cursor-pointer" @click="isApplyModalOpen = true"
@@ -27,9 +27,9 @@
                 <UButton v-if="isSuperUser && !isViewingOther" icon="i-lucide-inbox" size="xl" color="warning"
                     class="sm:hidden fixed bottom-20 right-6 rounded-full shadow-lg z-50"
                     @click="isPendingModalOpen = true">
-                    <UBadge v-if="pendingCount > 0" color="error" size="xs"
+                    <UBadge v-if="pendingLeaveCount > 0" color="error" size="xs"
                         class="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center">
-                        {{ pendingCount }}
+                        {{ pendingLeaveCount }}
                     </UBadge>
                 </UButton>
                 <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="xl"
@@ -100,7 +100,7 @@
                             </div>
 
                             <!-- Desktop/Tablet: Full Status Badge -->
-                            <UBadge v-if="true" :class="{
+                            <UBadge :class="{
                                 'bg-emerald-50 text-emerald-600': r.status === 'approved',
                                 'bg-amber-50 text-amber-600': r.status === 'pending',
                                 'bg-rose-50 text-rose-600': r.status === 'rejected' || r.status === 'cancelled',
@@ -109,7 +109,7 @@
                             </UBadge>
 
                             <!-- Mobile: Status Dot -->
-                            <div v-if="true" class="flex sm:hidden items-center gap-2">
+                            <div class="flex sm:hidden items-center gap-2">
                                 <div :class="{
                                     'bg-emerald-500': r.status === 'approved',
                                     'bg-amber-500': r.status === 'pending',
@@ -141,6 +141,7 @@
 <script setup lang="ts">
 import { useLeaveStore } from '~/stores/leaves'
 import { storeToRefs } from 'pinia'
+import type { PendingLeaveRequestAPI } from '~/types/leaves'
 
 const leaveStore = useLeaveStore()
 const { loading, leaveBalances, leaveRequests, pendingLeaveCount } = storeToRefs(leaveStore)
@@ -153,10 +154,8 @@ const { selectedEmployeeId, isViewingOther } = useEmployeeContext()
 const { isSuperUser } = useRoleAccess()
 const hasInitialized = ref(false)
 
-// Pending count for admin badge
-const pendingCount = computed(() => pendingLeaveCount.value)
 
-// Fetch data - always fetch personal leaves, plus pending count for admins
+// Fetch data - always fetch personal leaves, plus pending leaves for admins
 const { data: leaveData } = await useAsyncData('leave-data', async () => {
     const showLoader = hasInitialized.value
     hasInitialized.value = true
@@ -167,20 +166,30 @@ const { data: leaveData } = await useAsyncData('leave-data', async () => {
         leaveStore.fetchLeaveBalances(showLoader, selectedEmployeeId.value)
     ])
 
-    // For superusers, also fetch pending count
-    let pendingCount = 0
+    // For superusers, also fetch pending leaves
+    let pendingRequests: PendingLeaveRequestAPI[] = []
     if (isSuperUser.value && !selectedEmployeeId.value) {
-        pendingCount = await leaveStore.fetchPendingCount()
+        pendingRequests = await leaveStore.fetchPendingLeaves()
     }
 
-    return { requests, balances, pendingCount }
+    return { requests, balances, pendingRequests }
 }, {
     watch: [selectedEmployeeId]
 })
 
-if (import.meta.client && leaveData.value) {
-    leaveStore.setLeaveData(leaveData.value.requests, leaveData.value.balances)
-}
+// Hydrate store when data is available
+watch(leaveData, (data) => {
+    if (data) {
+        leaveStore.setLeaveData(data.requests, data.balances, data.pendingRequests)
+    }
+}, { immediate: true })
+
+// Fetch pending leaves on client-side for superusers (auth state may not be available during SSR)
+onMounted(async () => {
+    if (isSuperUser.value && !selectedEmployeeId.value && pendingLeaveCount.value === 0) {
+        await leaveStore.fetchPendingLeaves()
+    }
+})
 
 // UI configuration for leave types
 const leaveTypeConfig: Record<string, { icon: string; color: string }> = {
@@ -224,9 +233,8 @@ const filteredRequests = computed(() =>
         : requests.value.filter(r => r.status === activeFilter.value.toLowerCase())
 )
 
-const cancelLeave = async (id: number,) => {
-    const status = 'Cancelled'
-    await leaveStore.updateLeave(id, status)
+const cancelLeave = async (id: number) => {
+    await leaveStore.updateLeave(id, 'Cancelled')
 }
 
 const openLeaveDetails = (leave: any) => {

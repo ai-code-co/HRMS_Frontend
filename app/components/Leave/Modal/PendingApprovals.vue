@@ -40,23 +40,41 @@
                         @click="openLeaveDetails(request)"
                         class="bg-white border border-slate-200 p-4 rounded-xl cursor-pointer transition-all hover:border-indigo-300 hover:shadow-md">
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                            <!-- Employee Info -->
+                            <!-- Employee & Leave Info -->
                             <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                                    <span class="text-indigo-600 font-bold text-xs">{{ getInitials(request.employee_name) }}</span>
+                                <!-- Employee Photo -->
+                                <div class="w-11 h-11 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
+                                    <img v-if="request.employee_details?.photo"
+                                        :src="getPhotoUrl(request.employee_details.photo)"
+                                        :alt="request.employee_details.full_name"
+                                        class="w-full h-full object-cover" />
+                                    <div v-else class="w-full h-full bg-indigo-100 flex items-center justify-center">
+                                        <span class="text-indigo-600 font-bold text-sm">{{ getInitials(request.employee_details?.full_name) }}</span>
+                                    </div>
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="font-bold text-sm truncate">{{ request.employee_name }}</p>
-                                    <p class="text-xs text-slate-400">{{ request.leave_type }}</p>
+                                    <!-- Employee Name -->
+                                    <p class="font-bold text-sm truncate">{{ request.employee_details?.full_name }}</p>
+                                    <!-- Leave Type -->
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-xs text-slate-500">{{ request.leave_type }}</p>
+                                        <UBadge v-if="request.is_restricted" color="secondary" variant="soft" size="xs" class="bg-purple-100 text-purple-700">RH</UBadge>
+                                    </div>
+                                    <!-- Dates -->
                                     <p class="text-[10px] text-slate-400">
                                         {{ formatDate(request.from_date) }} — {{ formatDate(request.to_date) }}
-                                        <span class="ml-1 text-slate-500">({{ request.no_of_days }} {{ request.no_of_days === 1 ? 'day' : 'days' }})</span>
+                                        <span class="text-slate-500">({{ request.no_of_days }}d, {{ request.day_status }})</span>
                                     </p>
                                 </div>
                             </div>
 
                             <!-- Quick Actions -->
-                            <div class="flex items-center gap-2 flex-shrink-0">
+                            <div class="flex items-center gap-2 shrink-0">
+                                <!-- Document indicator -->
+                                <div v-if="request.doc_link_url"
+                                    class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-50">
+                                    <UIcon name="i-lucide-file-check" class="w-4 h-4 text-blue-600" />
+                                </div>
                                 <UButton icon="i-lucide-check" color="success" variant="soft" size="sm"
                                     class="cursor-pointer rounded-full"
                                     @click.stop="handleAction(request, 'Approved')" />
@@ -94,20 +112,60 @@
         @reject="(id) => handleAction(getLeaveById(id), 'Rejected')"
     />
 
-    <!-- Approve/Reject Confirmation Modal -->
-    <LeaveModalManageLeaveAction
-        v-model:open="isActionModalOpen"
-        :leave="actionLeave"
-        :action="actionType"
+    <!-- Approve Confirmation Dialog -->
+    <UIConfirmDialog
+        v-model:open="isApproveDialogOpen"
+        title="Approve Leave Request"
+        :message="`Approve ${actionLeave?.leave_type} request for ${actionLeave?.no_of_days} day(s)?`"
+        confirm-label="Approve"
+        cancel-label="Cancel"
+        confirm-color="success"
+        icon="i-lucide-check-circle"
+        icon-bg="bg-emerald-100"
+        icon-color="text-emerald-600"
         :loading="actionLoading"
-        @confirm="confirmAction"
+        @confirm="confirmApprove"
     />
+
+    <!-- Reject Confirmation Dialog -->
+    <UIConfirmDialog
+        v-model:open="isRejectDialogOpen"
+        title="Reject Leave Request"
+        confirm-label="Reject"
+        cancel-label="Cancel"
+        confirm-color="error"
+        icon="i-lucide-x-circle"
+        icon-bg="bg-rose-100"
+        icon-color="text-rose-600"
+        :loading="actionLoading"
+        @confirm="confirmReject"
+    >
+        <div class="space-y-3">
+            <p class="text-sm text-slate-600">
+                Reject {{ actionLeave?.leave_type }} request for {{ actionLeave?.no_of_days }} day(s)?
+            </p>
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-500 uppercase">
+                    Rejection Reason <span class="text-rose-500">*</span>
+                </label>
+                <UTextarea
+                    v-model="rejectionReason"
+                    placeholder="Please provide a reason for rejection..."
+                    :rows="3"
+                    class="w-full"
+                />
+                <p v-if="showRejectError && !rejectionReason.trim()" class="text-xs text-rose-500">
+                    Rejection reason is required
+                </p>
+            </div>
+        </div>
+    </UIConfirmDialog>
 </template>
 
 <script setup lang="ts">
 import { useLeaveStore } from '~/stores/leaves'
 import { storeToRefs } from 'pinia'
-import type { AllLeaveRequestAPI } from '~/types/leaves'
+import type { PendingLeaveRequestAPI } from '~/types/leaves'
 
 const props = defineProps<{
     open: boolean
@@ -119,11 +177,13 @@ const leaveStore = useLeaveStore()
 const { pendingLeaveRequests: pendingRequests, loading } = storeToRefs(leaveStore)
 
 const isViewModalOpen = ref(false)
-const isActionModalOpen = ref(false)
+const isApproveDialogOpen = ref(false)
+const isRejectDialogOpen = ref(false)
 const selectedLeave = ref<any>(null)
-const actionLeave = ref<AllLeaveRequestAPI | null>(null)
-const actionType = ref<'Approved' | 'Rejected'>('Approved')
+const actionLeave = ref<PendingLeaveRequestAPI | null>(null)
 const actionLoading = ref(false)
+const rejectionReason = ref('')
+const showRejectError = ref(false)
 
 const modelOpen = computed({
     get: () => props.open,
@@ -137,6 +197,14 @@ watch(() => props.open, async (isOpen) => {
     }
 })
 
+// Reset rejection reason when dialog closes
+watch(isRejectDialogOpen, (isOpen) => {
+    if (!isOpen) {
+        rejectionReason.value = ''
+        showRejectError.value = false
+    }
+})
+
 const close = () => {
     modelOpen.value = false
 }
@@ -145,7 +213,7 @@ const getLeaveById = (id: number) => {
     return pendingRequests.value.find(r => r.id === id)
 }
 
-const openLeaveDetails = (leave: AllLeaveRequestAPI) => {
+const openLeaveDetails = (leave: PendingLeaveRequestAPI) => {
     selectedLeave.value = {
         id: leave.id,
         type: leave.leave_type,
@@ -156,27 +224,52 @@ const openLeaveDetails = (leave: AllLeaveRequestAPI) => {
         appliedDate: leave.created_at,
         reason: leave.reason,
         doc_link_url: leave.doc_link_url,
-        employee_name: leave.employee_name,
+        employee_name: leave.employee_details?.full_name || 'Employee',
+        employee_photo: leave.employee_details?.photo,
+        employee_id: leave.employee_details?.employee_id,
+        day_status: leave.day_status,
+        is_restricted: leave.is_restricted,
+        restricted_holiday_details: leave.restricted_holiday_details,
     }
     isViewModalOpen.value = true
 }
 
-const handleAction = (leave: AllLeaveRequestAPI | undefined, action: 'Approved' | 'Rejected') => {
+const handleAction = (leave: PendingLeaveRequestAPI | undefined, action: 'Approved' | 'Rejected') => {
     if (!leave) return
     actionLeave.value = leave
-    actionType.value = action
-    isActionModalOpen.value = true
+    // Close view modal first to prevent z-index stacking issues
+    isViewModalOpen.value = false
+    if (action === 'Approved') {
+        isApproveDialogOpen.value = true
+    } else {
+        isRejectDialogOpen.value = true
+    }
 }
 
-const confirmAction = async (data: { id: number; action: string; notes: string }) => {
+const confirmApprove = async () => {
+    if (!actionLeave.value) return
     actionLoading.value = true
     try {
-        await leaveStore.updateLeaveWithReason(data.id, data.action, data.notes)
-        isActionModalOpen.value = false
-        isViewModalOpen.value = false
+        await leaveStore.updateLeaveWithReason(actionLeave.value.id, 'Approved', '')
+        isApproveDialogOpen.value = false
         actionLeave.value = null
-        // Refresh pending list
-        await leaveStore.fetchPendingLeaves()
+    } finally {
+        actionLoading.value = false
+    }
+}
+
+const confirmReject = async () => {
+    if (!actionLeave.value) return
+    if (!rejectionReason.value.trim()) {
+        showRejectError.value = true
+        return
+    }
+    actionLoading.value = true
+    try {
+        await leaveStore.updateLeaveWithReason(actionLeave.value.id, 'Rejected', rejectionReason.value.trim())
+        isRejectDialogOpen.value = false
+        actionLeave.value = null
+        rejectionReason.value = ''
     } finally {
         actionLoading.value = false
     }
@@ -192,7 +285,13 @@ const formatDate = (dateString: string) => {
     })
 }
 
-const getInitials = (name: string) => {
+const getPhotoUrl = (photo: string | null) => {
+    if (!photo) return ''
+    if (photo.startsWith('http')) return photo
+    return `https://res.cloudinary.com/dhlyvqdoi/image/upload/${photo}`
+}
+
+const getInitials = (name: string | undefined) => {
     if (!name) return '?'
     return name
         .split(' ')

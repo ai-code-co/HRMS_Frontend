@@ -1,18 +1,19 @@
 import { defineStore } from 'pinia'
 import type {
     LeaveRequestAPI,
-    AllLeaveRequestAPI,
     LeaveListResponse,
     LeaveBalanceResponse,
     EmployeeLeaveBalance,
-    LeaveBalanceAPIItem
+    LeaveBalanceAPIItem,
+    PendingLeaveRequestAPI,
+    PendingLeavesResponse
 } from '~/types/leaves'
 import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export const useLeaveStore = defineStore('leaves', {
     state: () => ({
         requests: [] as LeaveRequestAPI[],
-        pendingRequests: [] as AllLeaveRequestAPI[],
+        pendingRequests: [] as PendingLeaveRequestAPI[],
         allEmployeeBalances: [] as EmployeeLeaveBalance[],
         balances: {} as Record<string, any>,
         loading: false,
@@ -96,9 +97,12 @@ export const useLeaveStore = defineStore('leaves', {
             }
         },
 
-        setLeaveData(requests: LeaveRequestAPI[], balances: Record<string, any>) {
+        setLeaveData(requests: LeaveRequestAPI[], balances: Record<string, any>, pendingRequests?: PendingLeaveRequestAPI[]) {
             this.requests = requests
             this.balances = balances
+            if (pendingRequests) {
+                this.pendingRequests = pendingRequests
+            }
         },
 
         async applyLeave(payload: any) {
@@ -174,11 +178,12 @@ export const useLeaveStore = defineStore('leaves', {
                 showLoader()
             }
             try {
-                const res = await useApi<{ results: AllLeaveRequestAPI[] }>('/api/leaves/all/', {
-                    params: { status: 'Pending' }
-                })
-                this.pendingRequests = res.results
-                return res.results
+                const res = await useApi<PendingLeavesResponse>('/api/leaves/pending-leaves/')
+                if (res.error === 0) {
+                    this.pendingRequests = res.data
+                    return res.data
+                }
+                return []
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch pending leave requests')
                 toast.add({
@@ -191,18 +196,6 @@ export const useLeaveStore = defineStore('leaves', {
                 if (showGlobalLoader && import.meta.client) {
                     hideLoader()
                 }
-            }
-        },
-
-        async fetchPendingCount() {
-            try {
-                const res = await useApi<{ results: AllLeaveRequestAPI[] }>('/api/leaves/all/', {
-                    params: { status: 'Pending' }
-                })
-                this.pendingRequests = res.results
-                return res.results.length
-            } catch (err: any) {
-                return 0
             }
         },
 
