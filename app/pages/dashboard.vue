@@ -25,7 +25,7 @@
                         <span class="text-sm font-bold text-slate-600">{{ displayDate }}</span>
                     </div>
                     <button
-                        v-if="canCreateEmployee"
+                        v-if="canCreateEmployee && !selectedEmployeeId"
                         class="hidden sm:flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 text-sm font-bold cursor-pointer"
                         @click="openAddEmployeeModal"
                     >

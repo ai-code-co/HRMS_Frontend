@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Employee, EmployeeListResponse } from '../types/employee'
+import type { Employee, EmployeeListResponse, EmployeeCreateUpdate } from '../types/employee'
 import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export const useEmployeeStore = defineStore('employee', {
@@ -185,6 +185,42 @@ export const useEmployeeStore = defineStore('employee', {
             }
         },
 
+        async createEmployee(payload: EmployeeCreateUpdate) {
+            this.loading = true
+            this.error = null
+            const toast = useToast()
+            try {
+                const created = await useApi<Employee>('/api/employees/', {
+                    method: 'POST',
+                    body: payload,
+                    credentials: 'include',
+                })
+
+                // Add to employees list if it exists
+                if (created) {
+                    this.employeesList.push(created)
+                }
+
+                toast.add({
+                    title: 'Success',
+                    description: 'Employee created successfully',
+                    color: 'success'
+                })
+
+                return created
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to create employee')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            } finally {
+                this.loading = false
+            }
+        },
+
         async updateBankDetails(data: Record<string, any>, userId?: number | null) {
             this.loading = true
             this.error = null
@@ -244,37 +280,6 @@ export const useEmployeeStore = defineStore('employee', {
                 })
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to update password')
-                toast.add({
-                    title: 'Error',
-                    description: this.error,
-                    color: 'error'
-                })
-                throw err
-            } finally {
-                this.loading = false
-            }
-        },
-
-        async createEmployee(data: Partial<Employee>) {
-            this.loading = true
-            this.error = null
-            const toast = useToast()
-            try {
-                const created = await useApi<Employee>('/api/employees/', {
-                    method: 'POST',
-                    body: data,
-                    credentials: 'include',
-                })
-
-                this.employeesList.push(created)
-                toast.add({
-                    title: 'Success',
-                    description: 'Employee created successfully',
-                    color: 'success'
-                })
-                return created
-            } catch (err: any) {
-                this.error = extractErrorMessage(err, 'Failed to create employee')
                 toast.add({
                     title: 'Error',
                     description: this.error,
