@@ -11,6 +11,7 @@ const interviewStore = useInterviewStore()
 const { selectedCandidate, isLoading: loading } = storeToRefs(interviewStore)
 const hasInitialized = ref(false)
 const updatingStatus = ref(false)
+const updatingStatusFor = ref<'APPROVED' | 'REJECTED' | null>(null)
 const customMessage = ref('')
 
 const candidateId = computed(() => route.params.id as string)
@@ -61,6 +62,7 @@ const getStatusColor = (status: string) => {
 const handleStatusUpdate = async (status: 'APPROVED' | 'REJECTED' | 'PENDING') => {
     if (!selectedCandidate.value?.id || updatingStatus.value) return
     updatingStatus.value = true
+    updatingStatusFor.value = status === 'APPROVED' || status === 'REJECTED' ? status : null
     try {
         await interviewStore.updateCandidateStatus(selectedCandidate.value.id, {
             status,
@@ -69,10 +71,31 @@ const handleStatusUpdate = async (status: 'APPROVED' | 'REJECTED' | 'PENDING') =
         customMessage.value = ''
     } finally {
         updatingStatus.value = false
+        updatingStatusFor.value = null
     }
 }
 
 const hasInterview = computed(() => !!selectedCandidate.value?.interview)
+
+// One-time use: once Approve or Reject is chosen, both buttons are disabled
+const hasDecided = computed(() => {
+    const s = selectedCandidate.value?.status
+    return s === 'APPROVED' || s === 'REJECTED'
+})
+
+// Post-interview decision: disable Interview Approve/Reject only when decision was made after interview
+const hasPostInterviewDecided = computed(() => {
+    const c = selectedCandidate.value
+    if (!c?.interview) return false
+    const s = c.status
+    if (s !== 'APPROVED' && s !== 'REJECTED') return false
+    const updatedAt = c.status_updated_at
+    const completedAt = c.interview?.completed_at
+    if (updatedAt && completedAt) {
+        return new Date(updatedAt) >= new Date(completedAt)
+    }
+    return false
+})
 
 const getRecommendationColor = (recommendation: string) => {
     const recLower = recommendation.toLowerCase()
@@ -87,7 +110,7 @@ const getRecommendationColor = (recommendation: string) => {
     <div class="min-h-screen bg-[#F8FAFC] p-3 md:p-6 flex flex-col gap-8">
         <!-- Back Button -->
         <div class="flex items-center gap-4">
-            <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" @click="handleBack" class="text-slate-600">
+            <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" @click="handleBack" class="text-slate-600 cursor-pointer">
                 Back to Interviews
             </UButton>
         </div>
@@ -225,10 +248,58 @@ const getRecommendationColor = (recommendation: string) => {
                     </div>
                 </div>
 
-                <!-- Interview Information -->
+                <!-- AI Evaluation Decision (Approve = send interview link, Reject = send rejection email) -->
+                <div v-if="selectedCandidate.evaluation && !selectedCandidate.interview"
+                    class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">AI Evaluation Decision</h3>
+                    <p class="text-sm text-slate-600 mb-4">
+                        Based on the AI evaluation, approve to send an interview link to the candidate or reject to send a rejection email.
+                    </p>
+                    <div class="mb-4">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Optional message (included in email)</label>
+                        <UTextarea v-model="customMessage" placeholder="Add a personal note for the candidate (optional)" :rows="2"
+                            class="w-full border-primary-300 focus:border-primary-500 focus:border-2 focus:ring-0 focus:ring-transparent focus:outline-none" color="primary" variant="outline" />
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
+                            :disabled="updatingStatus || hasDecided"
+                            class="cursor-pointer"
+                            @click="handleStatusUpdate('APPROVED')">
+                            Approve — Send interview link
+                        </UButton>
+                        <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
+                            :disabled="updatingStatus || hasDecided"
+                            class="cursor-pointer"
+                            @click="handleStatusUpdate('REJECTED')">
+                            Reject — Send rejection email
+                        </UButton>
+                    </div>
+                </div>
+
+                <!-- Interview Information (video above decision) -->
                 <div v-if="selectedCandidate.interview"
                     class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
                     <h3 class="text-lg font-bold text-slate-800 mb-4">Interview Information</h3>
+                    <div v-if="selectedCandidate.interview.video_url" class="mb-6">
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Interview recording</p>
+                        <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900">
+                            <video :src="selectedCandidate.interview.video_url" controls class="w-full h-full object-cover" playsinline />
+                            <div class="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+                            <div class="absolute top-4 right-4 flex items-center gap-2 bg-black/40 backdrop-blur-sm border border-white/10 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wider">
+                                <UIcon name="i-lucide-video" class="size-3.5" />
+                                Recording
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">
+                            If the video does not play, you can
+                            <a :href="selectedCandidate.interview.video_url" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-medium">open the recording in a new tab</a>.
+                        </p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Optional message (included in email)</label>
+                        <UTextarea v-model="customMessage" placeholder="Add a personal note for the candidate (optional)" :rows="2"
+                            class="w-full border-primary-300 focus:border-primary-500 focus:border-2 focus:ring-0 focus:ring-transparent focus:outline-none" color="primary" variant="outline" />
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Status</p>
@@ -256,14 +327,16 @@ const getRecommendationColor = (recommendation: string) => {
                                 View Transcript
                             </UButton>
                         </div>
-                        <div class="flex flex-wrap gap-3">
-                            <UButton color="success" variant="soft" :loading="updatingStatus"
-                                :disabled="updatingStatus || selectedCandidate.status === 'APPROVED'"
+                        <div class="flex flex-wrap gap-3 md:col-span-2">
+                            <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
+                                :disabled="updatingStatus || hasPostInterviewDecided"
+                                class="cursor-pointer"
                                 @click="handleStatusUpdate('APPROVED')">
                                 Approve
                             </UButton>
-                            <UButton color="error" variant="soft" :loading="updatingStatus"
-                                :disabled="updatingStatus || selectedCandidate.status === 'REJECTED'"
+                            <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
+                                :disabled="updatingStatus || hasPostInterviewDecided"
+                                class="cursor-pointer"
                                 @click="handleStatusUpdate('REJECTED')">
                                 Reject
                             </UButton>
@@ -281,3 +354,20 @@ const getRecommendationColor = (recommendation: string) => {
         </template>
     </div>
 </template>
+
+<style scoped>
+/* Optional message textarea: primary blue border (matches Apply Leave Reason field) */
+:deep(textarea) {
+    border-color: #93c5fd !important; /* primary-300 / blue-300 */
+}
+:deep(textarea:focus),
+:deep([data-slot="textarea"]:focus-within),
+:deep([data-slot="textarea"]:focus-within > *) {
+    border-color: #3b82f6 !important; /* primary-500 / blue-500 */
+    border-width: 2px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    --tw-ring-shadow: 0 0 0 0 transparent !important;
+    --tw-ring-color: transparent !important;
+}
+</style>

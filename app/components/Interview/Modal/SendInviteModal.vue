@@ -137,19 +137,9 @@ const inviteSchema = z.object({
 
 type InviteFormSchema = z.output<typeof inviteSchema>
 
-const state = ref({
-    emails: [] as string[]
-})
-
 const modelOpen = computed({
     get: () => props.open,
     set: (value: boolean) => emit('update:open', value)
-})
-
-// Computed total emails count (depends on emailFields so it updates when fields change)
-const totalEmailsCount = computed(() => {
-    const validManualEmails = emailFields.value.filter(email => typeof email === 'string' && email.trim() && emailRegex.test(email.trim()))
-    return validManualEmails.length + selectedCsvEmails.value.length
 })
 
 // Get all valid emails
@@ -159,6 +149,21 @@ const getAllValidEmails = (): string[] => {
         .map(email => email.trim())
     return [...validManualEmails, ...selectedCsvEmails.value]
 }
+
+// Computed total emails count (depends on emailFields so it updates when fields change)
+const totalEmailsCount = computed(() => {
+    return getAllValidEmails().length
+})
+
+// State for form validation - sync with actual emails
+const state = ref({
+    emails: [] as string[]
+})
+
+// Watch email fields and CSV selections to update state
+watch([emailFields, selectedCsvEmails], () => {
+    state.value.emails = getAllValidEmails()
+}, { deep: true, immediate: true })
 
 const addEmailField = () => {
     emailFields.value = [...emailFields.value, '']
