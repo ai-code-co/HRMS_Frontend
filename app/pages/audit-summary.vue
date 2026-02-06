@@ -299,78 +299,25 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useGlobalLoader } from '~/composables/useGlobalLoader'
 import SidebarList from '~/components/Inventory/SidebarList.vue'
 import type { InventoryItem } from '~/types/inventory'
+import { useAuditStore } from '~/stores/audit'
+import type { AuditSummaryItem, EmployeeGroup } from '~/stores/audit'
 
 const { showLoader, hideLoader } = useGlobalLoader()
-
-// --- 1. INTERFACES ---
-interface AuditItem {
-  id: string
-  machine_type: string
-  machine_name: string
-  serial_number: string
-  bill_number: string
-  machine_id: string
-  assigned_user_id: string | null
-  file_name: string | null
-  audit_id: string | null
-  inventory_id: string
-  month: string
-  year: string
-  audit_done_by_user_id: string | null
-  comment_type: string | null 
-  comment: string | null
-  audit_done_by: string | null
-  assigned_to: string | null
-}
-
-interface EmployeeGroup {
-  employee_name: string
-  items: AuditItem[]
-}
-
-interface Stats {
-  total_inventories: number
-  audit_done: number
-  audit_pending: number
-  unassigned_inventories: number
-  audit_good: number
-  audit_issue: number
-  audit_critical_issue: number
-}
-
-interface AuditResponseData {
-  stats: Stats
-  audit_list: AuditItem[]
-  audit_list_employee_wise: EmployeeGroup[]
-}
-
-interface AuditResponse {
-  error: number
-  message: string
-  data: AuditResponseData
-}
+const auditStore = useAuditStore()
 
 // --- 2. STATE ---
 const selectedYear = ref('2026')
 const selectedMonth = ref('Feb')
 const selectedSidebarKey = ref<string | null>(null)
 const activeTab = ref('Employee Wise')
-const loading = ref(false)
-const auditResponse = ref<AuditResponse | null>(null)
 
 // --- 3. COMPUTED LOGIC ---
 
-const stats = computed(() => {
-  return auditResponse.value?.data?.stats || {
-    total_inventories: 0,
-    audit_done: 0,
-    audit_pending: 0,
-    unassigned_inventories: 0,
-    audit_good: 0,
-    audit_issue: 0,
-    audit_critical_issue: 0
-  }
-})
+const stats = computed(() => auditStore.auditSummaryStats)
+
+const loading = computed(() => auditStore.auditSummaryLoading)
+
+const auditResponse = computed(() => auditStore.auditSummaryData)
 
 const sidebarList = computed(() => {
   if (!auditResponse.value?.data) return []
@@ -469,45 +416,26 @@ const getDeviceIcon = (type: string) => {
 }
 
 // --- 5. API CALL ---
-const config = useRuntimeConfig()
-const token = useCookie('token')
-
-// Full month mapping
-const monthsMap: Record<string, number> = {
-  'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
-  'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
-}
-
 const fetchAuditSummary = async () => {
-  loading.value = true
-  showLoader()
-  try {
-    const monthNumber = monthsMap[selectedMonth.value] || 2
-    
-    // API Call
-    const response = await $fetch<AuditResponse>(`${config.public.apiBase}api/inventory/audit-summary/`, {
-      headers: { 'Authorization': `Bearer ${token.value}` },
-      query: { month: monthNumber, year: selectedYear.value }
-    })
-    
-    auditResponse.value = response
-
-    // Reset selection logic: if current selection is invalid in new data, default to first item
-    await nextTick()
-    if (sidebarList.value.length > 0) {
-      const currentExists = sidebarList.value.find(i => i.id === selectedSidebarKey.value)
-      if (!currentExists) {
-        selectedSidebarKey.value = sidebarList.value[0].id
-      }
-    } else {
-      selectedSidebarKey.value = null
-    }
-
-  } catch (error) {
-    console.error('API Error:', error)
-  } finally {
-    loading.value = false
+  if (import.meta.client) {
+    showLoader()
+  }
+  
+  const response = await auditStore.fetchAuditSummary(selectedMonth.value, selectedYear.value, true)
+  
+  if (import.meta.client) {
     hideLoader()
+  }
+
+  // Reset selection logic: if current selection is invalid in new data, default to first item
+  await nextTick()
+  if (sidebarList.value.length > 0) {
+    const currentExists = sidebarList.value.find(i => i.id === selectedSidebarKey.value)
+    if (!currentExists) {
+      selectedSidebarKey.value = sidebarList.value[0].id
+    }
+  } else {
+    selectedSidebarKey.value = null
   }
 }
 

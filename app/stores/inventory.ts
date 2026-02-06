@@ -11,6 +11,7 @@ import type {
     Comment
 } from '../types/inventory';
 import { extractErrorMessage } from '~/composables/useErrorMessage';
+import useApi from '~/composables/useApi';
 
 function getIconName(name: string): string {
     const n = name.toLowerCase();
@@ -151,6 +152,7 @@ export const useInventoryStore = defineStore('inventory', {
         },
 
         async fetchUnassignedDevices(search = '', categoryId?: string | number, showLoading = true) {
+            console.log('fetchUnassignedDevices', search, categoryId, showLoading);
             if (showLoading) {
                 this.loadingDevices = true;
                 this.rawDevices = [];
@@ -158,15 +160,14 @@ export const useInventoryStore = defineStore('inventory', {
             }
             const toast = useToast();
             try {
-                const config = useRuntimeConfig();
-                const token = useCookie('token');
                 const params: any = { search };
                 if (categoryId) {
                     params.category = categoryId;
                 }
-                const response = await $fetch<{ data: any[] }>(`${config.public.apiBase}api/inventory/devices/unassigned/`, {
-                    params,
-                    headers: { 'Authorization': `Bearer ${token.value}` }
+                
+                // Use useApi composable instead of $fetch
+                const response = await useApi<{ data: any[] }>('/api/inventory/devices/unassigned/', {
+                    params
                 });
                 
                 // Transform unassigned device response to match DeviceApiObject format

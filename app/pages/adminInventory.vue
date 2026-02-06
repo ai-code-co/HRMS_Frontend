@@ -367,10 +367,10 @@ onUnmounted(() => {
                         <h2 class="text-2xl font-bold text-slate-800">Inventory Items</h2>
                         <p class="text-sm text-slate-400">Manage assigned and unassigned devices by category.</p>
                     </div>
-                    <div class="flex items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm">
-                        <div class="flex items-center gap-1 bg-slate-100/60 p-1 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm w-full sm:w-auto">
+                        <div class="flex items-center gap-1 bg-slate-100/60 p-1 rounded-xl border border-slate-200 shadow-sm w-full sm:w-auto">
                             <UButton v-for="f in ['Assigned', 'Unassigned']" :key="f" size="xs" variant="ghost" :class="[
-                                'px-6 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all duration-200',
+                                'px-6 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all duration-200 flex-1 sm:flex-none',
                                 activeFilter === f
                                     ? 'bg-white text-indigo-600 shadow-sm'
                                     : 'text-slate-400 hover:text-slate-600'
@@ -386,13 +386,13 @@ onUnmounted(() => {
                             value-attribute="value"
                             placeholder="Select category"
                             size="lg"
-                            class="min-w-45 border border-slate-200 rounded-xl shadow-sm"
+                            class="w-full sm:min-w-45 border border-slate-200 rounded-xl shadow-sm"
                         />
                         <UButton 
                             label="Audit Summary" 
                             color="primary" 
                             size="lg"
-                            class="border border-slate-200 rounded-xl shadow-sm"
+                            class="w-full sm:w-auto border border-slate-200 rounded-xl shadow-sm"
                             @click="navigateTo('/audit-summary')"
                         />
                     </div>
@@ -404,7 +404,7 @@ onUnmounted(() => {
                     :loading="loadingDashboard" @select-category="handleSelectCategory"
                     @open-add-modal="isAddModalOpen = true" />
 
-                <div v-else class="flex h-full animate-fadeIn gap-6">
+                <div v-else class="flex flex-col lg:flex-row h-full animate-fadeIn gap-6">
                     <!-- Empty State -->
                     <div v-if="!loadingDevices && inventoryItems.length === 0" class="flex-1 flex items-center justify-center -mt-5">
                         <div class="text-center mb-80">
@@ -419,12 +419,12 @@ onUnmounted(() => {
 
                     <!-- Normal View with Items -->
                     <template v-else>
-                        <div class="w-80 h-full shrink-0 overflow-auto custom-scrollbar">
+                        <div class="w-full lg:w-80 h-64 lg:h-full shrink-0 overflow-auto custom-scrollbar">
                             <SidebarList :items="inventoryItems" :selected-id="selectedItemId" :loading="loadingDevices"
                                 @select="handleSelectItem" />
                         </div>
 
-                        <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
+                        <div class="flex-1 overflow-y-auto custom-scrollbar pr-0 lg:pr-2 space-y-6">
                             <section class="flex flex-col gap-10">
                                 <div class="flex flex-col xl:flex-row gap-6">
                                     <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
