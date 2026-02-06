@@ -8,6 +8,8 @@ export interface EmployeeLookup {
   photo_url?: string | null
   designation_name?: string
   department_name?: string
+  is_active?: boolean
+  employment_status?: string
 }
 
 const selectedEmployeeId = ref<number | null>(null)
@@ -68,7 +70,8 @@ export function useEmployeeContext() {
       avatar: emp.photo_url,
       suffix: emp.employee_id,
       designation: emp.designation_name,
-      department: emp.department_name
+      department: emp.department_name,
+      isInactive: emp.is_active === false || emp.employment_status === 'terminated'
     }))
   })
 
