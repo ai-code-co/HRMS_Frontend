@@ -99,3 +99,19 @@ export interface EmployeeLeaveBalancesResponse {
     error: number
     data: EmployeeLeaveBalance[]
 }
+
+export interface EmployeeLeaveSummaryItem {
+    employee_id: number
+    employee_code: string
+    employee_name: string
+    leaves: Record<string, {
+        pending: number
+        used: number
+        remaining: number
+    }>
+}
+
+export interface EmployeeLeaveSummaryResponse {
+    error: number
+    data: EmployeeLeaveSummaryItem[]
+}
