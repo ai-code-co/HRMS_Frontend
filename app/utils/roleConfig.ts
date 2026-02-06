@@ -2,10 +2,11 @@ import type { RoleDetail } from '~/types/auth'
 
 export interface NavigationItem {
   label: string
-  icon: string
-  to: string
+  icon?: string
+  to?: string
   requiredRole?: ('Admin' | 'HR' | 'Manager' | 'Employee')[]
   requiredPermission?: string
+  children?: NavigationItem[]
 }
 
 export const navigationItems: NavigationItem[] = [
@@ -15,8 +16,14 @@ export const navigationItems: NavigationItem[] = [
   { label: 'My Inventory', icon: 'i-lucide-monitor', to: '/inventory' },
   { label: 'Leaves', icon: 'i-lucide-file-text', to: '/leaves' },
   { label: 'Salary', icon: 'i-lucide-dollar-sign', to: '/salary' },
+  { label: 'Teams', icon: 'i-lucide-users', to: '/teams', requiredRole: ['Admin'] },
   { label: 'Settings', icon: 'i-lucide-settings', to: '/settings', requiredRole: ['Admin', 'HR'] },
-  { label: 'Inventory', icon: 'i-lucide-wrench', to: '/adminInventory', requiredRole: ['Admin', 'HR'] },
+  {
+    label: 'Inventory',
+    icon: 'i-lucide-wrench',
+    to: '/adminInventory?category=1',
+    requiredRole: ['Admin', 'HR'],
+  },
   { label: 'Interview', icon: 'i-lucide-users', to: '/interview', requiredRole: ['Admin'] },
   { label: 'Holidays', icon: 'i-lucide-sun', to: '/holidays' },
 ]

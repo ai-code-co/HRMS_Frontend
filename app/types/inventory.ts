@@ -45,6 +45,7 @@ export interface InventoryItem {
   serialNumber: string;
   internalSerial: string;
   status: 'working' | 'repair' | 'unassigned';
+  devicetypeName?: string;
   assignedTo?: string;
   designation?: string;
 }
@@ -79,6 +80,23 @@ export interface Comment {
   text: string;
   date: string;
   avatar: string;
+}
+
+export interface DeviceCommentApi {
+  id: number;
+  device: number;
+  employee: number;
+  employee_name: string;
+  employee_photo: string;
+  photo_url: string;
+  comment: string;
+  created_at: string;
+  formatted_date: string;
+}
+
+export interface DeviceCommentsApiResponse {
+  error: number;
+  data: DeviceCommentApi[];
 }
 // --- NEW: Device Detail Types ---
 export interface DeviceDetailApiObject {

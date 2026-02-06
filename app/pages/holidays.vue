@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import HolidayCard from '~/components/Holidays/HolidayCard.vue';
-import NextHoliday from '~/components/Holidays/NextHoliday.vue';
-
+import HolidayCard from '~/components/Holidays/HolidayCard.vue'
+import NextHoliday from '~/components/Holidays/NextHoliday.vue'
+import AddHolidayModal from '~/components/Holidays/Modal/AddHolidayModal.vue'
 const holidayStore = useHolidayStore()
+const { isSuperUser } = useRoleAccess()
+const addHolidayModalOpen = ref(false)
 const { holidays, nextHoliday } = storeToRefs(holidayStore)
 
 const { data: holidaysData } = await useAsyncData('holidays', () => {
@@ -14,18 +16,16 @@ if (import.meta.client && holidaysData.value) {
     holidayStore.setHolidays(holidaysData.value)
 }
 
-// UI state - managed in component
-const filter = ref<'all' | 'public' | 'restricted'>('all')
-const searchQuery = ref('')
-const filterOptions = ['all', 'public', 'restricted'] as const
+type VisibilityFilter = 'all' | 'public' | 'restricted'
+const filter = ref<VisibilityFilter>('all')
+const filterOptions: VisibilityFilter[] = ['all', 'public', 'restricted']
 
-// Filtering logic - managed in component
 const filteredHolidays = computed(() =>
-    holidays.value.filter(h => {
-        const matchesFilter = filter.value === 'all' || h.type.toLowerCase() === filter.value
-        const matchesSearch = h.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-        return matchesFilter && matchesSearch
-    })
+    holidays.value.filter(h =>
+        filter.value === 'all' ||
+        (filter.value === 'public' && !h.is_restricted) ||
+        (filter.value === 'restricted' && h.is_restricted)
+    )
 )
 </script>
 
@@ -39,24 +39,25 @@ const filteredHolidays = computed(() =>
                 <h1 class="text-2xl font-black text-slate-800 tracking-tight">Holiday Calendar 2025</h1>
             </div>
 
-            <!-- <div class="w-full sm:w-64">
-                <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search holiday..." size="md"
-                    :ui="{ rounded: 'rounded-xl' }" />
-            </div> -->
+            <UButton v-if="isSuperUser" icon="i-lucide-plus" color="primary" size="md" class="rounded-xl shrink-0 cursor-pointer"
+                @click="addHolidayModalOpen = true">
+            </UButton>
         </div>
-        <NextHoliday v-if="nextHoliday && !searchQuery" :holiday="nextHoliday" />
+
+        <AddHolidayModal v-if="isSuperUser" v-model:open="addHolidayModalOpen" />
+        <NextHoliday v-if="nextHoliday" :holiday="nextHoliday" />
         <div class="flex items-center gap-1.5 bg-slate-100/60 p-1 rounded-xl w-fit border border-slate-200">
             <UButton v-for="f in filterOptions" :key="f" size="xs" variant="ghost" :class="[
                 'px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',
                 filter === f ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'
             ]" @click="filter = f">
-                {{ f }}
+                {{ f === 'all' ? 'All' : f === 'public' ? 'Public' : 'Restricted' }}
             </UButton>
         </div>
 
         <div v-if="filteredHolidays.length > 0"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
-            <HolidayCard v-for="h in filteredHolidays" :key="h.name" :holiday="h" />
+            <HolidayCard v-for="h in filteredHolidays" :key="h.id" :holiday="h" />
         </div>
 
         <div v-else class="py-24 text-center">

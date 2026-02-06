@@ -1,36 +1,61 @@
 <script setup lang="ts">
-import { Send } from 'lucide-vue-next';
-import type { Comment } from '~/types/inventory';
+import { HistoryIcon } from 'lucide-vue-next';
+import { storeToRefs } from 'pinia';
+import { useInventoryStore } from '~/stores/inventory';
 
-defineProps<{
-  comments: Comment[];
+const props = defineProps<{
+  deviceId: string | undefined;
 }>();
 
-const newComment = ref('');
+const store = useInventoryStore();
+const { deviceComments: comments, loadingComments: loading } = storeToRefs(store);
+
+watch(() => props.deviceId, (id) => store.fetchDeviceComments(id), { immediate: true });
+
+const timelineItems = computed(() =>
+  comments.value.map((c) => ({
+    date: c.date,
+    title: c.author,
+    description: c.text,
+    avatar: c.avatar ? { src: c.avatar } : undefined,
+  }))
+);
 </script>
 
 <template>
-  <div class="w-full lg:w-72 space-y-6 flex flex-col justify-between">
-     <div class="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
-        <div v-for="comment in comments" :key="comment.id" class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-          <div class="flex items-center gap-3 mb-2">
-             <img :src="comment.avatar" alt="" class="w-8 h-8 rounded-full bg-white border border-slate-200" />
-             <div>
-                <p class="text-[11px] font-black text-slate-800">{{ comment.author }}</p>
-                <p class="text-[9px] font-bold text-slate-300">{{ comment.date }}</p>
-             </div>
-          </div>
-          <p class="text-xs font-medium text-slate-600 leading-relaxed">{{ comment.text }}</p>
-        </div>
-     </div>
-     <div class="relative">
-        <textarea 
-          v-model="newComment"
-          rows="2" 
-          placeholder="Type comment..." 
-          class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs font-medium resize-none focus:outline-none focus:ring-1 focus:ring-indigo-100" 
-        />
-        <button class="absolute right-3 bottom-3 text-indigo-500 hover:text-indigo-600"><Send :size="16" /></button>
-     </div>
+  <div class="w-full space-y-4">
+    <h3 class="text-lg font-black text-blue-700 flex gap-2 items-center">
+      <HistoryIcon />
+      Device History
+    </h3>
+
+    <p v-if="loading" class="text-xs text-slate-500 py-2">Loading comments...</p>
+    <template v-else-if="timelineItems.length === 0 && deviceId">
+      <div class="text-center py-8 text-slate-400">
+        <UIcon name="i-lucide-history" class="w-8 h-8 mb-2" />
+        <p class="text-sm font-medium">No history available</p>
+      </div>
+    </template>
+    <UTimeline
+      v-else
+      :items="timelineItems"
+      color="primary"
+      size="md"
+      :ui="{
+        date: 'float-end ms-1',
+        description: 'px-3 py-2 ring ring-default mt-2 rounded-md text-default',
+      }"
+    >
+      <template #indicator="{ item }">
+        <UAvatar v-if="item.avatar?.src" :src="item.avatar.src" size="md" />
+        <UIcon v-else name="i-lucide-message-circle" class="w-4 h-4" />
+      </template>
+      <template #title="{ item }">
+        <span class="font-bold text-slate-700">{{ item.title }}</span>
+      </template>
+      <template #description="{ item }">
+        <p class="text-slate-500 text-sm">{{ item.description }}</p>
+      </template>
+    </UTimeline>
   </div>
 </template>
