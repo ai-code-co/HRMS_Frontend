@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { extractErrorMessage } from '~/composables/useErrorMessage'
 import { formatDateFromISO } from '~/utils/function'
+import useApi from '~/composables/useApi'
 
 export interface Device {
   id: string
@@ -53,6 +54,53 @@ export interface DeviceListItem {
   isAudited: boolean
 }
 
+export interface AuditSummaryItem {
+  id: string
+  machine_type: string
+  machine_name: string
+  serial_number: string
+  bill_number: string
+  machine_id: string
+  assigned_user_id: string | null
+  file_name: string | null
+  audit_id: string | null
+  inventory_id: string
+  month: string
+  year: string
+  audit_done_by_user_id: string | null
+  comment_type: string | null 
+  comment: string | null
+  audit_done_by: string | null
+  assigned_to: string | null
+}
+
+export interface EmployeeGroup {
+  employee_name: string
+  items: AuditSummaryItem[]
+}
+
+export interface AuditSummaryStats {
+  total_inventories: number
+  audit_done: number
+  audit_pending: number
+  unassigned_inventories: number
+  audit_good: number
+  audit_issue: number
+  audit_critical_issue: number
+}
+
+export interface AuditSummaryResponseData {
+  stats: AuditSummaryStats
+  audit_list: AuditSummaryItem[]
+  audit_list_employee_wise: EmployeeGroup[]
+}
+
+export interface AuditSummaryResponse {
+  error: number
+  message: string
+  data: AuditSummaryResponseData
+}
+
 export const useAuditStore = defineStore('audit', () => {
   const deviceCache = ref<Record<number, Device>>({})
   const deviceList = ref<DeviceListItem[]>([]) 
@@ -60,6 +108,16 @@ export const useAuditStore = defineStore('audit', () => {
   const auditStatus = ref<AuditStatus | null>(null)
   const selectedDeviceLoading = ref(false)
   const error = ref<string | null>(null)
+  
+  // Audit Summary state
+  const auditSummaryLoading = ref(false)
+  const auditSummaryData = ref<AuditSummaryResponse | null>(null)
+  
+  // Month mapping for audit summary
+  const monthsMap: Record<string, number> = {
+    'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+  }
 
   async function fetchAuditStatus() {
     isLoading.value = true
@@ -227,6 +285,58 @@ export const useAuditStore = defineStore('audit', () => {
     }
   }
 
+  async function fetchAuditSummary(month: string, year: string, showGlobalLoader = false) {
+    auditSummaryLoading.value = true
+    error.value = null
+    const { showLoader, hideLoader } = useGlobalLoader()
+    
+    if (showGlobalLoader && import.meta.client) {
+      showLoader()
+    }
+    
+    const toast = useToast()
+    
+    try {
+      const monthNumber = monthsMap[month] || 2
+      
+      const response = await useApi<AuditSummaryResponse>('/api/inventory/audit-summary/', {
+        params: { 
+          month: monthNumber, 
+          year: year 
+        }
+      })
+      
+      auditSummaryData.value = response
+      return response
+    } catch (err: any) {
+      error.value = extractErrorMessage(err, 'Failed to fetch audit summary')
+      toast.add({
+        title: 'Error',
+        description: error.value,
+        color: 'error',
+      })
+      auditSummaryData.value = null
+      return null
+    } finally {
+      auditSummaryLoading.value = false
+      if (showGlobalLoader && import.meta.client) {
+        hideLoader()
+      }
+    }
+  }
+
+  const auditSummaryStats = computed(() => {
+    return auditSummaryData.value?.data?.stats || {
+      total_inventories: 0,
+      audit_done: 0,
+      audit_pending: 0,
+      unassigned_inventories: 0,
+      audit_good: 0,
+      audit_issue: 0,
+      audit_critical_issue: 0
+    }
+  })
+
   return {
     deviceCache,
     deviceList,
@@ -242,5 +352,10 @@ export const useAuditStore = defineStore('audit', () => {
     loadDeviceList,
     fetchDeviceDetails,
     submitAudit,
+    // Audit Summary
+    auditSummaryLoading,
+    auditSummaryData,
+    auditSummaryStats,
+    fetchAuditSummary,
   }
 })

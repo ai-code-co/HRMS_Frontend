@@ -5,6 +5,8 @@ import type {
     LeaveBalanceResponse,
     EmployeeLeaveBalance,
     LeaveBalanceAPIItem,
+    EmployeeLeaveSummaryItem,
+    EmployeeLeaveSummaryResponse,
     PendingLeaveRequestAPI,
     PendingLeavesResponse
 } from '~/types/leaves'
@@ -245,13 +247,13 @@ export const useLeaveStore = defineStore('leaves', {
                 showLoader()
             }
             try {
-                // TODO: Replace with actual API call when ready
-                // const res = await useApi<EmployeeLeaveBalancesResponse>('/api/leaves/all-balances/')
-                // this.allEmployeeBalances = res.data
-
-                // Mock data for UI development
-                this.allEmployeeBalances = getMockEmployeeBalances()
-                return this.allEmployeeBalances
+                const res = await useApi<EmployeeLeaveSummaryResponse>('/api/leaves/employee-leave-summary/')
+                if (res.error === 0) {
+                    this.allEmployeeBalances = mapEmployeeLeaveSummary(res.data)
+                    return this.allEmployeeBalances
+                }
+                this.allEmployeeBalances = []
+                return []
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch employee leave balances')
                 const toast = useToast()
@@ -271,32 +273,28 @@ export const useLeaveStore = defineStore('leaves', {
     }
 })
 
-// Mock data function for UI development
-function getMockEmployeeBalances(): EmployeeLeaveBalance[] {
-    const leaveTypes = ['Annual Leave', 'Sick Leave', 'Casual Leave', 'RH']
-    const employees = [
-        { id: 1, name: 'John Doe', designation: 'Software Engineer', department: 'Engineering' },
-        { id: 2, name: 'Jane Smith', designation: 'Product Manager', department: 'Product' },
-        { id: 3, name: 'Mike Johnson', designation: 'UI Designer', department: 'Design' },
-        { id: 4, name: 'Sarah Williams', designation: 'HR Manager', department: 'Human Resources' },
-        { id: 5, name: 'Robert Brown', designation: 'Backend Developer', department: 'Engineering' },
-        { id: 6, name: 'Emily Davis', designation: 'QA Engineer', department: 'Quality' },
-    ]
-
-    return employees.map(emp => {
+function mapEmployeeLeaveSummary(items: EmployeeLeaveSummaryItem[]): EmployeeLeaveBalance[] {
+    return items.map(item => {
         const balances: Record<string, LeaveBalanceAPIItem> = {}
         let totalAllocated = 0
         let totalUsed = 0
         let totalPending = 0
         let totalAvailable = 0
 
-        leaveTypes.forEach(type => {
-            const allocated = type === 'RH' ? 2 : Math.floor(Math.random() * 5) + 10
-            const used = Math.floor(Math.random() * (allocated / 2))
-            const pending = Math.floor(Math.random() * 2)
-            const available = allocated - used - pending
+        const leaves = item.leaves || {}
+        Object.entries(leaves).forEach(([type, values]) => {
+            const pending = toPositiveNumber(values?.pending)
+            const used = toPositiveNumber(values?.used)
+            const available = toPositiveNumber(values?.remaining)
+            const allocated = pending + used + available
 
-            balances[type] = { allocated, used, pending, available }
+            balances[type] = {
+                allocated,
+                used,
+                pending,
+                available
+            }
+
             totalAllocated += allocated
             totalUsed += used
             totalPending += pending
@@ -304,10 +302,8 @@ function getMockEmployeeBalances(): EmployeeLeaveBalance[] {
         })
 
         return {
-            employee_id: emp.id,
-            employee_name: emp.name,
-            designation: emp.designation,
-            department: emp.department,
+            employee_id: item.employee_id,
+            employee_name: item.employee_name,
             balances,
             summary: {
                 total_allocated: totalAllocated,
@@ -317,4 +313,9 @@ function getMockEmployeeBalances(): EmployeeLeaveBalance[] {
             }
         }
     })
+}
+
+function toPositiveNumber(value: unknown) {
+    const numberValue = Number(value)
+    return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0
 }
