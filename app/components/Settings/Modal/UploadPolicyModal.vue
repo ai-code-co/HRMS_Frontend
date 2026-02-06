@@ -42,6 +42,7 @@ import { ref, computed, watch } from 'vue'
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import type { PolicyItem } from '../PolicyCard.vue'
+import { useSettingsStore } from '~/stores/settings'
 
 const props = defineProps<{
     open: boolean
@@ -52,6 +53,7 @@ const emit = defineEmits(['update:open', 'close', 'success'])
 const toast = useToast()
 const isSubmitting = ref(false)
 const isEditMode = computed(() => !!props.policy)
+const settingsStore = useSettingsStore()
 
 const policySchema = z.object({
     document_name: z.string().min(1, 'Document name is required'),
@@ -111,8 +113,11 @@ function close() {
 async function onSubmit(event: FormSubmitEvent<PolicyFormSchema>) {
     isSubmitting.value = true
     try {
-        // TODO: replace with actual API call when backend is ready
-        await new Promise(resolve => setTimeout(resolve, 600))
+        if (!isEditMode.value) {
+            await settingsStore.createPolicyDocument(event.data)
+        } else {
+            await settingsStore.updatePolicyDocument(props.policy?.id ?? '', event.data)
+        }
 
         toast.add({
             title: isEditMode.value ? 'Policy document updated' : 'Policy document added',
