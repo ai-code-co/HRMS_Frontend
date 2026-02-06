@@ -20,11 +20,8 @@ export const navigationItems: NavigationItem[] = [
   {
     label: 'Inventory',
     icon: 'i-lucide-wrench',
+    to: '/adminInventory?category=1',
     requiredRole: ['Admin', 'HR'],
-    children: [
-      { label: 'Assigned', to: '/adminInventory' },
-      { label: 'Unassigned', to: '/adminInventory/unassigned' },
-    ],
   },
   { label: 'Interview', icon: 'i-lucide-users', to: '/interview', requiredRole: ['Admin'] },
   { label: 'Holidays', icon: 'i-lucide-sun', to: '/holidays' },
