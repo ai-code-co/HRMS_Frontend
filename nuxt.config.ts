@@ -20,7 +20,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL
+      apiBase: process.env.API_BASE_URL,
+      interviewApiBase: process.env.INTERVIEW_API_BASE_URL 
     }
   },
   compatibilityDate: '2025-01-15',

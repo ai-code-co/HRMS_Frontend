@@ -9,7 +9,7 @@
         </template>
 
         <template #body>
-            <UForm :state="state" @submit="onSubmit" class="w-full">
+            <UForm :schema="inviteSchema" :state="state" @submit="onSubmit" class="w-full">
                 <div class="space-y-4">
                     <!-- Manual Email Inputs -->
                     <div class="space-y-3">
@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { useInterviewStore } from '~/stores/interview'
@@ -137,19 +137,9 @@ const inviteSchema = z.object({
 
 type InviteFormSchema = z.output<typeof inviteSchema>
 
-const state = ref({
-    emails: [] as string[]
-})
-
 const modelOpen = computed({
     get: () => props.open,
     set: (value: boolean) => emit('update:open', value)
-})
-
-// Computed total emails count (depends on emailFields so it updates when fields change)
-const totalEmailsCount = computed(() => {
-    const validManualEmails = emailFields.value.filter(email => typeof email === 'string' && email.trim() && emailRegex.test(email.trim()))
-    return validManualEmails.length + selectedCsvEmails.value.length
 })
 
 // Get all valid emails
@@ -159,6 +149,21 @@ const getAllValidEmails = (): string[] => {
         .map(email => email.trim())
     return [...validManualEmails, ...selectedCsvEmails.value]
 }
+
+// Computed total emails count (depends on emailFields so it updates when fields change)
+const totalEmailsCount = computed(() => {
+    return getAllValidEmails().length
+})
+
+// State for form validation - sync with actual emails
+const state = ref({
+    emails: [] as string[]
+})
+
+// Watch email fields and CSV selections to update state
+watch([emailFields, selectedCsvEmails], () => {
+    state.value.emails = getAllValidEmails()
+}, { deep: true, immediate: true })
 
 const addEmailField = () => {
     emailFields.value = [...emailFields.value, '']
@@ -283,43 +288,34 @@ watch(() => props.open, (isOpen) => {
     }
 })
 
-// Keep form state in sync so schema validation sees the real emails
-watch(
-    [emailFields, selectedCsvEmails],
-    () => {
-        state.value.emails = getAllValidEmails()
-    },
-    { deep: true }
-)
-
 const close = () => {
     modelOpen.value = false
     emit('close')
 }
 
 async function onSubmit(event: FormSubmitEvent<any>) {
-    const allEmails = getAllValidEmails()
-    if (allEmails.length === 0) {
-        toast.add({
-            title: 'Error',
-            description: 'Please enter at least one valid email address',
-            color: 'error'
-        })
-        return
-    }
-
-    const payload: InvitePayload = {
-        emails: allEmails,
-        issued_by: '834a82fc-f116-4726-bcbb-5984fd113c3e'
-    }
-
     try {
+        const allEmails = getAllValidEmails()
+
+        if (allEmails.length === 0) {
+            toast.add({
+                title: 'Error',
+                description: 'Please enter at least one valid email address',
+                color: 'error'
+            })
+            return
+        }
+
+        // Hardcoded issued_by as per requirements
+        const payload: InvitePayload = {
+            emails: allEmails,
+            issued_by: '834a82fc-f116-4726-bcbb-5984fd113c3e'
+        }
+
         await interviewStore.createInvite(payload)
+        modelOpen.value = false
     } catch (err: any) {
         // Error is already handled in the store
-    } finally {
-        await nextTick()
-        close()
     }
 }
 </script>
