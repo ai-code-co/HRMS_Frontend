@@ -8,9 +8,15 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <UButton label="Save Changes" icon="i-heroicons-check-circle" color="primary" :loading="store.isSaving"
-                :disabled="!store.isDirty" @click="store.saveSettings"
-                class="font-bold rounded-xl px-6 py-2.5 transition-all" />
+            <template v-if="store.activeMenu === 'uploadPolicy'">
+                <UButton icon="i-lucide-plus" size="lg" class="rounded-lg cursor-pointer"
+                    title="Add policy document" @click="store.uploadPolicyModalOpen = true" />
+            </template>
+            <template v-else>
+                <UButton label="Save Changes" icon="i-heroicons-check-circle" color="primary" :loading="store.isSaving"
+                    :disabled="!store.isDirty" @click="store.saveSettings"
+                    class="font-bold rounded-xl px-6 py-2.5 transition-all" />
+            </template>
         </div>
     </div>
 </template>

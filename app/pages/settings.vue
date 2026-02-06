@@ -19,6 +19,7 @@
 import { useSettingsStore } from '~/stores/settings'
 // import Profile from '~/components/settings/Profile.vue'
 import Permissions from '~/components/Settings/Permissions.vue'
+import UploadPolicy from '~/components/Settings/UploadPolicy.vue'
 // import Appearance from '~/components/settings/Appearance.vue'
 // import Security from '~/components/settings/Security.vue'
 // import Notifications from '~/components/settings/Notifications.vue'
@@ -30,6 +31,7 @@ const activeTabComponent = computed(() => {
     const map: any = {
         // profile: Profile,
         permissions: Permissions,
+        uploadPolicy: UploadPolicy,
         // appearance: Appearance,
         // security: Security,
         // notifications: Notifications

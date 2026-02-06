@@ -68,6 +68,7 @@ export const useInventoryStore = defineStore('inventory', {
                 price: '-',
                 serialNumber: device.serial_number,
                 internalSerial: device.serial_number,
+                devicetypeName: device.device_type_name || '',
                 status: (device.status as 'working' | 'repair' | 'unassigned') || 'unassigned',
                 assignedTo: device.employee_name || undefined
             }));
@@ -85,6 +86,7 @@ export const useInventoryStore = defineStore('inventory', {
                 price: d.purchase_price ? `$${d.purchase_price}` : '-',
                 serialNumber: d.serial_number,
                 internalSerial: d.serial_number,
+                devicetypeName: d.device_type_detail?.name || '',
                 status: (d.status as 'working' | 'repair' | 'unassigned') || 'unassigned',
                 assignedTo: d.employee_detail?.full_name || undefined
             };
@@ -135,6 +137,69 @@ export const useInventoryStore = defineStore('inventory', {
                 return response.data || [];
             } catch (err: any) {
                 this.error = extractErrorMessage(err, 'Failed to fetch devices');
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
+                return [];
+            } finally {
+                if (showLoading) {
+                    this.loadingDevices = false;
+                }
+            }
+        },
+
+        async fetchUnassignedDevices(search = '', categoryId?: string | number, showLoading = true) {
+            if (showLoading) {
+                this.loadingDevices = true;
+                this.rawDevices = [];
+                this.currentDeviceDetail = null;
+            }
+            const toast = useToast();
+            try {
+                const config = useRuntimeConfig();
+                const token = useCookie('token');
+                const params: any = { search };
+                if (categoryId) {
+                    params.category = categoryId;
+                }
+                const response = await $fetch<{ data: any[] }>(`${config.public.apiBase}api/inventory/devices/unassigned/`, {
+                    params,
+                    headers: { 'Authorization': `Bearer ${token.value}` }
+                });
+                
+                // Transform unassigned device response to match DeviceApiObject format
+                let transformedDevices: DeviceApiObject[] = (response.data || []).map((device: any) => ({
+                    id: device.id,
+                    device_type: device.device_type || 0,
+                    device_type_name: device.device_type_name || '',
+                    serial_number: device.serial_number || '',
+                    model_name: device.model_name || '',
+                    brand: device.brand || '',
+                    status: device.status || 'unassigned',
+                    status_display: device.status_display || 'Unassigned',
+                    condition: device.condition || '',
+                    condition_display: device.condition_display || '',
+                    employee_name: null, // Unassigned devices have no employee
+                    purchase_date: device.purchase_date || null,
+                    warranty_expiry: device.warranty_expiry || null,
+                    is_active: device.is_active !== undefined ? device.is_active : true,
+                    created_at: device.created_at || ''
+                }));
+                
+                // If category filtering is not supported by API, filter client-side
+                if (categoryId && transformedDevices.length > 0) {
+                    const categoryIdStr = categoryId.toString();
+                    transformedDevices = transformedDevices.filter(device => 
+                        device.device_type && device.device_type.toString() === categoryIdStr
+                    );
+                }
+                
+                this.rawDevices = transformedDevices;
+                return transformedDevices;
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to fetch unassigned devices');
                 toast.add({
                     title: 'Error',
                     description: this.error,

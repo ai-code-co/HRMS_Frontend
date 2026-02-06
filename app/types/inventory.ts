@@ -45,6 +45,7 @@ export interface InventoryItem {
   serialNumber: string;
   internalSerial: string;
   status: 'working' | 'repair' | 'unassigned';
+  devicetypeName?: string;
   assignedTo?: string;
   designation?: string;
 }

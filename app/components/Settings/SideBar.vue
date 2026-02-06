@@ -30,6 +30,7 @@ const menuItems = [
     // { id: 'security', label: 'Security & Auth', icon: 'i-heroicons-shield-check', roles: ['admin', 'user'] },
     // { id: 'appearance', label: 'Appearance', icon: 'i-heroicons-swatch', roles: ['admin', 'user'] },
     { id: 'permissions', label: 'Access Permissions', icon: 'i-heroicons-finger-print', roles: ['admin'] },
+    { id: 'uploadPolicy', label: 'Upload Policy', icon: 'i-lucide-file-up', roles: ['admin'] },
 ]
 
 const filteredMenu = computed(() => menuItems.filter(item => item.roles.includes(props.role)))
