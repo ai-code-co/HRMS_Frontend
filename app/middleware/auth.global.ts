@@ -5,7 +5,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     const resetRoutes = ['/forgot-password', '/reset-password']
     const publicRoutes = ['/login', '/audit']
-    const isPublicRoute = publicRoutes.includes(to.path)
+    const isInterviewLink = /^\/interview\/[^/]+\/?$/.test(to.path)
+    const isPublicRoute = publicRoutes.includes(to.path) || to.path.startsWith('/apply/') || to.path.startsWith('/interview/link/') || isInterviewLink
 
     if (resetRoutes.includes(to.path)) {
         return
@@ -15,7 +16,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         return navigateTo('/dashboard')
     }
 
-    if (!publicRoutes.includes(to.path) && !token.value) {
+    if (!isPublicRoute && !token.value) {
         return navigateTo('/login')
     }
 

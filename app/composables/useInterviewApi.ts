@@ -7,7 +7,7 @@ export interface InterviewApiOptions {
     headers?: Record<string, string>
 }
 
-const INTERVIEW_API_BASE = 'http://localhost:3001'
+const INTERVIEW_API_BASE = 'https://ai-interviewer-py.onrender.com/'
 
 export default async function useInterviewApi<T = any>(
     path: string,
