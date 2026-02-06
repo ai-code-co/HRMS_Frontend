@@ -6,6 +6,7 @@ export interface Permission {
 
 export const useSettingsStore = defineStore('settings', () => {
     const activeMenu = ref('permissions')
+    const uploadPolicyModalOpen = ref(false)
     const employeeSearch = ref('')
     const selectedEmployeeId = ref<string | null>(null)
     const isSaving = ref(false)
@@ -63,7 +64,7 @@ export const useSettingsStore = defineStore('settings', () => {
     }
 
     return {
-        activeMenu, employeeSearch, selectedEmployeeId, isSaving, isDirty,
+        activeMenu, uploadPolicyModalOpen, employeeSearch, selectedEmployeeId, isSaving, isDirty,
         employees, filteredEmployees, selectedEmployee, currentPermissions,
         togglePermission, saveSettings
     }
