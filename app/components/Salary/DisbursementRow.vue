@@ -1,6 +1,6 @@
 <template>
     <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50/50 rounded-xl border border-slate-100 group hover:border-indigo-200 hover:bg-white transition-all">
+        class="relative flex flex-col sm:flex-row sm:items-center justify-between p-2 md:p-4 bg-slate-50/50 rounded-xl border border-slate-100 group hover:border-indigo-200 hover:bg-white transition-all">
         <div class="flex items-center gap-3 mb-3 sm:mb-0">
             <UAvatar :src="avatar" :alt="name" size="md" />
             <div>
@@ -10,7 +10,7 @@
                 </p>
             </div>
         </div>
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-6 mr-0 sm:mr-6 justify-between">
             <div class="text-right">
                 <p class="text-sm font-bold text-slate-800">₹{{ netPaid.toLocaleString() }}</p>
                 <p class="text-[9px] font-medium text-slate-400 uppercase">Net Paid</p>
@@ -21,8 +21,9 @@
                 </UBadge>
                 <p class="text-[9px] font-medium text-slate-400 mt-1">{{ paymentDate }}</p>
             </div>
-            <UButton class="cursor-pointer" icon="i-lucide-external-link" color="neutral" variant="ghost" size="xs" @click="$emit('view')" />
         </div>
+        <UButton class="absolute top-2 right-2 cursor-pointer" icon="i-lucide-external-link" color="neutral" variant="ghost" size="xs"
+            @click="$emit('view')" />
     </div>
 </template>
 
