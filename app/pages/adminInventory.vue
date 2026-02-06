@@ -405,24 +405,39 @@ onUnmounted(() => {
                     @open-add-modal="isAddModalOpen = true" />
 
                 <div v-else class="flex h-full animate-fadeIn gap-6">
-                    <div class="w-80 h-full shrink-0 overflow-auto custom-scrollbar">
-                        <SidebarList :items="inventoryItems" :selected-id="selectedItemId" :loading="loadingDevices"
-                            @select="handleSelectItem" />
+                    <!-- Empty State -->
+                    <div v-if="!loadingDevices && inventoryItems.length === 0" class="flex-1 flex items-center justify-center -mt-5">
+                        <div class="text-center mb-80">
+                            <div class="bg-slate-50 p-6 rounded-full mb-4 inline-block">
+                                <UIcon name="i-heroicons-inbox" class="text-4xl text-slate-300" />
+                            </div>
+                            <p class="text-base font-medium text-slate-600">
+                                There are currently no items available for selected filters
+                            </p>
+                        </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
-                        <section class="flex flex-col gap-10">
-                            <div class="flex flex-col xl:flex-row gap-6">
-                                <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
-                                    <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" />
+                    <!-- Normal View with Items -->
+                    <template v-else>
+                        <div class="w-80 h-full shrink-0 overflow-auto custom-scrollbar">
+                            <SidebarList :items="inventoryItems" :selected-id="selectedItemId" :loading="loadingDevices"
+                                @select="handleSelectItem" />
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
+                            <section class="flex flex-col gap-10">
+                                <div class="flex flex-col xl:flex-row gap-6">
+                                    <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                                        <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" />
+                                    </div>
+                                    <DocumentsCard />
                                 </div>
-                                <DocumentsCard />
-                            </div>
-                            <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
-                                <CommentSection :device-id="selectedItemId" class="w-full" />
-                            </div>
-                        </section>
-                    </div>
+                                <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
+                                    <CommentSection :device-id="selectedItemId" class="w-full" />
+                                </div>
+                            </section>
+                        </div>
+                    </template>
                 </div>
             </main>
         </div>

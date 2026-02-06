@@ -392,7 +392,7 @@ const sidebarList = computed(() => {
     return Object.keys(typeCounts).sort().map(type => ({
       id: type,
       label: type,
-      subLabel: null,
+      subLabel: `${typeCounts[type]} Assets`, 
       count: typeCounts[type]
     }))
   }
