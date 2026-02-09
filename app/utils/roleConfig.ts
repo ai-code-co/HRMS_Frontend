@@ -16,15 +16,13 @@ export const navigationItems: NavigationItem[] = [
   { label: 'My Inventory', icon: 'i-lucide-monitor', to: '/inventory' },
   { label: 'Leaves', icon: 'i-lucide-file-text', to: '/leaves' },
   { label: 'Salary', icon: 'i-lucide-dollar-sign', to: '/salary' },
+  { label: 'Teams', icon: 'i-lucide-users', to: '/teams', requiredRole: ['Admin'] },
   { label: 'Settings', icon: 'i-lucide-settings', to: '/settings', requiredRole: ['Admin', 'HR'] },
   {
     label: 'Inventory',
     icon: 'i-lucide-wrench',
+    to: '/adminInventory?category=1',
     requiredRole: ['Admin', 'HR'],
-    children: [
-      { label: 'Assigned', to: '/adminInventory' },
-      { label: 'Unassigned', to: '/adminInventory/unassigned' },
-    ],
   },
   { label: 'Interview', icon: 'i-lucide-users', to: '/interview', requiredRole: ['Admin'] },
   { label: 'Holidays', icon: 'i-lucide-sun', to: '/holidays' },
@@ -37,7 +35,7 @@ export const canAccessNavItem = (item: NavigationItem, roleDetail: RoleDetail | 
 
   if (!item.requiredRole) return true
   if (isSuperUser.value && selectedEmployeeId.value) {
-    if (item.label === 'Holidays' || item.label === 'Inventory' || item.label === 'Interview') return false
+    if (item.label === 'Holidays' || item.label === 'Inventory' || item.label === 'Interview' || item.label === 'Teams') return false
   }
   return item.requiredRole.includes(roleDetail.role)
 }

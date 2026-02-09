@@ -31,15 +31,15 @@ const filteredHolidays = computed(() =>
 
 <template>
     <main class="max-w-7xl mx-auto p-4 md:p-8 space-y-6 pb-24">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="flex md:flex-row md:items-end justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2 mb-1">
                     <p class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em]">Excellence HRMS</p>
                 </div>
-                <h1 class="text-2xl font-black text-slate-800 tracking-tight">Holiday Calendar 2025</h1>
+                <h1 class="hidden md:block text-2xl font-black text-slate-800 tracking-tight">Holiday Calendar 2025</h1>
             </div>
 
-            <UButton v-if="isSuperUser" icon="i-lucide-plus" color="primary" size="md" class="rounded-xl shrink-0 cursor-pointer"
+            <UButton v-if="isSuperUser" icon="i-lucide-plus" color="primary" size="md" label="Add Holiday" class="cursor-pointer"
                 @click="addHolidayModalOpen = true">
             </UButton>
         </div>

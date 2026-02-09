@@ -86,25 +86,65 @@ export const useEmployeeStore = defineStore('employee', {
             if (!this.employee) return
             this.employee = { ...this.employee, ...partial }
         },
-        async fetchEmployees() {
-            this.loading = true;
-            this.error = null;
+        async fetchEmployees(params: { department?: number; status?: 'active' | 'inactive' } = {}) {
+            this.loading = true
+            this.error = null
             try {
+                const query: Record<string, any> = {}
+                if (params.department) query.department = params.department
+                if (params.status) query.status = params.status
+
                 const data = await useApi<EmployeeListResponse>('/api/employees/', {
-                    credentials: 'include'
-                });
-                this.employeesList = data.results || [];
+                    credentials: 'include',
+                    params: query,
+                })
+                this.employeesList = data.results || []
             } catch (err: any) {
-                this.error = extractErrorMessage(err, 'Failed to fetch employees list');
-                this.employeesList = [];
-                const toast = useToast();
+                this.error = extractErrorMessage(err, 'Failed to fetch employees list')
+                this.employeesList = []
+                const toast = useToast()
                 toast.add({
                     title: 'Error',
                     description: this.error,
-                    color: 'error'
-                });
+                    color: 'error',
+                })
             } finally {
-                this.loading = false;
+                this.loading = false
+            }
+        },
+
+        async fetchExEmployees() {
+            this.loading = true
+            this.error = null
+            try {
+                const data = await useApi<
+                    EmployeeListResponse |
+                    Employee[] |
+                    { error?: number; data?: Employee[] }
+                >('/api/employees/terminated-list/', {
+                    credentials: 'include',
+                })
+
+                if (Array.isArray(data)) {
+                    this.employeesList = data
+                } else if ('results' in data) {
+                    this.employeesList = data.results || []
+                } else if ('data' in data) {
+                    this.employeesList = data.data || []
+                } else {
+                    this.employeesList = []
+                }
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to fetch ex-employees list')
+                this.employeesList = []
+                const toast = useToast()
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error',
+                })
+            } finally {
+                this.loading = false
             }
         },
 
@@ -289,6 +329,38 @@ export const useEmployeeStore = defineStore('employee', {
                     title: 'Error',
                     description: this.error,
                     color: 'error'
+                })
+                throw err
+            } finally {
+                this.loading = false
+            }
+        },
+
+        async terminateEmployee(employeeId: number) {
+            this.loading = true
+            this.error = null
+            const toast = useToast()
+            try {
+                await useApi(`/api/employees/${employeeId}/terminate/`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: {},
+                })
+
+                // Remove from in-memory list if present
+                this.employeesList = this.employeesList.filter(emp => emp.id !== employeeId)
+
+                toast.add({
+                    title: 'Employee terminated',
+                    description: 'The employee has been terminated successfully',
+                    color: 'success',
+                })
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to terminate employee')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error',
                 })
                 throw err
             } finally {

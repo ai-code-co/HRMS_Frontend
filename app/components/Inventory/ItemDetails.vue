@@ -52,21 +52,34 @@ const state = reactive<Schema>({
 
 const isDeviceAssigned = computed(() => Boolean(props.item?.assignedTo));
 
-watch(() => props.item, (newItem) => {
-  if (newItem) {
-    state.device_type = newItem.type;
-    state.name = newItem.name;
-    state.purchase_date = newItem.purchaseDate;
-    state.warranty_expiry = newItem.warrantyExpire;
-    state.purchase_price = newItem.purchase_price;
-    state.status = newItem.status;
-    state.serial_number = newItem.serialNumber;
-    state.internalSerial = newItem.internalSerial;
-
-    // Reset edit mode when item changes
+watch(() => props.item?.id, (newId, oldId) => {
+  // Update when item ID changes
+  if (newId !== oldId && props.item) {
+    state.device_type = props.item.type || 0;
+    state.name = props.item.name || '';
+    state.purchase_date = props.item.purchaseDate || '';
+    state.warranty_expiry = props.item.warrantyExpire || '';
+    state.purchase_price = props.item.purchase_price || '';
+    state.status = props.item.status || 'unassigned';
+    state.serial_number = props.item.serialNumber || '';
+    state.internalSerial = props.item.internalSerial || '';
     isEditMode.value = false;
   }
 }, { immediate: true });
+
+// Also watch the item object for deep changes
+watch(() => props.item, (newItem) => {
+  if (newItem) {
+    state.device_type = newItem.type || 0;
+    state.name = newItem.name || '';
+    state.purchase_date = newItem.purchaseDate || '';
+    state.warranty_expiry = newItem.warrantyExpire || '';
+    state.purchase_price = newItem.purchase_price || '';
+    state.status = newItem.status || 'unassigned';
+    state.serial_number = newItem.serialNumber || '';
+    state.internalSerial = newItem.internalSerial || '';
+  }
+}, { deep: true });
 
 // --- 4. Options for Select ---
 const statusOptions = [
@@ -209,7 +222,12 @@ const confirmUnassign = async () => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           <UFormField label="Machine Type" name="type">
-            <UInput v-model="state.device_type" :disabled="!isEditMode" class="w-full" :ui="{ base: 'bg-slate-50' }" />
+            <UInput
+              :model-value="props.item?.devicetypeName || ''"
+              :disabled="true"
+              class="w-full"
+              :ui="{ base: 'bg-slate-50' }"
+            />
           </UFormField>
 
           <UFormField label="Machine Name" name="name">
