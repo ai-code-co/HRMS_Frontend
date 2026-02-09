@@ -2,12 +2,12 @@
     <div class="space-y-6 h-full flex flex-col">
         <p class="text-slate-500">Upload and manage policy documents here.</p>
 
-        <div class="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1 w-fit border border-slate-200">
+        <div class="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1 w-full sm:w-fit border border-slate-200 overflow-x-auto no-scrollbar">
             <button
                 v-for="f in FILTER_OPTIONS"
                 :key="f"
                 type="button"
-                class="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all cursor-pointer"
+                class="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all cursor-pointer whitespace-nowrap shrink-0"
                 :class="activeFilter === f
                     ? 'bg-white text-indigo-600 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'"

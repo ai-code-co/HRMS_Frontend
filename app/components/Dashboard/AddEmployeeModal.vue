@@ -658,7 +658,6 @@ const documentTypeOptions = [
     'Previous Company Salary Slip',
     'Previous Company Other Documents',
     'Qualification Certificate',
-    'Other Documents',
 ]
 
 const stepFieldMap: Array<(keyof EmployeeFormState)[]> = [
