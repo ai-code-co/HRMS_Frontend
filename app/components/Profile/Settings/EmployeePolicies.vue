@@ -1,0 +1,124 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useEmployeeStore } from '~/stores/employee'
+
+const employeeStore = useEmployeeStore()
+const { employee } = storeToRefs(employeeStore)
+
+type PolicyItem = {
+    id: string | number
+    name: string
+    type: string
+    link?: string
+    appliedAt?: string
+    isApplied?: boolean
+}
+
+const normalizeArray = (data: any) => {
+    if (Array.isArray(data)) return data
+    if (Array.isArray(data?.results)) return data.results
+    return []
+}
+
+const rawPolicies = computed(() => {
+    const data = (employee.value as any)?.policies
+        ?? (employee.value as any)?.all_policies
+        ?? (employee.value as any)?.policy_list
+        ?? (employee.value as any)?.policy_documents
+        ?? (employee.value as any)?.policy_links
+        ?? (employee.value as any)?.applied_policies
+        ?? []
+    return normalizeArray(data)
+})
+
+const policies = computed<PolicyItem[]>(() => {
+    return rawPolicies.value
+        .map((policy: any, index: number) => {
+            const appliedAt = policy.applied_at ?? policy.appliedAt ?? policy.created_at ?? ''
+            const isApplied = policy.isApplied
+                ?? policy.is_applied
+                ?? policy.applied
+                ?? policy.applied_status
+                ?? policy.status === 'applied'
+                ?? Boolean(appliedAt)
+
+            return {
+                id: policy.id ?? `${index}`,
+                name: policy.name ?? policy.document_name ?? policy.title ?? 'Policy',
+                type: policy.type ?? policy.docType ?? policy.doc_type ?? policy.visibility ?? 'Policy',
+                link: policy.link ?? policy.url ?? policy.file_url ?? policy.document_url ?? '',
+                appliedAt,
+                isApplied
+            }
+        })
+        .filter(policy => policy.isApplied)
+})
+
+const formatDate = (value?: string) => {
+    if (!value) return ''
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) return ''
+    return parsed.toLocaleDateString()
+}
+
+const isPdfLink = (link?: string) => {
+    if (!link) return false
+    return link.toLowerCase().includes('.pdf')
+}
+
+</script>
+
+<template>
+    <section class="w-full max-w-5xl space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h4 class="text-lg font-bold text-slate-800">Applied Policies</h4>
+                <p class="text-xs text-slate-500">Policies applied to your account.</p>
+            </div>
+            <span class="text-xs text-slate-400">{{ policies.length }} total</span>
+        </div>
+
+        <div v-if="policies.length === 0"
+            class="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
+            <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
+                <UIcon name="i-heroicons-shield-check" class="h-6 w-6 text-slate-400" />
+            </div>
+            <p class="text-sm font-semibold text-slate-700">No policies applied yet</p>
+            <p class="text-xs text-slate-500">Applied policies will appear here.</p>
+        </div>
+
+        <div v-else class="space-y-3">
+            <div v-for="policy in policies" :key="policy.id"
+                class="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                <div class="flex items-start gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
+                        <UIcon v-if="isPdfLink(policy.link)" name="i-heroicons-document" class="h-5 w-5 text-emerald-600" />
+                        <UIcon v-else name="i-heroicons-shield-check" class="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">{{ policy.name }}</p>
+                        <p class="text-xs text-slate-500">
+                            <span class="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                                {{ policy.type }}
+                            </span>
+                            <span v-if="formatDate(policy.appliedAt)" class="text-slate-400">
+                                Applied {{ formatDate(policy.appliedAt) }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <UButton v-if="policy.link" :to="policy.link" target="_blank" size="sm" color="primary"
+                        variant="soft" icon="i-heroicons-arrow-top-right-on-square" class="cursor-pointer">
+                        Open
+                    </UButton>
+                    <UButton v-else size="sm" color="neutral" variant="ghost" disabled>
+                        No link
+                    </UButton>
+                </div>
+            </div>
+        </div>
+    </section>
+</template>

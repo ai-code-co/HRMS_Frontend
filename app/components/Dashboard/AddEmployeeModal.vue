@@ -233,7 +233,7 @@
                     </UFormField>
                 </div>
 
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-else-if="activeStep === 4" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <UFormField label="Bank Name" name="bank_name">
                         <UInput v-model="employeeForm.bank_name" placeholder="e.g. HDFC Bank" size="xl"
                             color="secondary" variant="outline" class="w-full" />
@@ -252,6 +252,135 @@
                             color="secondary" variant="outline" class="w-full" maxlength="11"
                             @input="employeeForm.ifsc_code = employeeForm.ifsc_code.toUpperCase()" />
                     </UFormField>
+                </div>
+                <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <UFormField label="Document Type" name="document_type">
+                            <USelectMenu v-model="employeeForm.document_type" :items="documentTypeOptions" size="xl"
+                                placeholder="Select document type" color="secondary" variant="outline"
+                                class="w-full" />
+                        </UFormField>
+
+                    <UFormField label="Upload Document"
+                        description="PDF, DOC, DOCX, JPG, PNG">
+                        <div v-if="!selectedUploadedDocument && !pendingUpload" class="relative">
+                            <UInput :key="documentInputKey" type="file" icon="i-heroicons-paper-clip"
+                                accept=".pdf,.doc,.docx,image/*" @change="handleDocumentUpload"
+                                size="xl" color="secondary" variant="outline" class="w-full" />
+                        </div>
+                        <div v-if="pendingUpload"
+                            class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div v-if="pendingUpload.isImage && pendingUpload.previewUrl"
+                                class="mb-3 rounded-lg border border-slate-200 bg-white p-3">
+                                <p class="text-xs font-semibold uppercase text-slate-500 mb-2">Preview</p>
+                                <div class="relative overflow-hidden rounded-md border border-slate-200 bg-black">
+                                    <img :src="pendingUpload.previewUrl" :alt="pendingUpload.fileName"
+                                        class="h-40 w-full object-contain bg-black" />
+                                    <button type="button"
+                                        class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md"
+                                        @click="hidePendingPreview">
+                                        <UIcon name="i-heroicons-x-mark" class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <UIcon :name="getFileIcon(pendingUpload)" class="h-5 w-5 text-slate-500" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-700">
+                                            {{ pendingUpload.fileName }}
+                                        </p>
+                                        <p class="text-xs text-slate-500">
+                                            {{ pendingUpload.type }} - {{ formatFileSize(pendingUpload.size) }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div v-if="!pendingUpload.isImage" class="flex items-center gap-2">
+                                    <button type="button"
+                                        class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600"
+                                        @click="openViewDocument(pendingUpload)">
+                                        <UIcon name="i-heroicons-eye" class="h-4 w-4" />
+                                    </button>
+                                    <button type="button"
+                                        class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600"
+                                        @click="hidePendingPreview">
+                                        <UIcon name="i-heroicons-x-mark" class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-center justify-end">
+                                <UButton color="primary" size="sm" class="cursor-pointer" @click="confirmPendingUpload">
+                                    Confirm Upload
+                                </UButton>
+                            </div>
+                        </div>
+                        <div v-else-if="selectedUploadedDocument"
+                            class="relative mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <UIcon :name="getFileIcon(selectedUploadedDocument)" class="h-5 w-5 text-slate-500" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-700">
+                                            {{ selectedUploadedDocument.fileName }}
+                                        </p>
+                                        <p class="text-xs text-slate-500">
+                                            {{ selectedUploadedDocument.type }} - {{ formatFileSize(selectedUploadedDocument.size) }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="ml-auto flex items-center gap-1">
+                                    <button type="button"
+                                        class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600"
+                                        @click="openViewDocument(selectedUploadedDocument)">
+                                        <UIcon name="i-heroicons-eye" class="h-4 w-4" />
+                                    </button>
+                                    <button type="button"
+                                        class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600"
+                                        @click="requestDeleteDocument(selectedUploadedDocument.type)">
+                                        <UIcon name="i-heroicons-trash" class="h-4 w-4" />
+                                    </button>
+                                    <button type="button"
+                                        class="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600"
+                                        @click="hideSelectedPreview">
+                                        <UIcon name="i-heroicons-x-mark" class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </UFormField>
+                </div>
+
+                    <div class="h-60 rounded-xl border border-slate-200 bg-white p-4 flex flex-col">
+                        <div class="mb-3 flex items-center justify-between">
+                            <p class="text-sm font-semibold text-slate-700">Required Documents</p>
+                            <p class="text-xs text-slate-400">
+                                {{ uploadedDocumentTypes.length }} / {{ documentTypeOptions.length }} uploaded
+                            </p>
+                        </div>
+                        <div class="flex-1 space-y-2 overflow-y-auto pr-2 pb-2">
+                            <button v-for="(docType, index) in documentTypeOptions" :key="docType" type="button"
+                                class="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-left transition"
+                                :class="[
+                                    isDocumentUploaded(docType) ? 'cursor-pointer' : 'cursor-default',
+                                    selectedUploadedType === docType
+                                        ? 'bg-indigo-50 ring-1 ring-indigo-200'
+                                        : 'hover:bg-slate-50'
+                                ]"
+                                @click="!pendingUpload && isDocumentUploaded(docType) && (selectedUploadedType = docType)">
+                                <div class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold"
+                                    :class="isDocumentUploaded(docType)
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-slate-100 text-slate-400'">
+                                    <UIcon v-if="isDocumentUploaded(docType)" name="i-heroicons-check" class="h-4 w-4" />
+                                    <span v-else>{{ index + 1 }}</span>
+                                </div>
+                                <p class="text-sm"
+                                    :class="isDocumentUploaded(docType) ? 'text-slate-700' : 'text-slate-400'">
+                                    {{ docType }}
+                                </p>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-between mt-8 pt-5 border-t border-slate-100">
@@ -280,6 +409,41 @@
             </UForm>
         </template>
     </UModal>
+
+    <UIConfirmDialog
+        v-model:open="deleteConfirmOpen"
+        title="Delete Document"
+        :message="`Delete '${pendingDeleteType}' document? This action cannot be undone.`"
+        confirm-label="Delete"
+        cancel-label="Cancel"
+        confirm-color="error"
+        icon="i-lucide-trash-2"
+        icon-bg="bg-red-100"
+        icon-color="text-red-600"
+        @confirm="confirmDeleteDocument"
+        @cancel="pendingDeleteType = null"
+    />
+
+    <UModal v-model:open="viewModalOpen" :overlay="true"
+        :ui="{ overlay: 'bg-slate-900/40 backdrop-blur-sm', content: 'w-[95vw] sm:w-full sm:max-w-4xl h-[80vh]' }">
+        <template #header>
+            <div class="flex items-center justify-between w-full">
+                <h3 class="text-lg font-semibold text-slate-800">View Document</h3>
+                <UButton icon="i-heroicons-x-mark" variant="ghost" class="rounded-full cursor-pointer"
+                    @click="closeViewDocument" />
+            </div>
+        </template>
+        <template #body>
+            <div class="w-full h-[calc(80vh-80px)] bg-slate-100 rounded-lg overflow-hidden">
+                <img v-if="viewFileUrl && viewFileIsImage" :src="viewFileUrl" alt="Preview"
+                    class="w-full h-full object-contain bg-black" />
+                <iframe v-else-if="viewFileUrl" :src="viewFileUrl" class="w-full h-full border-0" />
+                <div v-else class="flex items-center justify-center h-full text-slate-500">
+                    No file available
+                </div>
+            </div>
+        </template>
+    </UModal>
 </template>
 
 <script setup lang="ts">
@@ -297,6 +461,17 @@ const emit = defineEmits(['update:open', 'close', 'success'])
 const departmentStore = useDepartmentStore()
 const employeeStore = useEmployeeStore()
 const submitting = ref(false)
+const documentFile = ref<File | null>(null)
+const documentInputKey = ref(0)
+const uploadedDocumentTypes = ref<string[]>([])
+const uploadedDocuments = ref<{ type: string; fileName: string; size: number; file: File; previewUrl?: string | null; isImage?: boolean }[]>([])
+const selectedUploadedType = ref<string | null>(null)
+const pendingUpload = ref<{ type: string; fileName: string; size: number; file: File; previewUrl?: string | null; isImage?: boolean } | null>(null)
+const viewModalOpen = ref(false)
+const viewFileUrl = ref<string | null>(null)
+const viewFileIsImage = ref(false)
+const deleteConfirmOpen = ref(false)
+const pendingDeleteType = ref<string | null>(null)
 
 const modelOpen = computed({
     get: () => props.open,
@@ -312,6 +487,7 @@ const steps = [
     { id: 'address', title: 'Address', description: 'Provide current and permanent address information', icon: 'i-heroicons-map-pin' },
     { id: 'emergency', title: 'Emergency', description: 'Add emergency contact details for safety', icon: 'i-heroicons-heart' },
     { id: 'bank', title: 'Bank', description: 'Add bank account details (optional)', icon: 'i-heroicons-banknotes' },
+    { id: 'documents', title: 'Documents', description: 'Upload employee documents (optional)', icon: 'i-heroicons-document-arrow-up' },
 ]
 
 
@@ -387,6 +563,7 @@ const employeeSchema = z.object({
     account_number: z.string().optional(),
     ifsc_code: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC code format').optional().or(z.literal('')),
     account_holder_name: z.string().optional(),
+    document_type: z.string().optional(),
 })
 
 type EmployeeFormSchema = z.infer<typeof employeeSchema>
@@ -425,6 +602,7 @@ type EmployeeFormState = {
     account_number: string
     ifsc_code: string
     account_holder_name: string
+    document_type: string
 }
 
 const initialEmployeeForm: EmployeeFormState = {
@@ -461,12 +639,27 @@ const initialEmployeeForm: EmployeeFormState = {
     account_number: '',
     ifsc_code: '',
     account_holder_name: '',
+    document_type: '',
 }
 
 const employeeForm = reactive<EmployeeFormState>({ ...initialEmployeeForm })
 
 const departmentOptions = computed<SelectMenuItem[]>(() => departmentStore.departmentOptions)
 const designationOptions = computed<SelectMenuItem[]>(() => departmentStore.designationOptions)
+const documentTypeOptions = [
+    'CV',
+    'PAN Card',
+    'Address Proof',
+    'Photo',
+    'Offer Letter',
+    'Appointment Letter',
+    'Previous Company Experience Letter',
+    'Previous Company Offer Letter',
+    'Previous Company Salary Slip',
+    'Previous Company Other Documents',
+    'Qualification Certificate',
+    'Other Documents',
+]
 
 const stepFieldMap: Array<(keyof EmployeeFormState)[]> = [
     ['first_name', 'last_name', 'department', 'designation', 'date_of_birth', 'gender', 'blood_group', 'marital_status'],
@@ -487,6 +680,7 @@ const stepFieldMap: Array<(keyof EmployeeFormState)[]> = [
     ],
     ['emergency_contact_name', 'emergency_contact_relationship', 'emergency_phone', 'emergency_alternate_phone', 'emergency_email', 'emergency_address'],
     ['bank_name', 'account_number', 'ifsc_code', 'account_holder_name'],
+    [],
 ]
 
 const handleNumericKeyPress = (e: KeyboardEvent) => {
@@ -499,6 +693,9 @@ const handleNumericKeyPress = (e: KeyboardEvent) => {
 
 const validateStep = async (stepIndex: number) => {
     const fields = stepFieldMap[stepIndex]
+    if (!fields || fields.length === 0) {
+        return true
+    }
     const result = await formRef.value?.validate({ name: fields })
     return result !== false
 }
@@ -532,6 +729,12 @@ const resetForm = () => {
     Object.assign(employeeForm, initialEmployeeForm)
     departmentStore.clearDesignations()
     formRef.value?.clear()
+    clearDocumentFile()
+    revokeAllPreviews()
+    uploadedDocumentTypes.value = []
+    uploadedDocuments.value = []
+    selectedUploadedType.value = null
+    pendingUpload.value = null
 }
 
 watch(
@@ -547,6 +750,145 @@ watch(
         }
     }
 )
+
+const handleDocumentUpload = (event: Event) => {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+    documentFile.value = file
+    const type = employeeForm.document_type
+    if (!type) {
+        clearDocumentFile()
+        return
+    }
+
+    const isImage = file.type.startsWith('image/')
+    const previewUrl = isImage ? URL.createObjectURL(file) : null
+    if (pendingUpload.value?.previewUrl) {
+        URL.revokeObjectURL(pendingUpload.value.previewUrl)
+    }
+    pendingUpload.value = { type, fileName: file.name, size: file.size, file, previewUrl, isImage }
+}
+
+const clearDocumentFile = () => {
+    documentFile.value = null
+    documentInputKey.value += 1
+}
+
+const formatFileSize = (size: number) => {
+    if (size < 1024) return `${size} B`
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`
+}
+
+const getFileIcon = (doc: { fileName: string; isImage?: boolean }) => {
+    if (doc.isImage) return 'i-heroicons-photo'
+    return 'i-heroicons-document'
+}
+
+const isDocumentUploaded = (type: string) => {
+    return uploadedDocumentTypes.value.includes(type)
+}
+
+const selectedUploadedDocument = computed(() => {
+    if (!selectedUploadedType.value) return null
+    return uploadedDocuments.value.find(doc => doc.type === selectedUploadedType.value) ?? null
+})
+
+const hideSelectedPreview = () => {
+    selectedUploadedType.value = null
+}
+
+const hidePendingPreview = () => {
+    if (pendingUpload.value?.previewUrl) {
+        URL.revokeObjectURL(pendingUpload.value.previewUrl)
+    }
+    pendingUpload.value = null
+    clearDocumentFile()
+}
+
+const confirmPendingUpload = () => {
+    if (!pendingUpload.value) return
+    const type = pendingUpload.value.type
+    if (!uploadedDocumentTypes.value.includes(type)) {
+        uploadedDocumentTypes.value = [...uploadedDocumentTypes.value, type]
+    }
+    const existingIndex = uploadedDocuments.value.findIndex(doc => doc.type === type)
+    if (existingIndex >= 0) {
+        const existing = uploadedDocuments.value[existingIndex]
+        if (existing?.previewUrl && existing.previewUrl !== pendingUpload.value.previewUrl) {
+            URL.revokeObjectURL(existing.previewUrl)
+        }
+        uploadedDocuments.value = uploadedDocuments.value.map((doc, index) =>
+            index === existingIndex ? pendingUpload.value! : doc
+        )
+    } else {
+        uploadedDocuments.value = [...uploadedDocuments.value, pendingUpload.value]
+    }
+    employeeForm.document_type = ''
+    pendingUpload.value = null
+    clearDocumentFile()
+}
+
+const openViewDocument = (doc: { file: File }) => {
+    if (viewFileUrl.value) {
+        URL.revokeObjectURL(viewFileUrl.value)
+    }
+    viewFileUrl.value = URL.createObjectURL(doc.file)
+    viewFileIsImage.value = doc.file.type.startsWith('image/')
+    viewModalOpen.value = true
+}
+
+const closeViewDocument = () => {
+    viewModalOpen.value = false
+    if (viewFileUrl.value) {
+        URL.revokeObjectURL(viewFileUrl.value)
+        viewFileUrl.value = null
+    }
+    viewFileIsImage.value = false
+}
+
+const requestDeleteDocument = (type: string) => {
+    pendingDeleteType.value = type
+    deleteConfirmOpen.value = true
+}
+
+const confirmDeleteDocument = () => {
+    if (!pendingDeleteType.value) return
+    const typeToDelete = pendingDeleteType.value
+    const toDelete = uploadedDocuments.value.find(doc => doc.type === typeToDelete)
+    if (toDelete?.previewUrl) {
+        URL.revokeObjectURL(toDelete.previewUrl)
+    }
+    uploadedDocumentTypes.value = uploadedDocumentTypes.value.filter(type => type !== typeToDelete)
+    uploadedDocuments.value = uploadedDocuments.value.filter(doc => doc.type !== typeToDelete)
+    if (selectedUploadedType.value === typeToDelete) {
+        selectedUploadedType.value = null
+    }
+    pendingDeleteType.value = null
+    deleteConfirmOpen.value = false
+}
+
+watch(viewModalOpen, (isOpen) => {
+    if (!isOpen && viewFileUrl.value) {
+        URL.revokeObjectURL(viewFileUrl.value)
+        viewFileUrl.value = null
+    }
+    if (!isOpen) {
+        viewFileIsImage.value = false
+    }
+})
+
+const revokeAllPreviews = () => {
+    uploadedDocuments.value.forEach(doc => {
+        if (doc.previewUrl) {
+            URL.revokeObjectURL(doc.previewUrl)
+        }
+    })
+    if (pendingUpload.value?.previewUrl) {
+        URL.revokeObjectURL(pendingUpload.value.previewUrl)
+    }
+}
 
 watch(
     () => employeeForm.department,
