@@ -243,6 +243,15 @@ export interface EmployeeCreateUpdate {
     account_holder_name?: string
     is_active?: boolean
     emergency_contacts?: EmergencyContactCreate[]
+    documents?: EmployeeDocumentCreate[]
+}
+
+export interface EmployeeDocumentCreate {
+    document_type: string
+    document_name?: string
+    document_url?: string
+    public_id?: string
+    resource_type?: string
 }
 
 export interface CreateEmployeeForm {

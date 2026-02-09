@@ -43,6 +43,38 @@ export const useEmployeeStore = defineStore('employee', {
     },
 
     actions: {
+        async uploadEmployeeFile(file: File) {
+            const toast = useToast()
+            try {
+                const uploadFormData = new FormData()
+                uploadFormData.append('file', file)
+
+                const response = await useApi<{
+                    success: boolean
+                    url: string
+                    public_id: string
+                    resource_type: string
+                }>('/auth/upload-file/', {
+                    method: 'POST',
+                    body: uploadFormData,
+                    credentials: 'include',
+                })
+
+                if (!response?.success) {
+                    throw new Error('File upload failed')
+                }
+
+                return response
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to upload file')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            }
+        },
         async fetchEmployee(showGlobalLoader = false, userId?: number | null) {
             this.loading = true
             this.error = null
