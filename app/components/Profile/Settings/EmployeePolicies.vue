@@ -1,66 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useEmployeeStore } from '~/stores/employee'
+import { useSettingsStore } from '~/stores/settings'
 
-const employeeStore = useEmployeeStore()
-const { employee } = storeToRefs(employeeStore)
+const settingsStore = useSettingsStore()
+const { policies: policyDocuments, loadingPolicies } = storeToRefs(settingsStore)
 
-type PolicyItem = {
-    id: string | number
-    name: string
-    type: string
-    link?: string
-    appliedAt?: string
-    isApplied?: boolean
-}
-
-const normalizeArray = (data: any) => {
-    if (Array.isArray(data)) return data
-    if (Array.isArray(data?.results)) return data.results
-    return []
-}
-
-const rawPolicies = computed(() => {
-    const data = (employee.value as any)?.policies
-        ?? (employee.value as any)?.all_policies
-        ?? (employee.value as any)?.policy_list
-        ?? (employee.value as any)?.policy_documents
-        ?? (employee.value as any)?.policy_links
-        ?? (employee.value as any)?.applied_policies
-        ?? []
-    return normalizeArray(data)
+onMounted(async () => {
+    if (policyDocuments.value.length === 0 && !loadingPolicies.value) {
+        await settingsStore.fetchPolicyDocuments()
+    }
 })
 
-const policies = computed<PolicyItem[]>(() => {
-    return rawPolicies.value
-        .map((policy: any, index: number) => {
-            const appliedAt = policy.applied_at ?? policy.appliedAt ?? policy.created_at ?? ''
-            const isApplied = policy.isApplied
-                ?? policy.is_applied
-                ?? policy.applied
-                ?? policy.applied_status
-                ?? policy.status === 'applied'
-                ?? Boolean(appliedAt)
-
-            return {
-                id: policy.id ?? `${index}`,
-                name: policy.name ?? policy.document_name ?? policy.title ?? 'Policy',
-                type: policy.type ?? policy.docType ?? policy.doc_type ?? policy.visibility ?? 'Policy',
-                link: policy.link ?? policy.url ?? policy.file_url ?? policy.document_url ?? '',
-                appliedAt,
-                isApplied
-            }
-        })
-        .filter(policy => policy.isApplied)
+const policies = computed(() => {
+    return policyDocuments.value.filter(policy => policy.isApplied)
 })
-
-const formatDate = (value?: string) => {
-    if (!value) return ''
-    const parsed = new Date(value)
-    if (Number.isNaN(parsed.getTime())) return ''
-    return parsed.toLocaleDateString()
-}
 
 const isPdfLink = (link?: string) => {
     if (!link) return false
@@ -79,7 +33,14 @@ const isPdfLink = (link?: string) => {
             <span class="text-xs text-slate-400">{{ policies.length }} total</span>
         </div>
 
-        <div v-if="policies.length === 0"
+        <div v-if="loadingPolicies" class="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
+            <div class="text-center space-y-4">
+                <UIcon name="i-lucide-loader-2" class="w-10 h-10 text-indigo-600 animate-spin mx-auto" />
+                <p class="text-sm font-semibold text-slate-700">Loading policies...</p>
+            </div>
+        </div>
+
+        <div v-else-if="policies.length === 0"
             class="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
             <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
                 <UIcon name="i-heroicons-shield-check" class="h-6 w-6 text-slate-400" />
@@ -100,10 +61,10 @@ const isPdfLink = (link?: string) => {
                         <p class="text-sm font-semibold text-slate-800">{{ policy.name }}</p>
                         <p class="text-xs text-slate-500">
                             <span class="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
-                                {{ policy.type }}
+                                {{ policy.visibility || policy.docType }}
                             </span>
-                            <span v-if="formatDate(policy.appliedAt)" class="text-slate-400">
-                                Applied {{ formatDate(policy.appliedAt) }}
+                            <span v-if="policy.date" class="text-slate-400">
+                                Applied {{ policy.date }}
                             </span>
                         </p>
                     </div>
