@@ -4,7 +4,7 @@
         <div v-if="error"
             class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 md:p-10 text-center space-y-6">
             <div class="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
-                <UIcon name="i-lucide-link-off" class="size-8 text-red-600" />
+                <UIcon name="i-lucide-link-2-off" class="size-8 text-red-600" />
             </div>
             <div>
                 <p class="text-[10px] font-bold uppercase text-slate-500 tracking-widest mb-1">Link unavailable</p>
