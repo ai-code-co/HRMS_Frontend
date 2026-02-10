@@ -1,4 +1,4 @@
-import { ref, computed, readonly } from 'vue'
+import { ref, computed, readonly, watch } from 'vue'
 
 export interface EmployeeLookup {
   id: number
@@ -16,8 +16,50 @@ const selectedEmployeeId = ref<number | null>(null)
 const employeeLookupList = ref<EmployeeLookup[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+const employeeQueryKey = 'employeeId'
+let isRouteSyncInitialized = false
+
+const parseEmployeeId = (value: unknown): number | null => {
+  if (Array.isArray(value)) {
+    value = value[0]
+  }
+  if (value === null || value === undefined || value === '') return null
+  const num = Number.parseInt(String(value), 10)
+  return Number.isNaN(num) ? null : num
+}
 
 export function useEmployeeContext() {
+  const route = useRoute()
+  const router = useRouter()
+
+  const updateEmployeeQuery = async (employeeId: number | null) => {
+    if (!import.meta.client) return
+    const current = parseEmployeeId(route.query[employeeQueryKey])
+    if (current === employeeId) return
+
+    const nextQuery = { ...route.query }
+    if (employeeId === null) {
+      delete nextQuery[employeeQueryKey]
+    } else {
+      nextQuery[employeeQueryKey] = String(employeeId)
+    }
+
+    await router.replace({ query: nextQuery })
+  }
+
+  if (!isRouteSyncInitialized && import.meta.client) {
+    isRouteSyncInitialized = true
+    watch(
+      () => route.query[employeeQueryKey],
+      (value) => {
+        const parsed = parseEmployeeId(value)
+        if (parsed === selectedEmployeeId.value) return
+        selectedEmployeeId.value = parsed
+      },
+      { immediate: true }
+    )
+  }
+
   const activeEmployee = computed(() => {
     if (!selectedEmployeeId.value) return null
     const list = employeeLookupList.value
@@ -51,12 +93,18 @@ export function useEmployeeContext() {
     }
   }
 
-  function selectEmployee(employeeId: number) {
+  function selectEmployee(employeeId: number, options?: { skipQuery?: boolean }) {
     selectedEmployeeId.value = employeeId
+    if (!options?.skipQuery) {
+      void updateEmployeeQuery(employeeId)
+    }
   }
 
-  function clearSelection() {
+  function clearSelection(options?: { skipQuery?: boolean }) {
     selectedEmployeeId.value = null
+    if (!options?.skipQuery) {
+      void updateEmployeeQuery(null)
+    }
   }
 
   const employeeOptions = computed(() => {

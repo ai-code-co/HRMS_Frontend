@@ -2,6 +2,7 @@ import { canAccessNavItem, navigationItems } from '~/utils/roleConfig'
 
 export default defineNuxtRouteMiddleware(async (to) => {
     const { token, isAuthenticated, hasPermission, user } = useAuth()
+    const { selectedEmployeeId } = useEmployeeContext()
 
     const resetRoutes = ['/forgot-password', '/reset-password']
     const publicRoutes = ['/login', '/audit']
@@ -46,5 +47,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     if (navItem && !canAccessNavItem(navItem, user.value?.role_detail || null)) {
         return navigateTo('/dashboard')
+    }
+
+    if (selectedEmployeeId.value) {
+        const restrictedWhenImpersonating = new Set(['/holidays', '/adminInventory', '/interview', '/teams'])
+        if (restrictedWhenImpersonating.has(to.path)) {
+            return navigateTo('/dashboard')
+        }
     }
 })
