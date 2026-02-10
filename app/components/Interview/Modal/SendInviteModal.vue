@@ -4,7 +4,13 @@
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <h3 class="text-lg font-semibold text-slate-800">Send Invite</h3>
-                <UButton icon="i-heroicons-x-mark" variant="ghost" class="rounded-full cursor-pointer" @click="close" />
+                <UButton
+                    icon="i-heroicons-x-mark"
+                    variant="ghost"
+                    class="rounded-full cursor-pointer"
+                    type="button"
+                    @click="close"
+                />
             </div>
         </template>
 
@@ -115,11 +121,12 @@ import type { FormSubmitEvent } from '#ui/types'
 import { useInterviewStore } from '~/stores/interview'
 import type { InvitePayload } from '~/types/interview'
 
-const props = defineProps<{ open: boolean }>()
-const emit = defineEmits(['update:open', 'close'])
+const emit = defineEmits(['close'])
 
 const interviewStore = useInterviewStore()
 const toast = useToast()
+
+const modelOpen = defineModel<boolean>('open', { default: false })
 
 const emailFields = ref<string[]>([''])
 const emailErrors = ref<Record<number, boolean>>({})
@@ -137,21 +144,6 @@ const inviteSchema = z.object({
 
 type InviteFormSchema = z.output<typeof inviteSchema>
 
-const state = ref({
-    emails: [] as string[]
-})
-
-const modelOpen = computed({
-    get: () => props.open,
-    set: (value: boolean) => emit('update:open', value)
-})
-
-// Computed total emails count (depends on emailFields so it updates when fields change)
-const totalEmailsCount = computed(() => {
-    const validManualEmails = emailFields.value.filter(email => typeof email === 'string' && email.trim() && emailRegex.test(email.trim()))
-    return validManualEmails.length + selectedCsvEmails.value.length
-})
-
 // Get all valid emails
 const getAllValidEmails = (): string[] => {
     const validManualEmails = emailFields.value
@@ -159,6 +151,21 @@ const getAllValidEmails = (): string[] => {
         .map(email => email.trim())
     return [...validManualEmails, ...selectedCsvEmails.value]
 }
+
+// Computed total emails count (depends on emailFields so it updates when fields change)
+const totalEmailsCount = computed(() => {
+    return getAllValidEmails().length
+})
+
+// State for form validation - sync with actual emails
+const state = ref({
+    emails: [] as string[]
+})
+
+// Watch email fields and CSV selections to update state
+watch([emailFields, selectedCsvEmails], () => {
+    state.value.emails = getAllValidEmails()
+}, { deep: true, immediate: true })
 
 const addEmailField = () => {
     emailFields.value = [...emailFields.value, '']
@@ -270,7 +277,7 @@ const deselectAllCsvEmails = () => {
     selectedCsvEmails.value = []
 }
 
-watch(() => props.open, (isOpen) => {
+watch(modelOpen, (isOpen) => {
     if (!isOpen) {
         // Reset form when modal closes
         emailFields.value = ['']
@@ -308,7 +315,7 @@ async function onSubmit(event: FormSubmitEvent<any>) {
         }
 
         await interviewStore.createInvite(payload)
-        modelOpen.value = false
+        close()
     } catch (err: any) {
         // Error is already handled in the store
     }

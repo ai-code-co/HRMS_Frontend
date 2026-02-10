@@ -11,6 +11,7 @@ import type {
     InviteStatus
 } from '~/types/interview'
 import { extractErrorMessage } from '~/composables/useErrorMessage'
+import useInterviewApi from '~/composables/useInterviewApi'
 
 export const useInterviewStore = defineStore('interview', {
     state: () => ({
@@ -262,10 +263,12 @@ export const useInterviewStore = defineStore('interview', {
                 if (this.selectedCandidate?.id === candidateId) {
                     await this.fetchCandidateById(candidateId)
                 }
-                const statusLabel = payload.status.charAt(0) + payload.status.slice(1).toLowerCase()
+                const isApproved = payload.status === 'APPROVED'
                 toast.add({
-                    title: 'Success',
-                    description: `Candidate status updated to ${statusLabel}. Relevant email will be sent.`,
+                    title: isApproved ? 'Candidate approved' : 'Candidate rejected',
+                    description: isApproved
+                        ? "A selection email ('you are selected') has been sent to the candidate."
+                        : "A rejection email ('you are not selected') has been sent to the candidate.",
                     color: 'success'
                 })
             } catch (err: any) {
@@ -293,7 +296,9 @@ export const useInterviewStore = defineStore('interview', {
             try {
                 // Hardcoded user_id as per requirements
                 const userId = '834a82fc-f116-4726-bcbb-5984fd113c3e'
-                const response = await useInterviewApi<InviteApi[]>(`/api/invites?issued_by=${userId}`)
+                const response = await useInterviewApi<InviteApi[]>('/api/invites', {
+                    params: { issued_by: userId }
+                })
                 this.invites = response
                 return this.invites
             } catch (err: any) {
@@ -328,13 +333,13 @@ export const useInterviewStore = defineStore('interview', {
                 if (emails.length === 1) {
                     const response = await useInterviewApi<InviteApi>('/api/invites', {
                         method: 'POST',
-                        body: { email: emails[0] }
+                        body: { email: emails[0], issued_by: payload.issued_by  }
                     })
                     responses = [response]
                 } else {
                     const response = await useInterviewApi<InviteApi[]>('/api/invites/bulk', {
                         method: 'POST',
-                        body: { emails }
+                        body: { emails, issued_by: payload.issued_by  }
                     })
                     responses = Array.isArray(response) ? response : [response]
                 }
