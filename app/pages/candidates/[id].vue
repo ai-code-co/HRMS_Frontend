@@ -75,8 +75,6 @@ const handleStatusUpdate = async (status: 'APPROVED' | 'REJECTED' | 'PENDING') =
     }
 }
 
-const hasInterview = computed(() => !!selectedCandidate.value?.interview)
-
 // One-time use: once Approve or Reject is chosen, both buttons are disabled
 const hasDecided = computed(() => {
     const s = selectedCandidate.value?.status
@@ -95,6 +93,22 @@ const hasPostInterviewDecided = computed(() => {
         return new Date(updatedAt) >= new Date(completedAt)
     }
     return false
+})
+
+const decisionStage = computed<'pre' | 'in_progress' | 'post' | 'none'>(() => {
+    const c = selectedCandidate.value
+    if (!c) return 'none'
+    if (!c.interview) return 'pre'
+    const interviewStatus = c.interview.status?.toUpperCase()
+    if (interviewStatus === 'COMPLETED') return 'post'
+    return 'in_progress'
+})
+
+const decisionDisabled = computed(() => {
+    if (updatingStatus.value) return true
+    if (decisionStage.value === 'pre') return hasDecided.value
+    if (decisionStage.value === 'post') return hasPostInterviewDecided.value
+    return true
 })
 
 const getRecommendationColor = (recommendation: string) => {
@@ -248,39 +262,47 @@ const getRecommendationColor = (recommendation: string) => {
                     </div>
                 </div>
 
-                <!-- AI Evaluation Decision (Approve = send interview link, Reject = send rejection email) -->
-                <div v-if="selectedCandidate.evaluation && !selectedCandidate.interview"
+                <!-- Decision + Interview (single card) -->
+                <div v-if="selectedCandidate.evaluation || selectedCandidate.interview"
                     class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">AI Evaluation Decision</h3>
-                    <p class="text-sm text-slate-600 mb-4">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Decision & Interview</h3>
+                    <p v-if="decisionStage === 'pre'" class="text-sm text-slate-600 mb-4">
                         Based on the AI evaluation, approve to send an interview link to the candidate or reject to send a rejection email.
                     </p>
-                    <div class="mb-4">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Optional message (included in email)</label>
-                        <UTextarea v-model="customMessage" placeholder="Add a personal note for the candidate (optional)" :rows="2"
-                            class="w-full border-primary-300 focus:border-primary-500 focus:border-2 focus:ring-0 focus:ring-transparent focus:outline-none" color="primary" variant="outline" />
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
-                            :disabled="updatingStatus || hasDecided"
-                            class="cursor-pointer"
-                            @click="handleStatusUpdate('APPROVED')">
-                            Approve — Send interview link
-                        </UButton>
-                        <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
-                            :disabled="updatingStatus || hasDecided"
-                            class="cursor-pointer"
-                            @click="handleStatusUpdate('REJECTED')">
-                            Reject — Send rejection email
-                        </UButton>
-                    </div>
-                </div>
+                    <p v-else-if="decisionStage === 'in_progress'" class="text-sm text-slate-600 mb-4">
+                        Interview is in progress. You can approve or reject once the interview is completed.
+                    </p>
+                    <p v-else-if="decisionStage === 'post'" class="text-sm text-slate-600 mb-4">
+                        Interview completed. You can approve or reject once.
+                    </p>
 
-                <!-- Interview Information (video above decision) -->
-                <div v-if="selectedCandidate.interview"
-                    class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Interview Information</h3>
-                    <div v-if="selectedCandidate.interview.video_url" class="mb-6">
+                    <div v-if="selectedCandidate.interview" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Status</p>
+                            <UBadge :class="getStatusColor(selectedCandidate.interview.status)" variant="soft" size="sm">
+                                {{ selectedCandidate.interview.status }}
+                            </UBadge>
+                        </div>
+                        <div v-if="selectedCandidate.interview.duration">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Duration</p>
+                        </div>
+                        <div v-if="selectedCandidate.interview.video_url">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Video</p>
+                            <UButton icon="i-lucide-video" variant="ghost" size="sm"
+                                @click="window.open(selectedCandidate.interview.video_url, '_blank')">
+                                View Recording
+                            </UButton>
+                        </div>
+                        <div v-if="selectedCandidate.interview.transcript_url">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Transcript</p>
+                            <UButton icon="i-lucide-file-text" variant="ghost" size="sm"
+                                @click="window.open(selectedCandidate.interview.transcript_url, '_blank')">
+                                View Transcript
+                            </UButton>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedCandidate.interview?.video_url" class="mb-6">
                         <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Interview recording</p>
                         <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900">
                             <video :src="selectedCandidate.interview.video_url" controls class="w-full h-full object-cover" playsinline />
@@ -295,52 +317,26 @@ const getRecommendationColor = (recommendation: string) => {
                             <a :href="selectedCandidate.interview.video_url" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-medium">open the recording in a new tab</a>.
                         </p>
                     </div>
+
                     <div class="mb-4">
                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Optional message (included in email)</label>
                         <UTextarea v-model="customMessage" placeholder="Add a personal note for the candidate (optional)" :rows="2"
                             class="w-full border-primary-300 focus:border-primary-500 focus:border-2 focus:ring-0 focus:ring-transparent focus:outline-none" color="primary" variant="outline" />
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Status</p>
-                            <UBadge :class="getStatusColor(selectedCandidate.interview.status)" variant="soft"
-                                size="sm">
-                                {{ selectedCandidate.interview.status }}
-                            </UBadge>
-                        </div>
-                        <div v-if="selectedCandidate.interview.duration">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Duration</p>
-                            <!-- <p class="text-sm font-bold text-slate-700">{{ selectedCandidate.interview.duration }}</p> -->
-                        </div>
-                        <div v-if="selectedCandidate.interview.video_url">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Video</p>
-                            <UButton icon="i-lucide-video" variant="ghost" size="sm"
-                                @click="window.open(selectedCandidate.interview.video_url, '_blank')">
-                                View Recording
-                            </UButton>
-                        </div>
-                        <div v-if="selectedCandidate.interview.transcript_url">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Transcript
-                            </p>
-                            <UButton icon="i-lucide-file-text" variant="ghost" size="sm"
-                                @click="window.open(selectedCandidate.interview.transcript_url, '_blank')">
-                                View Transcript
-                            </UButton>
-                        </div>
-                        <div class="flex flex-wrap gap-3 md:col-span-2">
-                            <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
-                                :disabled="updatingStatus || hasPostInterviewDecided"
-                                class="cursor-pointer"
-                                @click="handleStatusUpdate('APPROVED')">
-                                Approve
-                            </UButton>
-                            <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
-                                :disabled="updatingStatus || hasPostInterviewDecided"
-                                class="cursor-pointer"
-                                @click="handleStatusUpdate('REJECTED')">
-                                Reject
-                            </UButton>
-                        </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
+                            :disabled="decisionDisabled"
+                            class="cursor-pointer"
+                            @click="handleStatusUpdate('APPROVED')">
+                            {{ decisionStage === 'pre' ? 'Approve — Send interview link' : 'Approve' }}
+                        </UButton>
+                        <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
+                            :disabled="decisionDisabled"
+                            class="cursor-pointer"
+                            @click="handleStatusUpdate('REJECTED')">
+                            {{ decisionStage === 'pre' ? 'Reject — Send rejection email' : 'Reject' }}
+                        </UButton>
                     </div>
                 </div>
             </div>

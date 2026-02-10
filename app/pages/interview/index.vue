@@ -122,7 +122,7 @@
                         <p class="text-sm font-medium">No interview invites found</p>
                     </div>
 
-                    <div v-else v-for="invite in invites" :key="invite.id"
+                    <div v-else v-for="invite in validInvites" :key="invite.id"
                         class="bg-white border border-slate-200 p-5 rounded-[1.5rem] flex justify-between items-center cursor-pointer transition-all hover:border-indigo-300 hover:shadow-md">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
@@ -328,8 +328,8 @@ const getInitials = (name: string) => {
 }
 
 
-const inviteStatusClass = (status: string) => {
-    const statusLower = status.toLowerCase()
+const inviteStatusClass = (status?: string | null) => {
+    const statusLower = status?.toLowerCase?.() || ''
     if (statusLower === 'pending') {
         return 'bg-amber-50 text-amber-600'
     } else if (statusLower === 'used') {
@@ -343,4 +343,8 @@ const inviteStatusClass = (status: string) => {
     }
     return 'bg-slate-50 text-slate-600'
 }
+
+const validInvites = computed(() => {
+    return invites.value.filter(invite => invite.email && invite.created_at)
+})
 </script>

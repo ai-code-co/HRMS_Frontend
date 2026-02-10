@@ -333,13 +333,13 @@ export const useInterviewStore = defineStore('interview', {
                 if (emails.length === 1) {
                     const response = await useInterviewApi<InviteApi>('/api/invites', {
                         method: 'POST',
-                        body: { email: emails[0] }
+                        body: { email: emails[0], issued_by: payload.issued_by  }
                     })
                     responses = [response]
                 } else {
                     const response = await useInterviewApi<InviteApi[]>('/api/invites/bulk', {
                         method: 'POST',
-                        body: { emails }
+                        body: { emails, issued_by: payload.issued_by  }
                     })
                     responses = Array.isArray(response) ? response : [response]
                 }

@@ -85,7 +85,12 @@
                         </template>
                         <UInput
                             v-model="state.phone"
-                            type="tel"
+                            type="text"
+                            inputmode="numeric"
+                            pattern="[0-9]+"
+                            maxlength="10"
+                            @keypress="handleNumericKeyPress"
+                            @input="handlePhoneInput"
                             size="xl"
                             placeholder="Enter your phone number (optional)"
                             color="neutral"
@@ -225,7 +230,7 @@ const submitting = ref(false)
 const applySchema = z.object({
     email: z.string().email(),
     full_name: z.string().min(1, 'Full name is required'),
-    phone: z.string().optional(),
+    phone: z.string().length(10, 'Phone must be 10 digits').optional().or(z.literal('')),
     job_id: z.string().min(1, 'Please select a position'),
 })
 
@@ -254,6 +259,20 @@ function onResumeChange(event: Event) {
     const file = target.files?.[0] ?? null
     state.resume = file
     validateResume(file)
+}
+
+const handleNumericKeyPress = (e: KeyboardEvent) => {
+    const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter']
+    const isNumber = /^[0-9]$/.test(e.key)
+    if (!isNumber && !allowedKeys.includes(e.key)) {
+        e.preventDefault()
+    }
+}
+
+const handlePhoneInput = (e: Event) => {
+    const target = e.target as HTMLInputElement
+    const digitsOnly = target.value.replace(/\D+/g, '').slice(0, 10)
+    if (digitsOnly !== state.phone) state.phone = digitsOnly
 }
 
 // Fetch invite by token (backend: validate token and return email)
