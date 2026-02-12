@@ -101,63 +101,124 @@ const handleFilterChange = async (filter: string) => {
 };
 
 
-// Fetch dashboard data and restore URL state if present (SSR-friendly)
-const { data: initialData } = await useAsyncData('admin-inventory-init', async () => {
-    const dashboardData = await store.fetchDashboardSummary();
+// Build a key that includes route query so refresh/direct load with params gets correct data
+const inventoryInitKey = computed(() => {
+    const q = route.query;
+    const parts = ['admin-inventory-init', String(q.category ?? ''), String(q.unassigned ?? ''), String(q.device ?? '')];
+    return parts.join('-');
+});
 
+// Fetch dashboard data and restore URL state if present (SSR-friendly)
+const { data: initialData } = await useAsyncData(
+    inventoryInitKey,
+    async () => {
+        const dashboardData = await store.fetchDashboardSummary();
+
+        const urlCategory = route.query.category as string | undefined;
+        const urlDevice = route.query.device as string | undefined;
+        const isUnassigned = !!route.query.unassigned;
+
+        let devicesData = null;
+        let deviceDetail = null;
+
+        if (isUnassigned) {
+            // Fetch unassigned devices with category filter if present
+            devicesData = await store.fetchUnassignedDevices('', urlCategory, false);
+
+            if (urlDevice) {
+                deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
+            } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
+                deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            }
+        } else if (urlCategory) {
+            // Fetch assigned devices by category
+            devicesData = await store.fetchDevicesByType(urlCategory, false);
+
+            if (urlDevice) {
+                deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
+            } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
+                deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            }
+        }
+
+        return {
+            dashboard: dashboardData,
+            devices: devicesData,
+            detail: deviceDetail,
+            selectedDevice: urlDevice || (devicesData?.[0]?.id?.toString())
+        };
+    }
+);
+
+// Set initial data from SSR / useAsyncData
+function applyInitialData(data: typeof initialData.value) {
+    if (!data) return;
+    if (data.dashboard) {
+        store.setDashboardData(data.dashboard);
+    }
+    if (data.devices) {
+        store.setDevicesData(data.devices);
+    }
+    if (data.detail) {
+        store.setDeviceDetail(data.detail);
+    }
+    if (data.selectedDevice) {
+        selectedItemId.value = data.selectedDevice;
+    }
+}
+
+if (import.meta.client) {
+    applyInitialData(initialData.value);
+    hasInitialized.value = true;
+}
+
+// Client-side fallback: when we have URL params but no devices (e.g. refresh or cache miss), re-fetch
+async function ensureListDataFromUrl() {
     const urlCategory = route.query.category as string | undefined;
     const urlDevice = route.query.device as string | undefined;
     const isUnassigned = !!route.query.unassigned;
+    if (!urlCategory && !isUnassigned) return;
+    if (store.rawDevices?.length > 0) return;
+    if (store.loadingDevices) return;
 
-    let devicesData = null;
-    let deviceDetail = null;
+    let devicesData: any[] = [];
+    let detail = null;
+    let selectedDevice: string | undefined = urlDevice;
 
     if (isUnassigned) {
-        // Fetch unassigned devices with category filter if present
-        devicesData = await store.fetchUnassignedDevices('', urlCategory, false);
-
+        devicesData = await store.fetchUnassignedDevices('', urlCategory, true);
         if (urlDevice) {
-            deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
-        } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
-            deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            detail = await store.fetchDeviceDetail(urlDevice, false);
+        } else if (devicesData?.length > 0) {
+            detail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            selectedDevice = devicesData[0].id?.toString();
         }
     } else if (urlCategory) {
-        // Fetch assigned devices by category
-        devicesData = await store.fetchDevicesByType(urlCategory, false);
-
+        devicesData = await store.fetchDevicesByType(urlCategory, true);
         if (urlDevice) {
-            deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
-        } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
-            deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            detail = await store.fetchDeviceDetail(urlDevice, false);
+        } else if (devicesData?.length > 0) {
+            detail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            selectedDevice = devicesData[0].id?.toString();
         }
     }
 
-    return {
-        dashboard: dashboardData,
-        devices: devicesData,
-        detail: deviceDetail,
-        selectedDevice: urlDevice || (devicesData?.[0]?.id?.toString())
-    };
-});
-
-// Set initial data from SSR
-if (import.meta.client) {
-    if (initialData.value) {
-        if (initialData.value.dashboard) {
-            store.setDashboardData(initialData.value.dashboard);
-        }
-        if (initialData.value.devices) {
-            store.setDevicesData(initialData.value.devices);
-        }
-        if (initialData.value.detail) {
-            store.setDeviceDetail(initialData.value.detail);
-        }
-        if (initialData.value.selectedDevice) {
-            selectedItemId.value = initialData.value.selectedDevice;
-        }
-    }
-    hasInitialized.value = true;
+    store.setDevicesData(devicesData);
+    if (detail) store.setDeviceDetail(detail);
+    if (selectedDevice) selectedItemId.value = selectedDevice;
 }
+
+onMounted(async () => {
+    if (!import.meta.client) return;
+    await nextTick();
+    const urlCategory = route.query.category as string | undefined;
+    const isUnassigned = !!route.query.unassigned;
+    const hasListParams = urlCategory || isUnassigned;
+    const listEmpty = !store.rawDevices?.length && !store.loadingDevices;
+    if (hasListParams && listEmpty) {
+        await ensureListDataFromUrl();
+    }
+});
 
 // Handle URL changes with loading states
 const navigateToCategory = async (categoryId: string, deviceId?: string) => {

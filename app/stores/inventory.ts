@@ -78,6 +78,7 @@ export const useInventoryStore = defineStore('inventory', {
         selectedDetailItem: (state): InventoryItem | null => {
             if (!state.currentDeviceDetail) return null;
             const d = state.currentDeviceDetail;
+            console.log(d, "here is the device detail");
             return {
                 id: d.id.toString(),
                 name: d.model_name || d.device_type_detail?.name || 'Unknown Device',
@@ -88,6 +89,7 @@ export const useInventoryStore = defineStore('inventory', {
                 serialNumber: d.serial_number,
                 internalSerial: d.serial_number,
                 devicetypeName: d.device_type_detail?.name || '',
+                purchase_price: d.purchase_price || '',
                 status: (d.status as 'working' | 'repair' | 'unassigned') || 'unassigned',
                 assignedTo: d.employee_detail?.full_name || undefined
             };
@@ -329,9 +331,12 @@ export const useInventoryStore = defineStore('inventory', {
                     credentials: 'include'
                 });
 
-                this.currentDeviceDetail = updatedDevice;
+                // Only update detail if API returned data (avoid blank screen on empty/odd response)
+                if (updatedDevice && typeof updatedDevice === 'object') {
+                    this.currentDeviceDetail = updatedDevice;
+                }
                 const index = this.rawDevices.findIndex(d => d.id.toString() === id.toString());
-                if (index !== -1) {
+                if (index !== -1 && updatedDevice) {
                     this.rawDevices[index] = {
                         ...this.rawDevices[index],
                         serial_number: updatedDevice.serial_number,
