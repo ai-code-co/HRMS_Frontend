@@ -153,6 +153,16 @@ const { data: initialData } = await useAsyncData(
     }
 );
 
+// Build document map from device detail (API or InventoryItem shape)
+function buildDeviceDocuments(detail: { photo_url?: string | null; warranty_doc_url?: string | null; invoice_doc_url?: string | null } | null): Record<string, { name: string; url: string }> {
+    if (!detail) return {};
+    const docs: Record<string, { name: string; url: string }> = {};
+    if (detail.photo_url) docs['photo'] = { name: 'Photo', url: detail.photo_url };
+    if (detail.warranty_doc_url) docs['warranty_doc'] = { name: 'Warranty Document', url: detail.warranty_doc_url };
+    if (detail.invoice_doc_url) docs['invoice_doc'] = { name: 'Invoice Document', url: detail.invoice_doc_url };
+    return docs;
+}
+
 // Set initial data from SSR / useAsyncData
 function applyInitialData(data: typeof initialData.value) {
     if (!data) return;
@@ -164,6 +174,7 @@ function applyInitialData(data: typeof initialData.value) {
     }
     if (data.detail) {
         store.setDeviceDetail(data.detail);
+        deviceDocuments.value = buildDeviceDocuments(data.detail);
     }
     if (data.selectedDevice) {
         selectedItemId.value = data.selectedDevice;
@@ -207,7 +218,10 @@ async function ensureListDataFromUrl() {
     }
 
     store.setDevicesData(devicesData);
-    if (detail) store.setDeviceDetail(detail);
+    if (detail) {
+        store.setDeviceDetail(detail);
+        deviceDocuments.value = buildDeviceDocuments(detail);
+    }
     if (selectedDevice) selectedItemId.value = selectedDevice;
 }
 
@@ -220,6 +234,11 @@ onMounted(async () => {
     const listEmpty = !store.rawDevices?.length && !store.loadingDevices;
     if (hasListParams && listEmpty) {
         await ensureListDataFromUrl();
+    }
+    // Sync documents from store (catches any path where detail was set but deviceDocuments wasn't)
+    const currentDetail = store.currentDeviceDetail;
+    if (currentDetail) {
+        deviceDocuments.value = buildDeviceDocuments(currentDetail);
     }
 });
 
@@ -413,6 +432,12 @@ const handleBack = () => {
     router.push({ query: {} });
 };
 
+// Update documents when selected item details change (e.g. user picks another device).
+// No immediate: true so we don't overwrite deviceDocuments before store has settled on initial load.
+watch(selectedDetailItem, (newItem) => {
+    deviceDocuments.value = buildDeviceDocuments(newItem ?? null);
+});
+
 // Cleanup timeout on unmount
 onUnmounted(() => {
     if (loaderTimeout) {
@@ -501,7 +526,7 @@ onUnmounted(() => {
                                     <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
                                         <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" :documents="deviceDocuments" @update:documents="deviceDocuments = $event" />
                                     </div>
-                                    <DocumentsCard :documents="deviceDocuments" />
+                                    <DocumentsCard :documents="deviceDocuments" :device-id="selectedItemId" />
                                 </div>
                                 <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
                                     <CommentSection :device-id="selectedItemId" class="w-full" />
