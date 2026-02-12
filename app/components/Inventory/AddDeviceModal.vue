@@ -66,6 +66,7 @@
                             <USelectMenu
                                 v-model="selectedEmployee"
                                 :searchable="searchEmployees"
+                                :items="localEmployeeList"
                                 placeholder="Search by Name or ID..."
                                 option-attribute="name"
                                 by="id"
@@ -74,22 +75,7 @@
                                 size="md"
                                 :ui="{ rounded: 'rounded-xl' }"
                             >
-                                <template #option="{ option }">
-                                    <div class="flex items-center gap-3 w-full min-w-0 py-1">
-                                        <UAvatar 
-                                            :src="option.avatar" 
-                                            :alt="option.name" 
-                                            size="xs" 
-                                            class="shrink-0 bg-slate-100 text-slate-500" 
-                                        />
-                                        <div class="flex flex-col min-w-0 flex-1 text-left">
-                                            <span class="font-bold text-slate-700 truncate text-xs">{{ option.name }}</span>
-                                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-                                                {{ option.employeeId }} <span v-if="option.designation">· {{ option.designation }}</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </template>
+                                
                             </USelectMenu>
                         </UFormField>
 
@@ -181,8 +167,6 @@ const props = defineProps<{ open: boolean }>();
 const emit = defineEmits(['update:open', 'close', 'success']);
 
 const inventoryStore = useInventoryStore();
-const config = useRuntimeConfig();
-const token = useCookie('token');
 
 const uploadMode = ref<'single' | 'bulk'>('single');
 const submitting = ref(false);
@@ -243,14 +227,17 @@ const state = reactive<DeviceFormSchema>({ ...initialState });
 const fetchLocalEmployees = async () => {
     employeesLoading.value = true;
     try {
-        const response = await $fetch<EmployeeApiResponse>(`${config.public.apiBase}api/employees/`, {
-            headers: { 'Authorization': `Bearer ${token.value}` }
+        const data = await useApi<EmployeeApiResponse>('/api/employees/', {
+            credentials: 'include',
         });
-        if (response.results) {
-            rawEmployees.value = response.results;
-        }
-    } catch (error) {
+        rawEmployees.value = data.results ?? [];
+    } catch (error: any) {
         console.error('Failed to fetch employees:', error);
+        useToast().add({
+            title: 'Error',
+            description: error?.data?.message ?? 'Failed to load employees list',
+            color: 'error',
+        });
     } finally {
         employeesLoading.value = false;
     }
@@ -442,13 +429,10 @@ const onSubmitBulk = async () => {
             throw new Error("CSV file is empty or contains no valid rows");
         }
 
-        await $fetch(`${config.public.apiBase}api/inventory/devices/bulk-add/`, {
+        await useApi('/api/inventory/devices/bulk-add/', {
             method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${token.value}`,
-                'Content-Type': 'application/json' 
-            },
-            body: jsonArray 
+            credentials: 'include',
+            body: jsonArray as any,
         });
 
         const toast = useToast();
