@@ -356,10 +356,9 @@ const confirmUnassign = async () => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <div class="space-y-4">
               <UFormField label="Document Type" name="documentType">
-                <USelectMenu
+                <USelect
                   v-model="selectedDocumentType"
                   :items="documentTypeOptions"
-                  value-key="value"
                   option-attribute="label"
                   placeholder="--Select document--"
                   :disabled="!isEditMode"
@@ -393,7 +392,7 @@ const confirmUnassign = async () => {
                 <p class="text-xs font-semibold uppercase text-slate-500">Preview</p>
                 <div class="relative bg-slate-50 rounded-lg p-3 border border-slate-200">
                   <img :src="uploadedImageUrl" alt="Uploaded document" 
-                    class="w-full h-48 object-cover rounded-md" />
+                    class="w-full h-48 object-contain rounded-md" />
                   <button v-if="isEditMode" type="button" @click="removeFile"
                     class="absolute top-3 right-3">
                     <UButton icon="i-heroicons-x-mark" color="error" variant="solid" size="xs"
