@@ -26,7 +26,7 @@ const itemSchema = z.object({
   purchase_date: z.string().optional(),
   warranty_expiry: z.string().optional(),
   purchase_price: z.string().optional(),
-  status: z.enum(['working', 'repair', 'unassigned']),
+  status: z.enum(['working', 'repair','damaged','need_to_sell','lost','retired','other']),
   serial_number: z.string().min(1, 'Serial number is required'),
   internalSerial: z.string().optional(),
 });
@@ -154,6 +154,7 @@ watch(() => props.item, (newItem) => {
     state.purchase_price = newItem.purchase_price || '';
     state.status = newItem.status || 'unassigned';
     state.serial_number = newItem.serialNumber || '';
+    state.purchase_price = newItem.purchase_price || '';
     state.internalSerial = newItem.internalSerial || '';
   }
 }, { deep: true });
@@ -162,7 +163,11 @@ watch(() => props.item, (newItem) => {
 const statusOptions = [
   { label: 'Working', value: 'working' },
   { label: 'Under Repair', value: 'repair' },
-  { label: 'Unassigned', value: 'unassigned' }
+  { label: 'Need to Sell', value: 'need_to_sell' },
+  { label: 'Damaged', value: 'damaged' },
+  { label: 'Lost', value: 'lost' },
+  { label: 'Retired', value: 'retired' },
+  { label: 'Other', value: 'other' },
 ];
 
 // --- 5. Form Submission ---
@@ -327,7 +332,7 @@ const confirmUnassign = async () => {
           </UFormField>
 
           <UFormField label="Status" name="status">
-            <USelect v-model="state.status" :options="statusOptions" :disabled="!isEditMode" class="w-full"
+            <USelect v-model="state.status" :items="statusOptions" :disabled="!isEditMode" class="w-full"
               :ui="{ base: 'bg-slate-50' }" option-attribute="label" />
           </UFormField>
 
