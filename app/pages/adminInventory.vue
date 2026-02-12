@@ -35,6 +35,7 @@ const view = computed(() => (route.query.category || route.query.unassigned) ? '
 const selectedCategoryId = computed(() => route.query.category as string | null);
 const selectedItemId = ref<string | undefined>(undefined);
 const isAddModalOpen = ref(false);
+const deviceDocuments = ref<Record<string, { name: string; url: string }>>({});
 const hasInitialized = ref(false);
 
 // 1. Define the active filter based on the query parameter
@@ -428,9 +429,9 @@ onUnmounted(() => {
                             <section class="flex flex-col gap-10">
                                 <div class="flex flex-col xl:flex-row gap-6">
                                     <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
-                                        <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" />
+                                        <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" :documents="deviceDocuments" @update:documents="deviceDocuments = $event" />
                                     </div>
-                                    <DocumentsCard />
+                                    <DocumentsCard :documents="deviceDocuments" />
                                 </div>
                                 <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
                                     <CommentSection :device-id="selectedItemId" class="w-full" />
