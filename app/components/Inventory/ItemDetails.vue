@@ -44,15 +44,19 @@ const unassigning = ref(false);
 
 const toast = useToast();
 
-const selectedDocumentType = ref<string | null>(null);
-const documentTypeOptions = [
-  { label: 'Photo', value: 'photo' },
-  { label: 'Warranty', value: 'warranty' },
-  { label: 'Invoice', value: 'invoice' },
-];
+const DOCUMENT_TYPES = ['photo', 'warranty_doc', 'invoice_doc'] as const;
+const DOC_TYPE_LABELS: Record<string, string> = {
+  photo: 'Photo',
+  warranty_doc: 'Warranty',
+  invoice_doc: 'Invoice',
+};
+const documentTypeOptions = DOCUMENT_TYPES.map((value) => ({ label: DOC_TYPE_LABELS[value], value }));
+
+const selectedDocumentType = ref<string | undefined>(undefined);
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref<string>('');
+const selectedFile = ref<File | null>(null);
 const uploadedImageUrl = ref<string>('');
 
 // Track uploaded documents per type
@@ -60,6 +64,10 @@ const uploadedDocuments = reactive<Record<string, { name: string; url: string }>
 
 // Sync with props
 watch(() => props.documents, (newDocs) => {
+  // Clear existing documents first to avoid stale data
+  for (const key in uploadedDocuments) {
+    delete uploadedDocuments[key];
+  }
   if (newDocs) {
     Object.assign(uploadedDocuments, newDocs);
   }
@@ -80,14 +88,12 @@ const onDocumentFileChange = (e: Event) => {
   
   const docType = selectedDocumentType.value;
   selectedFileName.value = file.name;
+  selectedFile.value = file;
   
   const reader = new FileReader();
   reader.onload = (ev) => {
     const url = ev.target?.result as string;
     uploadedImageUrl.value = url;
-    // Store in the documents map by type
-    uploadedDocuments[docType] = { name: file.name, url };
-    emit('update:documents', { ...uploadedDocuments });
   };
   reader.readAsDataURL(file);
 };
@@ -96,9 +102,9 @@ const removeFile = () => {
   // Remove from map if a type was selected
   if (selectedDocumentType.value && uploadedDocuments[selectedDocumentType.value]) {
     delete uploadedDocuments[selectedDocumentType.value];
-    emit('update:documents', { ...uploadedDocuments });
   }
   selectedFileName.value = '';
+  selectedFile.value = null;
   uploadedImageUrl.value = '';
   if (fileInputRef.value) fileInputRef.value.value = '';
 };
@@ -110,19 +116,79 @@ watch(selectedDocumentType, (newType) => {
     uploadedImageUrl.value = uploadedDocuments[newType].url;
   } else {
     selectedFileName.value = '';
+    selectedFile.value = null;
     uploadedImageUrl.value = '';
     if (fileInputRef.value) fileInputRef.value.value = '';
   }
 });
 
+const uploading = ref(false);
 
+function documentTypeLabel(type: string): string {
+  return DOC_TYPE_LABELS[type] ?? type;
+}
+
+const confirmUpload = async () => {
+  if (!selectedDocumentType.value || !selectedFileName.value || !uploadedImageUrl.value) {
+    toast.add({ title: 'Please select a document type and file', color: 'warning' });
+    return;
+  }
+
+  // If no file object (representing existing uploaded doc), just return or handle re-upload check
+  if (!selectedFile.value) {
+      if (uploadedDocuments[selectedDocumentType.value]) {
+          // It's an existing document being previewed
+          toast.add({ title: 'Document already uploaded', color: 'info' });
+          return;
+      }
+      toast.add({ title: 'Please select a file to upload', color: 'warning' });
+      return;
+  }
+  
+  const docType = selectedDocumentType.value;
+  
+  if (!props.item?.id) {
+      toast.add({ title: 'Cannot upload document: Device ID missing', color: 'error' });
+      return;
+  }
+
+  uploading.value = true;
+  try {
+      await store.uploadDocument(props.item.id, selectedFile.value, docType);
+      
+      // Update local staged/display list
+      uploadedDocuments[docType] = { name: selectedFileName.value, url: uploadedImageUrl.value };
+      
+      // Emit to parent to update any other views
+      emit('update:documents', { ...uploadedDocuments });
+
+      toast.add({ 
+        title: 'Success', 
+        description: `${docType} uploaded successfully.`, 
+        color: 'success' 
+      });
+
+      // Reset fields for next upload
+      selectedDocumentType.value = undefined;
+      selectedFileName.value = '';
+      selectedFile.value = null;
+      uploadedImageUrl.value = '';
+      if (fileInputRef.value) fileInputRef.value.value = '';
+  } catch (error) {
+     // Error handled in store but we catch here to stop loading state flow if needed
+  } finally {
+      uploading.value = false;
+  }
+};
+
+const currentDeviceId = ref<string | null>(null);
 const state = reactive<Schema>({
   device_type: 0,
   name: '',
   purchase_date: '',
   warranty_expiry: '',
   purchase_price: '',
-  status: 'unassigned',
+  status: 'working',
   serial_number: '',
   internalSerial: '',
 });
@@ -131,16 +197,23 @@ const isDeviceAssigned = computed(() => Boolean(props.item?.assignedTo));
 
 watch(() => props.item?.id, (newId, oldId) => {
   // Update when item ID changes
-  if (newId !== oldId && props.item) {
+  if (newId !== currentDeviceId.value && props.item) {
+    currentDeviceId.value = newId;
     state.device_type = props.item.type || 0;
     state.name = props.item.name || '';
     state.purchase_date = props.item.purchaseDate || '';
     state.warranty_expiry = props.item.warrantyExpire || '';
     state.purchase_price = props.item.purchase_price || '';
-    state.status = props.item.status || 'unassigned';
+    state.status = (props.item.status === 'unassigned' ? 'other' : props.item.status) || 'working';
     state.serial_number = props.item.serialNumber || '';
     state.internalSerial = props.item.internalSerial || '';
     isEditMode.value = false;
+    
+    // Reset documents for new item
+    for (const key in uploadedDocuments) {
+        delete uploadedDocuments[key];
+    }
+    emit('update:documents', {});
   }
 }, { immediate: true });
 
@@ -152,9 +225,8 @@ watch(() => props.item, (newItem) => {
     state.purchase_date = newItem.purchaseDate || '';
     state.warranty_expiry = newItem.warrantyExpire || '';
     state.purchase_price = newItem.purchase_price || '';
-    state.status = newItem.status || 'unassigned';
+    state.status = (newItem.status === 'unassigned' ? 'other' : newItem.status) || 'working';
     state.serial_number = newItem.serialNumber || '';
-    state.purchase_price = newItem.purchase_price || '';
     state.internalSerial = newItem.internalSerial || '';
   }
 }, { deep: true });
@@ -176,7 +248,22 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
   submitting.value = true;
   try {
+    // If there's a pending upload that hasn't been confirmed yet, include it
+    if (selectedDocumentType.value && uploadedImageUrl.value && selectedFileName.value) {
+       const docType = selectedDocumentType.value;
+       uploadedDocuments[docType] = { name: selectedFileName.value, url: uploadedImageUrl.value };
+       
+       // Clear the pending state visually
+       selectedDocumentType.value = undefined;
+       selectedFileName.value = '';
+       uploadedImageUrl.value = '';
+       if (fileInputRef.value) fileInputRef.value.value = '';
+    }
+
     await store.updateDevice(props.item.id, event.data);
+    
+    // Save documents
+    emit('update:documents', { ...uploadedDocuments });
 
     const toast = useToast();
     toast.add({ title: 'Success', description: 'Device details updated successfully', color: 'success' });
@@ -360,6 +447,7 @@ const confirmUnassign = async () => {
                   v-model="selectedDocumentType"
                   :items="documentTypeOptions"
                   option-attribute="label"
+                  value-attribute="value"
                   placeholder="--Select document--"
                   :disabled="!isEditMode"
                   class="w-full"
@@ -398,6 +486,33 @@ const confirmUnassign = async () => {
                     <UButton icon="i-heroicons-x-mark" color="error" variant="solid" size="xs"
                       class="rounded-full shadow-md cursor-pointer" />
                   </button>
+                </div>
+                <UButton v-if="isEditMode && uploadedImageUrl" 
+                  :label="uploading ? 'Uploading...' : 'Confirm Upload'" 
+                  :loading="uploading"
+                  color="primary" 
+                  variant="solid" 
+                  size="xs" 
+                  class="mt-2 w-full flex justify-center"
+                  @click="confirmUpload"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Added Documents List -->
+        <div v-if="Object.keys(uploadedDocuments).length > 0 && isEditMode" class="border border-slate-200 rounded-2xl p-6 mt-6">
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Added Documents</h4>
+          <div class="space-y-3">
+            <div v-for="(doc, type) in uploadedDocuments" :key="type" class="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-white">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                  <UIcon name="i-lucide-file-text" class="w-5 h-5 text-slate-400" />
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-slate-700">{{ documentTypeLabel(type) }}</p>
+                  <p class="text-xs text-slate-500 truncate max-w-[200px]">{{ doc.name }}</p>
                 </div>
               </div>
             </div>
@@ -448,5 +563,6 @@ const confirmUnassign = async () => {
       :loading="unassigning"
       @confirm="confirmUnassign"
     />
+
   </div>
 </template>
