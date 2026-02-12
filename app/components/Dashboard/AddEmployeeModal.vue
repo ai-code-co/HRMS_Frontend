@@ -314,10 +314,6 @@
                                     :loading="isUploadingDocument" :disabled="isUploadingDocument"
                                     @click="confirmPendingUpload">
                                     {{ isUploadingDocument ? 'Uploading...' : 'Confirm Upload' }}
-                                <UButton color="primary" size="sm" class="cursor-pointer"
-                                    :loading="isUploadingDocument" :disabled="isUploadingDocument"
-                                    @click="confirmPendingUpload">
-                                    {{ isUploadingDocument ? 'Uploading...' : 'Confirm Upload' }}
                                 </UButton>
                             </div>
                         </div>
@@ -380,15 +376,6 @@
                                         : 'bg-slate-100 text-slate-400'">
                                     <UIcon v-if="isDocumentUploaded(docType.value)" name="i-heroicons-check" class="h-4 w-4" />
                                     <span v-else>{{ index + 1 }}</span>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <p class="text-sm"
-                                        :class="isDocumentUploaded(docType.value) ? 'text-slate-700' : 'text-slate-400'">
-                                        {{ docType.label }}
-                                    </p>
-                                    <span v-if="isRequiredDocumentType(docType.value)" class="text-rose-500 text-xs font-bold">
-                                        *
-                                    </span>
                                 </div>
                                 <div class="flex items-center gap-1">
                                     <p class="text-sm"
