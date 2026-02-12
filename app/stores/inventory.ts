@@ -393,28 +393,34 @@ export const useInventoryStore = defineStore('inventory', {
             warranty_expiry?: string;
             notes?: string;
             is_active: boolean;
+            photo?: string | null;
+            warranty_doc?: string | null;
+            invoice_doc?: string | null;
         }) {
             this.error = null;
             const toast = useToast();
             try {
-                const apiPayload = {
+                const apiPayload: Record<string, unknown> = {
                     device_type: payload.device_type,
                     serial_number: payload.serial_number,
                     model_name: payload.model_name,
                     brand: payload.brand,
                     status: payload.status,
                     condition: payload.condition,
-                    employee: payload.employee || null,
-                    purchase_date: payload.purchase_date || null,
-                    purchase_price: payload.purchase_price || null,
-                    warranty_expiry: payload.warranty_expiry || null,
-                    notes: payload.notes || '',
+                    employee: payload.employee ?? null,
+                    purchase_date: payload.purchase_date ?? null,
+                    purchase_price: payload.purchase_price ?? null,
+                    warranty_expiry: payload.warranty_expiry ?? null,
+                    notes: payload.notes ?? '',
                     is_active: payload.is_active,
                 };
+                if (payload.photo != null && payload.photo !== '') apiPayload.photo = payload.photo;
+                if (payload.warranty_doc != null && payload.warranty_doc !== '') apiPayload.warranty_doc = payload.warranty_doc;
+                if (payload.invoice_doc != null && payload.invoice_doc !== '') apiPayload.invoice_doc = payload.invoice_doc;
 
                 const newDevice = await useApi<DeviceDetailApiObject>('/api/inventory/devices/', {
                     method: 'POST',
-                    body: apiPayload,
+                    body: apiPayload as Record<string, unknown>,
                     credentials: 'include'
                 });
 
