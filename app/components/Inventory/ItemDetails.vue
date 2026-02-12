@@ -6,11 +6,15 @@ import type { InventoryItem } from '../../types/inventory';
 import { useInventoryStore } from '../../stores/inventory';
 import { useEmployeeStore } from '../../stores/employee';
 import AssignDeviceModal from './AssignDeviceModal.vue';
-import DocumentSection from './DocumentSection.vue';
 
 const props = defineProps<{
   item: InventoryItem | null;
   loading?: boolean;
+  documents?: Record<string, { name: string; url: string }>;
+}>();
+
+const emit = defineEmits<{
+  (e: 'update:documents', docs: Record<string, { name: string; url: string }>): void;
 }>();
 
 const store = useInventoryStore();
@@ -37,7 +41,80 @@ const deleteConfirmOpen = ref(false);
 const deleting = ref(false);
 const unassignConfirmOpen = ref(false);
 const unassigning = ref(false);
-const isDocumentModalOpen = ref(false);
+
+const toast = useToast();
+
+const selectedDocumentType = ref<string | null>(null);
+const documentTypeOptions = [
+  { label: 'Photo', value: 'photo' },
+  { label: 'Warranty', value: 'warranty' },
+  { label: 'Invoice', value: 'invoice' },
+];
+
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const selectedFileName = ref<string>('');
+const uploadedImageUrl = ref<string>('');
+
+// Track uploaded documents per type
+const uploadedDocuments = reactive<Record<string, { name: string; url: string }>>({});
+
+// Sync with props
+watch(() => props.documents, (newDocs) => {
+  if (newDocs) {
+    Object.assign(uploadedDocuments, newDocs);
+  }
+}, { immediate: true, deep: true });
+
+const openFilePicker = () => {
+  if (!selectedDocumentType.value) {
+    toast.add({ title: 'Please select a document type first', color: 'warning' });
+    return;
+  }
+  fileInputRef.value?.click();
+};
+
+const onDocumentFileChange = (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !selectedDocumentType.value) return;
+  
+  const docType = selectedDocumentType.value;
+  selectedFileName.value = file.name;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const url = ev.target?.result as string;
+    uploadedImageUrl.value = url;
+    // Store in the documents map by type
+    uploadedDocuments[docType] = { name: file.name, url };
+    emit('update:documents', { ...uploadedDocuments });
+  };
+  reader.readAsDataURL(file);
+};
+
+const removeFile = () => {
+  // Remove from map if a type was selected
+  if (selectedDocumentType.value && uploadedDocuments[selectedDocumentType.value]) {
+    delete uploadedDocuments[selectedDocumentType.value];
+    emit('update:documents', { ...uploadedDocuments });
+  }
+  selectedFileName.value = '';
+  uploadedImageUrl.value = '';
+  if (fileInputRef.value) fileInputRef.value.value = '';
+};
+
+// When document type changes, show the existing doc for that type (if any)
+watch(selectedDocumentType, (newType) => {
+  if (newType && uploadedDocuments[newType]) {
+    selectedFileName.value = uploadedDocuments[newType].name;
+    uploadedImageUrl.value = uploadedDocuments[newType].url;
+  } else {
+    selectedFileName.value = '';
+    uploadedImageUrl.value = '';
+    if (fileInputRef.value) fileInputRef.value.value = '';
+  }
+});
+
 
 const state = reactive<Schema>({
   device_type: 0,
@@ -259,14 +336,14 @@ const confirmUnassign = async () => {
               :ui="{ base: 'bg-slate-50' }" option-attribute="label" />
           </UFormField>
 
-          <div class="md:col-span-2">
+          <div class="md:col-span-1">
             <UFormField label="Serial Number" name="serial_number">
               <UInput v-model="state.serial_number" :disabled="!isEditMode" class="w-full"
                 :ui="{ base: 'bg-slate-50' }" />
             </UFormField>
           </div>
 
-          <div class="md:col-span-2">
+          <div class="md:col-span-1">
             <UFormField label="Internal Serial No." name="internalSerial">
               <UInput v-model="state.internalSerial" :disabled="!isEditMode" class="w-full"
                 :ui="{ base: 'bg-slate-50' }" />
@@ -274,36 +351,76 @@ const confirmUnassign = async () => {
           </div>
         </div>
 
+        <!-- Document Upload Card -->
+        <div class="mt-6 p-1 bg-white rounded-2xl">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div class="space-y-4">
+              <UFormField label="Document Type" name="documentType">
+                <USelectMenu
+                  v-model="selectedDocumentType"
+                  :items="documentTypeOptions"
+                  value-key="value"
+                  option-attribute="label"
+                  placeholder="--Select document--"
+                  :disabled="!isEditMode"
+                  class="w-full"
+                  :ui="{ base: 'bg-slate-50' }"
+                />
+              </UFormField>
+            </div>
+            
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-gray-700">Upload Document</label>
+              <p class="text-xs text-gray-500 mb-2">{{ selectedFileName ? `Attached: ${selectedFileName}` : 'Select an image to upload' }}</p>
+              <div v-if="!uploadedImageUrl || !isEditMode" 
+                class="flex items-center gap-3 px-3 py-1.5 border border-gray-300 rounded-md bg-slate-50 transition-colors w-full h-[32px]"
+                :class="isEditMode ? 'cursor-pointer' : 'opacity-50 pointer-events-none'"
+                @click="isEditMode && openFilePicker()"
+              >
+                <input 
+                  ref="fileInputRef"
+                  type="file" 
+                  class="hidden" 
+                  accept="image/*,.pdf"
+                  @change="onDocumentFileChange" 
+                />
+                <UIcon name="i-lucide-paperclip" class="w-4 h-4 text-slate-400" />
+                <span class="text-sm font-medium text-slate-700">Choose File</span>
+                <span class="text-xs text-gray-400 ml-1 truncate flex-1">No file chosen</span>
+              </div>
+              <!-- Image Preview Section -->
+              <div v-if="uploadedImageUrl && isEditMode" class="mt-2 space-y-2">
+                <p class="text-xs font-semibold uppercase text-slate-500">Preview</p>
+                <div class="relative bg-slate-50 rounded-lg p-3 border border-slate-200">
+                  <img :src="uploadedImageUrl" alt="Uploaded document" 
+                    class="w-full h-48 object-cover rounded-md" />
+                  <button v-if="isEditMode" type="button" @click="removeFile"
+                    class="absolute top-3 right-3">
+                    <UButton icon="i-heroicons-x-mark" color="error" variant="solid" size="xs"
+                      class="rounded-full shadow-md cursor-pointer" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Footer Actions -->
         <div class="flex justify-end pt-6 gap-2 flex-wrap md:flex-nowrap">
-          <UButton
-            label="Upload New Document"
-            icon="i-lucide-upload"
-            variant="soft"
-            color="primary"
-            size="md"
-            class="font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider w-full md:flex-1 justify-center"
-            @click="isDocumentModalOpen = true"
-          />
-          <div class="flex items-center gap-2 flex-wrap md:flex-nowrap">
-            <!-- Only show Delete in Edit Mode or if not editing? Usually always visible or in edit mode. -->
-            <!-- Toggle between Edit and Save buttons -->
-            <UButton v-if="!isEditMode" label="Edit" size="xs" variant="subtle"
-              class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto"
-              @click="isEditMode = true" />
+          <UButton v-if="!isEditMode" label="Edit" size="xs" variant="subtle"
+            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto"
+            @click="isEditMode = true" />
 
-            <UButton v-else type="submit" label="Save" size="xs" variant="subtle" :loading="submitting"
-              class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto" />
+          <UButton v-else type="submit" label="Save" size="xs" variant="subtle" :loading="submitting"
+            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto" />
 
-            <UButton v-if="isEditMode" label="Cancel" size="xs" variant="ghost"
-              class="font-bold uppercase px-5 py-2.5 w-full md:w-auto" @click="isEditMode = false" />
-          </div>
+          <UButton v-if="isEditMode" label="Cancel" size="xs" variant="ghost"
+            class="font-bold uppercase px-5 py-2.5 w-full md:w-auto" @click="isEditMode = false" />
         </div>
       </UForm>
     </div>
 
     <AssignDeviceModal v-model:open="isAssignModalOpen" :item="item" @success="handleAssignmentSuccess" />
-    <DocumentSection v-model:open="isDocumentModalOpen" />
 
     <UIConfirmDialog
       v-model:open="deleteConfirmOpen"
