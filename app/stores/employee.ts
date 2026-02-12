@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Employee, EmployeeListResponse, EmployeeCreateUpdate } from '../types/employee'
+import type { Employee, EmployeeDocumentRecord, EmployeeListResponse, EmployeeCreateUpdate } from '../types/employee'
 import { extractErrorMessage } from '~/composables/useErrorMessage'
 
 export const useEmployeeStore = defineStore('employee', {
@@ -8,6 +8,9 @@ export const useEmployeeStore = defineStore('employee', {
         employeesList: [] as Employee[],
         loading: false,
         error: null as string | null,
+        employeeDocuments: [] as EmployeeDocumentRecord[],
+        documentsLoading: false,
+        documentsError: null as string | null,
     }),
 
     getters: {
@@ -43,6 +46,118 @@ export const useEmployeeStore = defineStore('employee', {
     },
 
     actions: {
+        async uploadEmployeeFile(file: File) {
+            const toast = useToast()
+            try {
+                const uploadFormData = new FormData()
+                uploadFormData.append('file', file)
+
+                const response = await useApi<{
+                    success: boolean
+                    url: string
+                    public_id: string
+                    resource_type: string
+                }>('/auth/upload-file/', {
+                    method: 'POST',
+                    body: uploadFormData,
+                    credentials: 'include',
+                })
+
+                if (!response?.success) {
+                    throw new Error('File upload failed')
+                }
+
+                return response
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to upload file')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                })
+                throw err
+            }
+        },
+        async deleteEmployeeDocument(documentId: string | number) {
+            const toast = useToast()
+            this.error = null
+            try {
+                await useApi(`/api/employees/all-documents/${documentId}/`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                })
+
+                if (this.employee) {
+                    const target = this.employee as any
+                    const keys = ['documents', 'employee_documents', 'doc_links']
+                    keys.forEach((key) => {
+                        if (!Array.isArray(target[key])) return
+                        target[key] = target[key].filter((doc: any) => {
+                            const docId = doc?.id ?? doc?.document_id ?? doc?.pk ?? doc?.documentId ?? doc?.doc_id
+                            return String(docId) !== String(documentId)
+                        })
+                    })
+                    this.employee = { ...target }
+                }
+
+                toast.add({
+                    title: 'Document deleted',
+                    description: 'The document has been removed successfully',
+                    color: 'success',
+                })
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to delete document')
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error',
+                })
+                throw err
+            }
+        },
+        async fetchEmployeeDocuments(employeeId: number | string) {
+            const toast = useToast()
+            this.documentsLoading = true
+            this.documentsError = null
+            try {
+                const response = await useApi<any>('/api/employees/all-documents/', {
+                    method: 'GET',
+                    params: { employee: employeeId },
+                    credentials: 'include',
+                })
+
+                const payload = response?.data ?? response
+                const list = Array.isArray(payload)
+                    ? payload
+                    : Array.isArray(payload?.results)
+                        ? payload.results
+                        : Array.isArray(payload?.data)
+                            ? payload.data
+                            : Array.isArray(payload?.documents)
+                                ? payload.documents
+                                : []
+
+                this.employeeDocuments = list
+
+                if (this.employee && String(this.employee.id) === String(employeeId)) {
+                    const target = this.employee as any
+                    target.documents = list
+                    this.employee = { ...target }
+                }
+
+                return list
+            } catch (err: any) {
+                this.documentsError = extractErrorMessage(err, 'Failed to fetch employee documents')
+                toast.add({
+                    title: 'Error',
+                    description: this.documentsError,
+                    color: 'error',
+                })
+                return []
+            } finally {
+                this.documentsLoading = false
+            }
+        },
         async fetchEmployee(showGlobalLoader = false, userId?: number | null) {
             this.loading = true
             this.error = null

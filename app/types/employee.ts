@@ -104,6 +104,27 @@ export interface WorkHistory {
     updated_by?: number | null
 }
 
+/** Document as returned from API (may use different key names per backend). */
+export interface EmployeeDocumentRecord {
+    id?: number | string
+    document_id?: number | string
+    name?: string
+    document_name?: string
+    title?: string
+    type?: string
+    document_type?: string
+    doc_type?: string
+    url?: string
+    link?: string
+    file_url?: string
+    document_url?: string
+    path?: string
+    uploaded_at?: string
+    created_at?: string
+    public_id?: string
+    resource_type?: string
+}
+
 export interface Employee {
     id: number
     employee_id: string
@@ -180,6 +201,7 @@ export interface Employee {
     account_holder_name?: string
 
     // Related data
+    documents?: EmployeeDocumentRecord[]
     emergency_contacts?: EmergencyContact[]
     educations?: Education[]
     work_histories?: WorkHistory[]
@@ -243,6 +265,15 @@ export interface EmployeeCreateUpdate {
     account_holder_name?: string
     is_active?: boolean
     emergency_contacts?: EmergencyContactCreate[]
+    documents?: EmployeeDocumentCreate[]
+}
+
+export interface EmployeeDocumentCreate {
+    document_type: string
+    document_name?: string
+    document_url?: string
+    public_id?: string
+    resource_type?: string
 }
 
 export interface CreateEmployeeForm {

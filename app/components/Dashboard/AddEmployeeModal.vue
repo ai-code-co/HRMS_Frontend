@@ -258,7 +258,7 @@
                         <UFormField label="Document Type" name="document_type">
                             <USelectMenu v-model="employeeForm.document_type" :items="documentTypeOptions" size="xl"
                                 placeholder="Select document type" color="secondary" variant="outline"
-                                class="w-full" />
+                                class="w-full" value-key="value" />
                         </UFormField>
 
                     <UFormField label="Upload Document"
@@ -309,8 +309,10 @@
                                 </div>
                             </div>
                             <div class="mt-3 flex items-center justify-end">
-                                <UButton color="primary" size="sm" class="cursor-pointer" @click="confirmPendingUpload">
-                                    Confirm Upload
+                                <UButton color="primary" size="sm" class="cursor-pointer"
+                                    :loading="isUploadingDocument" :disabled="isUploadingDocument"
+                                    @click="confirmPendingUpload">
+                                    {{ isUploadingDocument ? 'Uploading...' : 'Confirm Upload' }}
                                 </UButton>
                             </div>
                         </div>
@@ -354,32 +356,40 @@
                         <div class="mb-3 flex items-center justify-between">
                             <p class="text-sm font-semibold text-slate-700">Required Documents</p>
                             <p class="text-xs text-slate-400">
-                                {{ uploadedDocumentTypes.length }} / {{ documentTypeOptions.length }} uploaded
+                                {{ requiredDocumentsUploadedCount }} / {{ requiredDocumentTypes.length }} required uploaded
                             </p>
                         </div>
                         <div class="flex-1 space-y-2 overflow-y-auto pr-2 pb-2">
-                            <button v-for="(docType, index) in documentTypeOptions" :key="docType" type="button"
+                            <button v-for="(docType, index) in documentTypeOptions" :key="docType.value" type="button"
                                 class="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-left transition"
                                 :class="[
-                                    isDocumentUploaded(docType) ? 'cursor-pointer' : 'cursor-default',
-                                    selectedUploadedType === docType
+                                    isDocumentUploaded(docType.value) ? 'cursor-pointer' : 'cursor-default',
+                                    selectedUploadedType === docType.value
                                         ? 'bg-indigo-50 ring-1 ring-indigo-200'
                                         : 'hover:bg-slate-50'
                                 ]"
-                                @click="!pendingUpload && isDocumentUploaded(docType) && (selectedUploadedType = docType)">
+                                @click="!pendingUpload && isDocumentUploaded(docType.value) && (selectedUploadedType = docType.value)">
                                 <div class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold"
-                                    :class="isDocumentUploaded(docType)
+                                    :class="isDocumentUploaded(docType.value)
                                         ? 'bg-emerald-500 text-white'
                                         : 'bg-slate-100 text-slate-400'">
-                                    <UIcon v-if="isDocumentUploaded(docType)" name="i-heroicons-check" class="h-4 w-4" />
+                                    <UIcon v-if="isDocumentUploaded(docType.value)" name="i-heroicons-check" class="h-4 w-4" />
                                     <span v-else>{{ index + 1 }}</span>
                                 </div>
-                                <p class="text-sm"
-                                    :class="isDocumentUploaded(docType) ? 'text-slate-700' : 'text-slate-400'">
-                                    {{ docType }}
-                                </p>
+                                <div class="flex items-center gap-1">
+                                    <p class="text-sm"
+                                        :class="isDocumentUploaded(docType.value) ? 'text-slate-700' : 'text-slate-400'">
+                                        {{ docType.label }}
+                                    </p>
+                                    <span v-if="isRequiredDocumentType(docType.value)" class="text-rose-500 text-xs font-bold">
+                                        *
+                                    </span>
+                                </div>
                             </button>
                         </div>
+                        <p v-if="showMissingRequiredDocuments" class="mt-3 text-xs text-rose-600">
+                            Please upload required documents: {{ missingRequiredDocumentLabels.join(', ') }}.
+                        </p>
                     </div>
                 </div>
 
@@ -452,6 +462,14 @@ import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import type { SelectMenuItem } from '@nuxt/ui'
 import type { EmployeeCreateUpdate } from '~/types/employee'
+import {
+    DOCUMENT_TYPE_OPTIONS,
+    REQUIRED_DOCUMENT_TYPES,
+    formatFileSize,
+    getDocumentLabel,
+    isRequiredDocumentType,
+    normalizeDocumentType,
+} from '~/utils/employeeDocuments'
 import { useDepartmentStore } from '~/stores/department'
 import { useEmployeeStore } from '~/stores/employee'
 
@@ -461,12 +479,25 @@ const emit = defineEmits(['update:open', 'close', 'success'])
 const departmentStore = useDepartmentStore()
 const employeeStore = useEmployeeStore()
 const submitting = ref(false)
+type UploadedDocument = {
+    type: string
+    fileName: string
+    size: number
+    file: File
+    previewUrl?: string | null
+    isImage?: boolean
+    documentUrl?: string
+    publicId?: string
+    resourceType?: string
+}
+
 const documentFile = ref<File | null>(null)
 const documentInputKey = ref(0)
 const uploadedDocumentTypes = ref<string[]>([])
-const uploadedDocuments = ref<{ type: string; fileName: string; size: number; file: File; previewUrl?: string | null; isImage?: boolean }[]>([])
+const uploadedDocuments = ref<UploadedDocument[]>([])
 const selectedUploadedType = ref<string | null>(null)
-const pendingUpload = ref<{ type: string; fileName: string; size: number; file: File; previewUrl?: string | null; isImage?: boolean } | null>(null)
+const pendingUpload = ref<UploadedDocument | null>(null)
+const isUploadingDocument = ref(false)
 const viewModalOpen = ref(false)
 const viewFileUrl = ref<string | null>(null)
 const viewFileIsImage = ref(false)
@@ -487,7 +518,7 @@ const steps = [
     { id: 'address', title: 'Address', description: 'Provide current and permanent address information', icon: 'i-heroicons-map-pin' },
     { id: 'emergency', title: 'Emergency', description: 'Add emergency contact details for safety', icon: 'i-heroicons-heart' },
     { id: 'bank', title: 'Bank', description: 'Add bank account details (optional)', icon: 'i-heroicons-banknotes' },
-    { id: 'documents', title: 'Documents', description: 'Upload employee documents (optional)', icon: 'i-heroicons-document-arrow-up' },
+    { id: 'documents', title: 'Documents', description: 'Upload required employee documents', icon: 'i-heroicons-document-arrow-up' },
 ]
 
 
@@ -646,19 +677,8 @@ const employeeForm = reactive<EmployeeFormState>({ ...initialEmployeeForm })
 
 const departmentOptions = computed<SelectMenuItem[]>(() => departmentStore.departmentOptions)
 const designationOptions = computed<SelectMenuItem[]>(() => departmentStore.designationOptions)
-const documentTypeOptions = [
-    'CV',
-    'PAN Card',
-    'Address Proof',
-    'Photo',
-    'Offer Letter',
-    'Appointment Letter',
-    'Previous Company Experience Letter',
-    'Previous Company Offer Letter',
-    'Previous Company Salary Slip',
-    'Previous Company Other Documents',
-    'Qualification Certificate',
-]
+const documentTypeOptions = DOCUMENT_TYPE_OPTIONS
+const requiredDocumentTypes = REQUIRED_DOCUMENT_TYPES
 
 const stepFieldMap: Array<(keyof EmployeeFormState)[]> = [
     ['first_name', 'last_name', 'department', 'designation', 'date_of_birth', 'gender', 'blood_group', 'marital_status'],
@@ -682,6 +702,29 @@ const stepFieldMap: Array<(keyof EmployeeFormState)[]> = [
     [],
 ]
 
+const showMissingRequiredDocuments = ref(false)
+
+const missingRequiredDocuments = computed(() =>
+    requiredDocumentTypes.filter(type => !uploadedDocumentTypes.value.includes(type))
+)
+
+const missingRequiredDocumentLabels = computed(() =>
+    missingRequiredDocuments.value.map(type => getDocumentLabel(type))
+)
+
+const requiredDocumentsUploadedCount = computed(() =>
+    requiredDocumentTypes.filter(type => uploadedDocumentTypes.value.includes(type)).length
+)
+
+const validateRequiredDocuments = () => {
+    if (missingRequiredDocuments.value.length === 0) {
+        showMissingRequiredDocuments.value = false
+        return true
+    }
+    showMissingRequiredDocuments.value = true
+    return false
+}
+
 const handleNumericKeyPress = (e: KeyboardEvent) => {
     const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter']
     const isNumber = /^[0-9]$/.test(e.key)
@@ -692,11 +735,16 @@ const handleNumericKeyPress = (e: KeyboardEvent) => {
 
 const validateStep = async (stepIndex: number) => {
     const fields = stepFieldMap[stepIndex]
-    if (!fields || fields.length === 0) {
-        return true
+    let fieldsValid = true
+    if (fields && fields.length > 0) {
+        const result = await formRef.value?.validate({ name: fields })
+        fieldsValid = result !== false
     }
-    const result = await formRef.value?.validate({ name: fields })
-    return result !== false
+    if (!fieldsValid) return false
+    if (stepIndex === steps.length - 1) {
+        return validateRequiredDocuments()
+    }
+    return true
 }
 
 const goToStep = async (stepIndex: number) => {
@@ -734,6 +782,7 @@ const resetForm = () => {
     uploadedDocuments.value = []
     selectedUploadedType.value = null
     pendingUpload.value = null
+    isUploadingDocument.value = false
 }
 
 watch(
@@ -755,7 +804,7 @@ const handleDocumentUpload = (event: Event) => {
     const file = input.files?.[0]
     if (!file) return
     documentFile.value = file
-    const type = employeeForm.document_type
+    const type = normalizeDocumentType(employeeForm.document_type)
     if (!type) {
         clearDocumentFile()
         return
@@ -772,12 +821,6 @@ const handleDocumentUpload = (event: Event) => {
 const clearDocumentFile = () => {
     documentFile.value = null
     documentInputKey.value += 1
-}
-
-const formatFileSize = (size: number) => {
-    if (size < 1024) return `${size} B`
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
 const getFileIcon = (doc: { fileName: string; isImage?: boolean }) => {
@@ -806,27 +849,41 @@ const hidePendingPreview = () => {
     clearDocumentFile()
 }
 
-const confirmPendingUpload = () => {
+const confirmPendingUpload = async () => {
     if (!pendingUpload.value) return
-    const type = pendingUpload.value.type
-    if (!uploadedDocumentTypes.value.includes(type)) {
-        uploadedDocumentTypes.value = [...uploadedDocumentTypes.value, type]
-    }
-    const existingIndex = uploadedDocuments.value.findIndex(doc => doc.type === type)
-    if (existingIndex >= 0) {
-        const existing = uploadedDocuments.value[existingIndex]
-        if (existing?.previewUrl && existing.previewUrl !== pendingUpload.value.previewUrl) {
-            URL.revokeObjectURL(existing.previewUrl)
+    if (isUploadingDocument.value) return
+    isUploadingDocument.value = true
+    const type = normalizeDocumentType(pendingUpload.value.type)
+    try {
+        const uploadResponse = await employeeStore.uploadEmployeeFile(pendingUpload.value.file)
+        const finalizedUpload: UploadedDocument = {
+            ...pendingUpload.value,
+            documentUrl: uploadResponse.url,
+            publicId: uploadResponse.public_id,
+            resourceType: uploadResponse.resource_type,
         }
-        uploadedDocuments.value = uploadedDocuments.value.map((doc, index) =>
-            index === existingIndex ? pendingUpload.value! : doc
-        )
-    } else {
-        uploadedDocuments.value = [...uploadedDocuments.value, pendingUpload.value]
+
+        if (!uploadedDocumentTypes.value.includes(type)) {
+            uploadedDocumentTypes.value = [...uploadedDocumentTypes.value, type]
+        }
+        const existingIndex = uploadedDocuments.value.findIndex(doc => doc.type === type)
+        if (existingIndex >= 0) {
+            const existing = uploadedDocuments.value[existingIndex]
+            if (existing?.previewUrl && existing.previewUrl !== pendingUpload.value.previewUrl) {
+                URL.revokeObjectURL(existing.previewUrl)
+            }
+            uploadedDocuments.value = uploadedDocuments.value.map((doc, index) =>
+                index === existingIndex ? finalizedUpload : doc
+            )
+        } else {
+            uploadedDocuments.value = [...uploadedDocuments.value, finalizedUpload]
+        }
+        employeeForm.document_type = ''
+        pendingUpload.value = null
+        clearDocumentFile()
+    } finally {
+        isUploadingDocument.value = false
     }
-    employeeForm.document_type = ''
-    pendingUpload.value = null
-    clearDocumentFile()
 }
 
 const openViewDocument = (doc: { file: File }) => {
@@ -900,9 +957,10 @@ watch(
     }
 )
 
-const selectedDepartmentLabel = computed(() => {
-    const item = departmentOptions.value.find(opt => opt.value === employeeForm.department)
-    return typeof item === 'object' && item?.label ? item.label : 'department'
+watch(missingRequiredDocuments, (missing) => {
+    if (missing.length === 0) {
+        showMissingRequiredDocuments.value = false
+    }
 })
 
 const onSubmit = async (_event: FormSubmitEvent<EmployeeFormSchema>) => {
@@ -948,6 +1006,15 @@ const onSubmit = async (_event: FormSubmitEvent<EmployeeFormSchema>) => {
                 address: employeeForm.emergency_address || undefined,
                 is_primary: true,
             }] : undefined,
+            documents: uploadedDocuments.value.length > 0
+                ? uploadedDocuments.value.map(doc => ({
+                    document_type: doc.type,
+                    document_name: doc.fileName,
+                    document_url: doc.documentUrl,
+                    public_id: doc.publicId,
+                    resource_type: doc.resourceType,
+                }))
+                : undefined,
         }
 
         await employeeStore.createEmployee(payload)
