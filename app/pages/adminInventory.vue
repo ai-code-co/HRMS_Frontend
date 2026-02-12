@@ -11,6 +11,7 @@ import ItemDetails from '../components/Inventory/ItemDetails.vue';
 import DocumentsCard from '../components/Inventory/DocumentsCard.vue';
 import CommentSection from '../components/Inventory/CommentSection.vue';
 import AddTypeModal from '../components/Inventory/AddTypeModal.vue';
+import AddDeviceModal from '../components/Inventory/AddDeviceModal.vue';
 
 const store = useInventoryStore();
 const {
@@ -35,6 +36,7 @@ const view = computed(() => (route.query.category || route.query.unassigned) ? '
 const selectedCategoryId = computed(() => route.query.category as string | null);
 const selectedItemId = ref<string | undefined>(undefined);
 const isAddModalOpen = ref(false);
+const isAddDeviceModalOpen = ref(false);
 const deviceDocuments = ref<Record<string, { name: string; url: string }>>({});
 const hasInitialized = ref(false);
 
@@ -457,6 +459,13 @@ onUnmounted(() => {
                             class="w-full sm:w-auto border border-slate-200 rounded-xl shadow-sm"
                             @click="navigateTo('/audit-summary')"
                         />
+                        <UButton 
+                            label="Add Device" 
+                            color="primary" 
+                            size="lg"
+                            class="w-full sm:w-auto border border-slate-200 rounded-xl shadow-sm"
+                            @click="isAddDeviceModalOpen = true"
+                        />
                     </div>
                 </div>
             </div>
@@ -506,6 +515,9 @@ onUnmounted(() => {
 
         <Teleport to="body">
             <AddTypeModal v-if="isAddModalOpen" @close="isAddModalOpen = false" />
+            <AddDeviceModal v-if="isAddDeviceModalOpen" :open="isAddDeviceModalOpen"
+                @update:open="isAddDeviceModalOpen = $event" @close="isAddDeviceModalOpen = false"
+                @success="isAddDeviceModalOpen = false; store.fetchDashboardSummary()" />
         </Teleport>
     </div>
 </template>
