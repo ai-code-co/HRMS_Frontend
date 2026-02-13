@@ -368,15 +368,16 @@ const uploadDocument = async () => {
                         <UIcon :name="getFileIcon(doc)" class="h-5 w-5 text-indigo-600" />
                     </div>
                     <div>
-                        <p class="text-sm font-semibold text-slate-800">{{ doc.name }}</p>
-                        <p class="text-xs text-slate-500">
-                            <span class="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
-                                {{ getDocumentLabel(doc.type) }}
-                            </span>
-                            <span v-if="formatDate(doc.uploadedAt)" class="text-slate-400">
+                        <div class="space-y-1">
+                            <p class="text-xs text-slate-500">
+                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                                    {{ getDocumentLabel(doc.type) }}
+                                </span>
+                            </p>
+                            <p v-if="formatDate(doc.uploadedAt)" class="text-xs text-slate-400">
                                 Uploaded {{ formatDate(doc.uploadedAt) }}
-                            </span>
-                        </p>
+                            </p>
+                        </div>
                     </div>
                 </div>
 
