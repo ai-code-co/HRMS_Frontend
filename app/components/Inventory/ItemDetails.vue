@@ -373,8 +373,8 @@ const confirmUnassign = async () => {
 
     <!-- Actual Content -->
     <div v-else>
-      <div class="flex items-center justify-between mb-2">
-        <div>
+      <div class="flex items-start justify-between gap-2 mb-2 min-w-0">
+        <div class="min-w-0 flex-1">
           <h3 class="text-xl font-black text-slate-800 tracking-tight">
             {{ isEditMode ? 'Edit Machine Details' : 'Machine Details' }}
           </h3>
@@ -383,18 +383,20 @@ const confirmUnassign = async () => {
             Assigned to: {{ item.assignedTo }}
           </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <UButton
-            :label="isDeviceAssigned ? 'Unassign Device' : 'Assign Device'"
-            :icon="isDeviceAssigned ? 'i-lucide-user-minus' : 'i-lucide-user-plus'"
             variant="soft"
             color="primary"
             size="xs"
-            class="font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider"
+            :aria-label="isDeviceAssigned ? 'Unassign Device' : 'Assign Device'"
+            class="font-bold px-2.5 py-2 rounded-lg text-[11px] uppercase tracking-wide whitespace-nowrap justify-center"
             @click="isDeviceAssigned ? handleUnassign() : (isAssignModalOpen = true)"
-          />
+          >
+            <UIcon :name="isDeviceAssigned ? 'i-lucide-user-minus' : 'i-lucide-user-plus'" class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ isDeviceAssigned ? 'Unassign Device' : 'Assign Device' }}</span>
+          </UButton>
           <UButton icon="i-lucide-trash-2" color="error" variant="soft" size="xs"
-            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider"
+            class="font-bold px-3 py-2 rounded-lg shrink-0"
             :class="isDeviceAssigned ? 'opacity-40 saturate-50' : ''" :disabled="isDeviceAssigned"
             :title="isDeviceAssigned ? 'Unassign device before deleting' : 'Delete device'" @click="handleDelete" />
         </div>
