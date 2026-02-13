@@ -36,7 +36,7 @@ const filteredItems = computed(() => {
 </script>
 
 <template>
-  <div class="bg-white border border-slate-100 rounded-3xl flex flex-col shadow-sm overflow-hidden shrink-0">
+  <div class="bg-white border border-slate-100 rounded-3xl flex flex-col shadow-sm overflow-hidden shrink-0 h-full max-h-[70vh] lg:max-h-[calc(100dvh-220px)]">
     <div class="p-4 border-b border-slate-50 flex items-center gap-2">
        <div class="relative flex-1">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" :size="14" />
