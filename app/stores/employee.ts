@@ -89,6 +89,11 @@ export const useEmployeeStore = defineStore('employee', {
                     credentials: 'include',
                 })
 
+                this.employeeDocuments = this.employeeDocuments.filter((doc: any) => {
+                    const docId = doc?.id ?? doc?.document_id ?? doc?.pk ?? doc?.documentId ?? doc?.doc_id
+                    return String(docId) !== String(documentId)
+                })
+
                 if (this.employee) {
                     const target = this.employee as any
                     const keys = ['documents', 'employee_documents', 'doc_links']
