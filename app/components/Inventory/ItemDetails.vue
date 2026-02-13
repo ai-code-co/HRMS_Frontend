@@ -534,16 +534,16 @@ const confirmUnassign = async () => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="flex justify-end pt-6 gap-2 flex-wrap md:flex-nowrap">
+        <div class="flex justify-center md:justify-end pt-6 gap-2 flex-wrap md:flex-nowrap">
           <UButton v-if="!isEditMode" label="Edit" size="xs" variant="subtle"
-            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto"
+            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto justify-center"
             @click="isEditMode = true" />
 
           <UButton v-else type="submit" label="Save" size="xs" variant="subtle" :loading="submitting"
-            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto" />
+            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto justify-center" />
 
           <UButton v-if="isEditMode" label="Cancel" size="xs" variant="ghost"
-            class="font-bold uppercase px-5 py-2.5 w-full md:w-auto" @click="isEditMode = false" />
+            class="font-bold uppercase px-5 py-2.5 w-full md:w-auto justify-center" @click="isEditMode = false" />
         </div>
       </UForm>
     </div>
