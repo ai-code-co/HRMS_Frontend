@@ -119,6 +119,42 @@ const getRecommendationColor = (recommendation: string) => {
     return 'text-red-600'
 }
 
+const toDisplayItems = (value: unknown): string[] => {
+    if (!value) return []
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => {
+                if (typeof item === 'string') return item.trim()
+                if (item && typeof item === 'object') {
+                    const obj = item as Record<string, unknown>
+                    if (typeof obj.skill === 'string') {
+                        const reason = typeof obj.reason === 'string' ? obj.reason.trim() : ''
+                        return reason ? `${obj.skill}: ${reason}` : obj.skill
+                    }
+                    if (typeof obj.header === 'string') {
+                        const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
+                        return detail ? `${obj.header}: ${detail}` : obj.header
+                    }
+                    const entries = Object.entries(obj)
+                        .filter(([, val]) => typeof val === 'string' && val.trim().length > 0)
+                        .map(([key, val]) => `${key}: ${String(val).trim()}`)
+                    return entries.join(' | ')
+                }
+                return ''
+            })
+            .filter((item): item is string => item.length > 0)
+    }
+    if (typeof value === 'object') {
+        return Object.entries(value as Record<string, unknown>).map(([key, description]) => {
+            if (typeof description === 'string' && description.trim().length > 0) {
+                return `${key}: ${description}`
+            }
+            return key
+        })
+    }
+    return []
+}
+
 const openExternalLink = (url?: string | null) => {
     if (!url || !import.meta.client) return
     window.open(url, '_blank', 'noopener,noreferrer')
@@ -261,6 +297,93 @@ const openExternalLink = (url?: string | null) => {
                                     :key="skillName">
                                     {{ skillName }} :
                                     <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-4">{{ description }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Interview Report -->
+                <div v-if="selectedCandidate.ai_interview_report"
+                    class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">AI Interview Report</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Score</p>
+                                <p class="text-2xl font-black text-slate-800">{{ selectedCandidate.ai_interview_report.score }}%</p>
+                            </div>
+                            <UBadge
+                                v-if="selectedCandidate.ai_interview_report.recommendation"
+                                :class="getRecommendationColor(selectedCandidate.ai_interview_report.recommendation)"
+                                variant="soft"
+                                size="sm"
+                            >
+                                {{ selectedCandidate.ai_interview_report.recommendation.replace(/_/g, ' ') }}
+                            </UBadge>
+                        </div>
+
+                        <div v-if="selectedCandidate.ai_interview_report.summary">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Summary</p>
+                            <p class="text-sm text-slate-700">{{ selectedCandidate.ai_interview_report.summary }}</p>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.matched_skills).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Matched Skills</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.matched_skills)" :key="`matched-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.missing_skills).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Missing Skills</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.missing_skills)" :key="`missing-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.strengths).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strengths</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.strengths)" :key="`strength-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.areas_for_improvement).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Areas for Improvement</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.areas_for_improvement)" :key="`improve-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
                                 </li>
                             </ul>
                         </div>
