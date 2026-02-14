@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '~/stores/settings'
+import type { PolicyItem } from '~/components/Settings/PolicyCard.vue'
 
 const settingsStore = useSettingsStore()
 const { policies: policyDocuments, loadingPolicies } = storeToRefs(settingsStore)
@@ -19,6 +20,27 @@ const policies = computed(() => {
 const isPdfLink = (link?: string) => {
     if (!link) return false
     return link.toLowerCase().includes('.pdf')
+}
+
+const viewModalOpen = ref(false)
+const policyToView = ref<PolicyItem | null>(null)
+
+const openPolicyModal = (policy: any) => {
+    if (!policy.link) return
+    policyToView.value = {
+        id: String(policy.id ?? ''),
+        name: policy.name ?? 'Policy',
+        link: policy.link,
+        docType: policy.docType ?? 'Policy',
+        visibility: policy.visibility ?? 'Policy',
+        date: policy.date ?? '',
+        isApplied: policy.isApplied ?? true,
+    }
+    viewModalOpen.value = true
+}
+
+const closePolicyModal = () => {
+    policyToView.value = null
 }
 
 </script>
@@ -51,7 +73,9 @@ const isPdfLink = (link?: string) => {
 
         <div v-else class="space-y-3">
             <div v-for="policy in policies" :key="policy.id"
-                class="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                class="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between"
+                :class="policy.link ? 'cursor-pointer hover:border-slate-200 hover:shadow-md transition' : ''"
+                @click="openPolicyModal(policy)">
                 <div class="flex items-start gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
                         <UIcon v-if="isPdfLink(policy.link)" name="i-heroicons-document" class="h-5 w-5 text-emerald-600" />
@@ -69,17 +93,8 @@ const isPdfLink = (link?: string) => {
                         </p>
                     </div>
                 </div>
-
-                <div class="flex items-center gap-2">
-                    <UButton v-if="policy.link" :to="policy.link" target="_blank" size="sm" color="primary"
-                        variant="soft" icon="i-heroicons-arrow-top-right-on-square" class="cursor-pointer">
-                        Open
-                    </UButton>
-                    <UButton v-else size="sm" color="neutral" variant="ghost" disabled>
-                        No link
-                    </UButton>
-                </div>
             </div>
         </div>
     </section>
+    <SettingsModalViewPolicyModal v-model:open="viewModalOpen" :policy="policyToView" @close="closePolicyModal" />
 </template>

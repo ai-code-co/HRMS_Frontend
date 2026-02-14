@@ -361,26 +361,27 @@ const uploadDocument = async () => {
 
         <div v-else class="space-y-3">
             <div v-for="doc in documents" :key="doc.id"
-                class="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between cursor-pointer hover:border-slate-200 hover:shadow-md transition"
+                class="flex items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:items-center cursor-pointer hover:border-slate-200 hover:shadow-md transition"
                 @click="viewDocument(doc)">
-                <div class="flex items-start gap-3">
+                <div class="flex min-w-0 flex-1 items-start gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
                         <UIcon :name="getFileIcon(doc)" class="h-5 w-5 text-indigo-600" />
                     </div>
                     <div>
-                        <p class="text-sm font-semibold text-slate-800">{{ doc.name }}</p>
-                        <p class="text-xs text-slate-500">
-                            <span class="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
-                                {{ getDocumentLabel(doc.type) }}
-                            </span>
-                            <span v-if="formatDate(doc.uploadedAt)" class="text-slate-400">
+                        <div class="space-y-1">
+                            <p class="text-xs text-slate-500">
+                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+                                    {{ getDocumentLabel(doc.type) }}
+                                </span>
+                            </p>
+                            <p v-if="formatDate(doc.uploadedAt)" class="text-xs text-slate-400">
                                 Uploaded {{ formatDate(doc.uploadedAt) }}
-                            </span>
-                        </p>
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2" @click.stop>
+                <div class="flex shrink-0 items-center gap-2" @click.stop>
                     <UButton size="xs" color="error" variant="soft" icon="i-heroicons-trash"
                         class="rounded-full shrink-0 cursor-pointer" aria-label="Delete document"
                         @click="requestDeleteDocument(doc)" />
