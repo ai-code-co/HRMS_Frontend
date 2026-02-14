@@ -43,8 +43,15 @@
                     Employee</span>
                 </div>
 
-                <UCommandPalette v-model="selectedCommandItem" :groups="commandPaletteGroups" class="h-72 border-0"
-                  selected-icon="i-lucide-check" close close-icon="i-heroicons-x-mark" @update:open="handleCloseClick"
+                <UCommandPalette
+                  v-model="selectedCommandItem"
+                  :groups="commandPaletteGroups"
+                  :fuse="{ resultLimit: 100 }"
+                  class="h-72 border-0"
+                  selected-icon="i-lucide-check"
+                  close
+                  close-icon="i-heroicons-x-mark"
+                  @update:open="handleCloseClick"
                   :ui="{
                     root: 'divide-y-0',
                     input: '[&>input]:h-10 [&>input]:text-sm border-b border-gray-100 dark:border-gray-800',
@@ -55,7 +62,8 @@
                     itemLabelBase: 'font-medium',
                     itemLabelSuffix: 'text-xs text-gray-400 dark:text-gray-500',
                     empty: 'py-8 text-gray-400'
-                  }" />
+                  }"
+                />
               </div>
             </template>
           </UPopover>
