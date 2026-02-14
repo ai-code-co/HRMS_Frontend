@@ -18,6 +18,8 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const employeeQueryKey = 'employeeId'
 let isRouteSyncInitialized = false
+/** Only sync from URL when the route actually changed (refresh or navigation), not on every call (so clear selection is not overwritten before router updates). */
+let lastSyncedFullPath = ''
 
 const parseEmployeeId = (value: unknown): number | null => {
   if (Array.isArray(value)) {
@@ -31,6 +33,14 @@ const parseEmployeeId = (value: unknown): number | null => {
 export function useEmployeeContext() {
   const route = useRoute()
   const router = useRouter()
+
+  // Sync from URL only when route changed (refresh or navigation). Runs on server too so SSR gets correct employee for dashboard.
+  const fullPath = route.fullPath
+  if (fullPath !== lastSyncedFullPath) {
+    lastSyncedFullPath = fullPath
+    const fromQuery = parseEmployeeId(route.query[employeeQueryKey])
+    selectedEmployeeId.value = fromQuery
+  }
 
   const updateEmployeeQuery = async (employeeId: number | null) => {
     if (!import.meta.client) return
