@@ -282,11 +282,20 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
 
 const handleDelete = () => {
+  if (isDeviceAssigned.value) {
+    toast.add({
+      title: 'Cannot delete assigned device',
+      description: 'Unassign this device before deleting it.',
+      color: 'warning'
+    });
+    return;
+  }
   deleteConfirmOpen.value = true;
 };
 
 const confirmDelete = async () => {
   if (!props.item?.id) return;
+  if (isDeviceAssigned.value) return;
 
   deleting.value = true;
   try {
@@ -364,25 +373,32 @@ const confirmUnassign = async () => {
 
     <!-- Actual Content -->
     <div v-else>
-      <div class="flex items-center justify-between mb-2">
-        <div>
+      <div class="flex items-start justify-between gap-2 mb-2 min-w-0">
+        <div class="min-w-0 flex-1">
           <h3 class="text-xl font-black text-slate-800 tracking-tight">
             {{ isEditMode ? 'Edit Machine Details' : 'Machine Details' }}
           </h3>
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {{ item.id }}</p>
+          <p v-if="item.assignedTo" class="text-xs font-semibold text-slate-400 mt-0.5">
+            Assigned to: {{ item.assignedTo }}
+          </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <UButton
-            :label="isDeviceAssigned ? 'Unassign Device' : 'Assign Device'"
-            :icon="isDeviceAssigned ? 'i-lucide-user-minus' : 'i-lucide-user-plus'"
             variant="soft"
             color="primary"
             size="xs"
-            class="font-bold px-3 py-2 rounded-lg text-xs uppercase tracking-wider"
+            :aria-label="isDeviceAssigned ? 'Unassign Device' : 'Assign Device'"
+            class="font-bold px-2.5 py-2 rounded-lg text-[11px] uppercase tracking-wide whitespace-nowrap justify-center"
             @click="isDeviceAssigned ? handleUnassign() : (isAssignModalOpen = true)"
-          />
+          >
+            <UIcon :name="isDeviceAssigned ? 'i-lucide-user-minus' : 'i-lucide-user-plus'" class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ isDeviceAssigned ? 'Unassign Device' : 'Assign Device' }}</span>
+          </UButton>
           <UButton icon="i-lucide-trash-2" color="error" variant="soft" size="xs"
-            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider" @click="handleDelete" />
+            class="font-bold px-3 py-2 rounded-lg shrink-0"
+            :class="isDeviceAssigned ? 'opacity-40 saturate-50' : ''" :disabled="isDeviceAssigned"
+            :title="isDeviceAssigned ? 'Unassign device before deleting' : 'Delete device'" @click="handleDelete" />
         </div>
       </div>
 
@@ -520,16 +536,16 @@ const confirmUnassign = async () => {
         </div>
 
         <!-- Footer Actions -->
-        <div class="flex justify-end pt-6 gap-2 flex-wrap md:flex-nowrap">
+        <div class="flex justify-center md:justify-end pt-6 gap-2 flex-wrap md:flex-nowrap">
           <UButton v-if="!isEditMode" label="Edit" size="xs" variant="subtle"
-            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto"
+            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto justify-center"
             @click="isEditMode = true" />
 
           <UButton v-else type="submit" label="Save" size="xs" variant="subtle" :loading="submitting"
-            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto" />
+            class="font-bold px-5 py-2.5 rounded-lg text-xs uppercase tracking-wider w-full md:w-auto justify-center" />
 
           <UButton v-if="isEditMode" label="Cancel" size="xs" variant="ghost"
-            class="font-bold uppercase px-5 py-2.5 w-full md:w-auto" @click="isEditMode = false" />
+            class="font-bold uppercase px-5 py-2.5 w-full md:w-auto justify-center" @click="isEditMode = false" />
         </div>
       </UForm>
     </div>

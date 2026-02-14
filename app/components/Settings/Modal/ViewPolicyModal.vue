@@ -5,18 +5,6 @@
             <div class="flex items-center justify-between w-full">
                 <h3 class="text-lg font-semibold text-slate-800">{{ policy?.name || 'View Policy' }}</h3>
                 <div class="flex items-center gap-2">
-                    <UButton
-                        v-if="policy?.link"
-                        icon="i-lucide-external-link"
-                        variant="soft"
-                        color="primary"
-                        size="sm"
-                        class="cursor-pointer"
-                        :to="policy.link"
-                        target="_blank"
-                    >
-                        Open in New Tab
-                    </UButton>
                     <UButton icon="i-heroicons-x-mark" variant="ghost" class="rounded-full cursor-pointer" @click="close" />
                 </div>
             </div>
