@@ -37,7 +37,7 @@
                         <UButton v-for="tab in tabs" :key="tab.key" size="xs" variant="ghost" :class="[
                             'px-3 sm:px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',
                             activeTab === tab.key ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'
-                        ]" @click="activeTab = tab.key">
+                        ]" @click="handleTabChange(tab.key)">
                             {{ tab.label }}
                         </UButton>
                     </div>
@@ -181,10 +181,17 @@ const { jobsList: jobs, candidatesList: candidates, invitesList: invites, isLoad
 const validTabs = ['jobs', 'candidates', 'invites'] as const
 const activeTab = ref<'jobs' | 'candidates' | 'invites'>('jobs')
 
+const handleTabChange = async (tab: 'jobs' | 'candidates' | 'invites') => {
+    activeTab.value = tab
+    if (tab === 'invites' && import.meta.client) {
+        await interviewStore.fetchInvites(false)
+    }
+}
+
 // Restore tab from query when navigating back from candidate/job page
-watch(() => route.query.tab, (tab) => {
+watch(() => route.query.tab, async (tab) => {
     if (tab && validTabs.includes(tab as any)) {
-        activeTab.value = tab as 'jobs' | 'candidates' | 'invites'
+        await handleTabChange(tab as 'jobs' | 'candidates' | 'invites')
     }
 }, { immediate: true })
 const hasInitialized = ref(false)

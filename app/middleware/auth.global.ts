@@ -7,7 +7,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const resetRoutes = ['/forgot-password', '/reset-password']
     const publicRoutes = ['/login', '/audit']
     const isInterviewLink = /^\/interview\/[^/]+\/?$/.test(to.path)
-    const isPublicRoute = publicRoutes.includes(to.path) || to.path.startsWith('/apply/') || to.path.startsWith('/interview/link/') || isInterviewLink
+    const isPublicRoute = publicRoutes.includes(to.path) || to.path === '/apply' || to.path.startsWith('/apply/') || to.path.startsWith('/interview/link/') || isInterviewLink
 
     if (resetRoutes.includes(to.path)) {
         return

@@ -118,6 +118,11 @@ const getRecommendationColor = (recommendation: string) => {
     if (recLower.includes('partial')) return 'text-amber-600'
     return 'text-red-600'
 }
+
+const openExternalLink = (url?: string | null) => {
+    if (!url || !import.meta.client) return
+    window.open(url, '_blank', 'noopener,noreferrer')
+}
 </script>
 
 <template>
@@ -175,7 +180,7 @@ const getRecommendationColor = (recommendation: string) => {
                                 </div>
                             </div>
                             <UButton v-if="doc.url" icon="i-lucide-download" variant="ghost" size="xs"
-                                @click="window.open(doc.url, '_blank')" />
+                                @click="openExternalLink(doc.url)" />
                         </div>
                     </div>
                 </div>
@@ -283,20 +288,10 @@ const getRecommendationColor = (recommendation: string) => {
                                 {{ selectedCandidate.interview.status }}
                             </UBadge>
                         </div>
-                        <div v-if="selectedCandidate.interview.duration">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Duration</p>
-                        </div>
-                        <div v-if="selectedCandidate.interview.video_url">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Video</p>
-                            <UButton icon="i-lucide-video" variant="ghost" size="sm"
-                                @click="window.open(selectedCandidate.interview.video_url, '_blank')">
-                                View Recording
-                            </UButton>
-                        </div>
                         <div v-if="selectedCandidate.interview.transcript_url">
                             <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Transcript</p>
                             <UButton icon="i-lucide-file-text" variant="ghost" size="sm"
-                                @click="window.open(selectedCandidate.interview.transcript_url, '_blank')">
+                                @click="openExternalLink(selectedCandidate.interview.transcript_url)">
                                 View Transcript
                             </UButton>
                         </div>

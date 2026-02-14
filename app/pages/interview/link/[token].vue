@@ -242,6 +242,8 @@ const lastQuestionId = ref<string | null>(null)
 const done = ref(false)
 const recording = ref(false)
 const mediaRecorder = ref<MediaRecorder | null>(null)
+const fullSessionRecorder = ref<MediaRecorder | null>(null)
+const fullSessionChunks = ref<BlobPart[]>([])
 const audioBlob = ref<Blob | null>(null)
 const submitting = ref(false)
 const liveTranscript = ref('')
@@ -319,6 +321,7 @@ async function handleStart() {
         if (res?.session) {
             session.value = { ...session.value!, ...res.session }
         }
+        startFullSessionRecording()
         step.value = 'question'
         await fetchNextQuestion()
     } catch (err: any) {
@@ -330,6 +333,62 @@ async function handleStart() {
     } finally {
         starting.value = false
     }
+}
+
+function createFullSessionRecorder(stream: MediaStream): MediaRecorder {
+    if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+        return new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8,opus' })
+    }
+    if (MediaRecorder.isTypeSupported('video/webm')) {
+        return new MediaRecorder(stream, { mimeType: 'video/webm' })
+    }
+    return new MediaRecorder(stream)
+}
+
+function startFullSessionRecording() {
+    if (!localStream.value || fullSessionRecorder.value) return
+    try {
+        fullSessionChunks.value = []
+        const recorder = createFullSessionRecorder(localStream.value)
+        recorder.ondataavailable = (event: BlobEvent) => {
+            if (event.data && event.data.size > 0) {
+                fullSessionChunks.value.push(event.data)
+            }
+        }
+        recorder.start(1000)
+        fullSessionRecorder.value = recorder
+    } catch (err) {
+        console.error('Failed to start full-session recording:', err)
+    }
+}
+
+function stopFullSessionRecording(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+        const recorder = fullSessionRecorder.value
+        if (!recorder) {
+            resolve(null)
+            return
+        }
+
+        recorder.onstop = () => {
+            const blob = fullSessionChunks.value.length > 0
+                ? new Blob(fullSessionChunks.value, { type: recorder.mimeType || 'video/webm' })
+                : null
+            fullSessionChunks.value = []
+            resolve(blob)
+        }
+
+        if (recorder.state !== 'inactive') {
+            recorder.stop()
+        } else {
+            const blob = fullSessionChunks.value.length > 0
+                ? new Blob(fullSessionChunks.value, { type: recorder.mimeType || 'video/webm' })
+                : null
+            fullSessionChunks.value = []
+            resolve(blob)
+        }
+        fullSessionRecorder.value = null
+    })
 }
 
 async function fetchNextQuestion() {
@@ -488,19 +547,38 @@ async function submitAnswer() {
 async function completeInterview() {
     if (!session.value?.id) return
     try {
-        // 1. Complete the interview session
+        // 1. Upload full interview video
+        const fullSessionBlob = await stopFullSessionRecording()
+        if (fullSessionBlob) {
+            await uploadFullVideo(fullSessionBlob)
+        }
+
+        // 2. Complete the interview session
         await useInterviewApi('/api/interview/complete', {
             method: 'POST',
             body: { session_id: session.value.id },
         })
 
-        // 2. Generate and upload transcript PDF
+        // 3. Generate and upload transcript file
         if (allTranscripts.value.length > 0) {
             await uploadTranscriptPdf()
         }
     } catch {
         // Non-fatal
     }
+}
+
+async function uploadFullVideo(videoBlob: Blob) {
+    if (!session.value?.id) return
+    const formData = new FormData()
+    formData.append('session_id', session.value.id)
+    formData.append('video', videoBlob, `full_session_${session.value.id}.webm`)
+
+    await $fetch('/api/interview/upload-full-video', {
+        baseURL: INTERVIEW_API_BASE,
+        method: 'POST',
+        body: formData,
+    })
 }
 
 // Generate a simple PDF from transcripts and upload to backend
@@ -570,6 +648,15 @@ watch(
 )
 
 onBeforeUnmount(() => {
+    if (fullSessionRecorder.value && fullSessionRecorder.value.state !== 'inactive') {
+        try {
+            fullSessionRecorder.value.stop()
+        } catch {
+            // ignore stop errors on teardown
+        }
+    }
+    fullSessionRecorder.value = null
+    fullSessionChunks.value = []
     localStream.value?.getTracks().forEach((t) => t.stop())
     localStream.value = null
 })
