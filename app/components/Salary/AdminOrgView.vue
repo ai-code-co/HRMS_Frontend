@@ -32,10 +32,16 @@
                     </template>
 
                     <div class="space-y-3">
-                        <SalaryDisbursementRow v-for="emp in employees" :key="emp.id" :id="emp.id" :name="emp.name"
-                            :avatar="emp.avatar" :employee-id="emp.employeeId" :designation="emp.designation"
-                            :net-paid="emp.netPaid" :status="emp.status" :payment-date="emp.paymentDate"
-                            @view="handleSelectEmployee(emp.id)" />
+                        <template v-if="employees.length">
+                            <SalaryDisbursementRow v-for="emp in employees" :key="emp.id" :id="emp.id" :name="emp.name"
+                                :avatar="emp.avatar" :employee-id="emp.employeeId" :designation="emp.designation"
+                                :net-paid="emp.netPaid" :status="emp.status" :payment-date="emp.paymentDate"
+                                @view="handleSelectEmployee(emp.id)" />
+                        </template>
+                        <div v-else class="py-12 text-center text-slate-500">
+                            <p v-if="store.isLoading" class="text-sm font-medium">Loading disbursements...</p>
+                            <p v-else class="text-sm font-medium">No disbursements to show.</p>
+                        </div>
                     </div>
                 </UCard>
             </div>
@@ -76,19 +82,22 @@ import { useSalaryStore } from '@/stores/salary'
 const store = useSalaryStore()
 const { employeeLookupList } = useEmployeeContext()
 
-// Generate mock employees from lookup list
 const employees = computed(() => {
-    const list = employeeLookupList.value || []
-    return list.slice(0, 5).map((emp, i) => ({
-        id: emp.id.toString(),
-        name: emp.full_name,
-        avatar: emp.photo_url || '',
-        employeeId: emp.employee_id,
-        designation: emp.designation_name || 'Employee',
-        netPaid: 12450 + (i * 100),
-        status: (i === 3 ? 'Processing' : 'Paid') as 'Paid' | 'Processing' | 'Failed' | 'On Hold',
-        paymentDate: 'Nov 30, 2025'
-    }))
+    const statements = store.orgSalaryStatements || []
+    const lookup = employeeLookupList.value || []
+    return statements.map((stmt) => {
+        const emp = lookup.find((e) => String(e.id) === String(stmt.user_Id))
+        return {
+            id: stmt.user_Id,
+            name: emp?.full_name ?? `User ${stmt.user_Id}`,
+            avatar: emp?.photo_url ?? '',
+            employeeId: emp?.employee_id ?? '',
+            designation: emp?.designation_name ?? 'Employee',
+            netPaid: parseFloat(stmt.total_net_salary) || 0,
+            status: (stmt.status || 'Paid') as 'Paid' | 'Processing' | 'Failed' | 'On Hold',
+            paymentDate: `${stmt.month_name} ${stmt.year}`
+        }
+    })
 })
 
 const handleSelectEmployee = (id: string) => {
