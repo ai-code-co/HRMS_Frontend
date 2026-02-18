@@ -6,12 +6,22 @@ export interface Permission {
     module: string; view: boolean; create: boolean; edit: boolean; delete: boolean;
 }
 
+export interface SettingsEmployee {
+    id: string
+    name: string
+    designation: string
+    avatar: string
+    email?: string
+}
+
 export const useSettingsStore = defineStore('settings', () => {
     const activeMenu = ref('permissions')
     const uploadPolicyModalOpen = ref(false)
     const employeeSearch = ref('')
     const selectedEmployeeId = ref<string | null>(null)
     const isSaving = ref(false)
+    const employeesLoading = ref(false)
+    const employeesError = ref<string | null>(null)
     const policySaving = ref(false)
     const policyDeleting = ref(false)
     const policyError = ref<string | null>(null)
@@ -31,14 +41,42 @@ export const useSettingsStore = defineStore('settings', () => {
         return JSON.stringify(permissions.value) !== JSON.stringify(initialPermissions.value)
     })
 
-    const employees = ref([
-        { id: 'EMP001', name: 'Sarah Miller', designation: 'Product Designer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah', email: 'sarah.m@nebula.io' },
-        { id: 'EMP002', name: 'Marcus Chen', designation: 'Fullstack Dev', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus', email: 'marcus.c@nebula.io' },
-    ])
+    const employees = ref<SettingsEmployee[]>([])
+
+    async function fetchEmployeesForPermissions() {
+        employeesLoading.value = true
+        employeesError.value = null
+        try {
+            const res = await useApi<{ data: { id: number; employee_id?: string; full_name: string; photo_url?: string | null; designation_name?: string }[] }>(
+                '/api/employees/lookup-list/',
+                { credentials: 'include' }
+            )
+            const list = res?.data ?? []
+            employees.value = list.map((e: any) => ({
+                id: String(e.id),
+                name: e.full_name ?? '',
+                designation: e.designation_name ?? e.designation ?? '',
+                avatar: e.photo_url ?? `https://ui-avatars.com/api/?name=${encodeURIComponent((e.full_name || 'U').slice(0, 2))}&background=random`,
+                email: e.email ?? undefined
+            }))
+        } catch (err: any) {
+            employeesError.value = err?.data?.message || err?.message || 'Failed to load employees'
+            const toast = useToast()
+            toast.add({ title: 'Error', description: employeesError.value, color: 'error' })
+        } finally {
+            employeesLoading.value = false
+        }
+    }
 
     const filteredEmployees = computed(() => {
         if (!employeeSearch.value) return []
-        return employees.value.filter(e => e.name.toLowerCase().includes(employeeSearch.value.toLowerCase()))
+        const q = employeeSearch.value.toLowerCase()
+        return employees.value.filter(e =>
+            e.name.toLowerCase().includes(q) ||
+            (e.designation && e.designation.toLowerCase().includes(q)) ||
+            (e.email && e.email.toLowerCase().includes(q)) ||
+            (e.id && e.id.toLowerCase().includes(q))
+        )
     })
 
     const selectedEmployee = computed(() => employees.value.find(e => e.id === selectedEmployeeId.value))
@@ -271,6 +309,7 @@ export const useSettingsStore = defineStore('settings', () => {
         activeMenu, uploadPolicyModalOpen, employeeSearch, selectedEmployeeId, isSaving, isDirty,
         policySaving, policyDeleting, policyApplying, policyError, policies, loadingPolicies,
         employees, filteredEmployees, selectedEmployee, currentPermissions,
+        employeesLoading, employeesError, fetchEmployeesForPermissions,
         togglePermission, saveSettings,
         createPolicyDocument, updatePolicyDocument, deletePolicyDocument, fetchPolicyDocuments,
         applyPolicyDocument, unapplyPolicyDocument
