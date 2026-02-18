@@ -7,8 +7,11 @@
             </UFormField>
             <div v-if="store.employeeSearch"
                 class="absolute top-full left-0 right-0 -mt-4 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2">
-                <div v-if="store.filteredEmployees.length <= 0">
-                    <p class="text-sm font-bold text-black px-3 py-2">
+                <div v-if="store.employeesLoading" class="px-3 py-4 text-sm text-slate-500">
+                    Loading employees...
+                </div>
+                <div v-else-if="store.filteredEmployees.length <= 0" class="px-3 py-2">
+                    <p class="text-sm font-bold text-slate-600">
                         No employees found.
                     </p>
                 </div>
@@ -64,7 +67,13 @@
 
 <script setup lang="ts">
 import { useSettingsStore } from '~/stores/settings'
+
 const store = useSettingsStore()
+
+onMounted(() => {
+    store.fetchEmployeesForPermissions()
+})
+
 const select = (id: string) => {
     store.selectedEmployeeId = id
     store.employeeSearch = ''
