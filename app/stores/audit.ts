@@ -26,6 +26,9 @@ export interface Device {
   isUnderWarranty: boolean
   assignmentHistory: AssignmentHistory[]
   isAudited?: boolean
+  warranty_doc_url: string
+  invoice_doc_url: string
+  photo_url: string
 }
 
 export interface AssignmentHistory {
@@ -68,7 +71,7 @@ export interface AuditSummaryItem {
   month: string
   year: string
   audit_done_by_user_id: string | null
-  comment_type: string | null 
+  comment_type: string | null
   comment: string | null
   audit_done_by: string | null
   assigned_to: string | null
@@ -103,16 +106,16 @@ export interface AuditSummaryResponse {
 
 export const useAuditStore = defineStore('audit', () => {
   const deviceCache = ref<Record<number, Device>>({})
-  const deviceList = ref<DeviceListItem[]>([]) 
+  const deviceList = ref<DeviceListItem[]>([])
   const isLoading = ref(false)
   const auditStatus = ref<AuditStatus | null>(null)
   const selectedDeviceLoading = ref(false)
   const error = ref<string | null>(null)
-  
+
   // Audit Summary state
   const auditSummaryLoading = ref(false)
   const auditSummaryData = ref<AuditSummaryResponse | null>(null)
-  
+
   // Month mapping for audit summary
   const monthsMap: Record<string, number> = {
     'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
@@ -147,7 +150,7 @@ export const useAuditStore = defineStore('audit', () => {
     if (!auditStatus.value?.devices) {
       return
     }
-    
+
     try {
       const deviceListPromises = auditStatus.value.devices.map(async (d) => {
         try {
@@ -164,7 +167,7 @@ export const useAuditStore = defineStore('audit', () => {
           return null
         }
       })
-      
+
       const devices = await Promise.all(deviceListPromises)
       deviceList.value = devices.filter((d): d is DeviceListItem => d !== null)
     } catch (err) {
@@ -233,6 +236,9 @@ export const useAuditStore = defineStore('audit', () => {
           conditionAtAssignment: history.condition_at_assignment,
           conditionAtReturn: history.condition_at_return,
         })),
+        photo_url: response.photo_url,
+        warranty_doc_url: response.warranty_doc_url,
+        invoice_doc_url: response.invoice_doc_url,
       }
 
       deviceCache.value[deviceId] = device
@@ -289,23 +295,23 @@ export const useAuditStore = defineStore('audit', () => {
     auditSummaryLoading.value = true
     error.value = null
     const { showLoader, hideLoader } = useGlobalLoader()
-    
+
     if (showGlobalLoader && import.meta.client) {
       showLoader()
     }
-    
+
     const toast = useToast()
-    
+
     try {
       const monthNumber = monthsMap[month] || 2
-      
+
       const response = await useApi<AuditSummaryResponse>('/api/inventory/audit-summary/', {
-        params: { 
-          month: monthNumber, 
-          year: year 
+        params: {
+          month: monthNumber,
+          year: year
         }
       })
-      
+
       auditSummaryData.value = response
       return response
     } catch (err: any) {

@@ -71,12 +71,15 @@ export const useInventoryStore = defineStore('inventory', {
                 internalSerial: device.serial_number,
                 devicetypeName: device.device_type_name || '',
                 status: (device.status as 'working' | 'repair' | 'unassigned') || 'unassigned',
-                assignedTo: device.employee_name || undefined
+                assignedTo: device.employee_name || undefined,
+                photo_url: device.photo_url || null,
+                warranty_doc_url: device.warranty_doc_url || null,
+                invoice_doc_url: device.invoice_doc_url || null,
             }));
         },
 
         selectedDetailItem: (state): InventoryItem | null => {
-            if (!state.currentDeviceDetail) return null;
+            if (!state.currentDeviceDetail || !state.currentDeviceDetail.id) return null;
             const d = state.currentDeviceDetail;
             return {
                 id: d.id.toString(),
@@ -88,8 +91,13 @@ export const useInventoryStore = defineStore('inventory', {
                 serialNumber: d.serial_number,
                 internalSerial: d.serial_number,
                 devicetypeName: d.device_type_detail?.name || '',
+                purchase_price: d.purchase_price || '',
                 status: (d.status as 'working' | 'repair' | 'unassigned') || 'unassigned',
-                assignedTo: d.employee_detail?.full_name || undefined
+                assignedTo: d.employee_detail?.full_name || undefined,
+                designation: d.employee_detail?.designation || undefined,
+                photo_url: d.photo_url,
+                warranty_doc_url: d.warranty_doc_url,
+                invoice_doc_url: d.invoice_doc_url
             };
         }
     },
@@ -164,12 +172,12 @@ export const useInventoryStore = defineStore('inventory', {
                 if (categoryId) {
                     params.category = categoryId;
                 }
-                
+
                 // Use useApi composable instead of $fetch
                 const response = await useApi<{ data: any[] }>('/api/inventory/devices/unassigned/', {
                     params
                 });
-                
+
                 // Transform unassigned device response to match DeviceApiObject format
                 let transformedDevices: DeviceApiObject[] = (response.data || []).map((device: any) => ({
                     id: device.id,
@@ -188,15 +196,15 @@ export const useInventoryStore = defineStore('inventory', {
                     is_active: device.is_active !== undefined ? device.is_active : true,
                     created_at: device.created_at || ''
                 }));
-                
+
                 // If category filtering is not supported by API, filter client-side
                 if (categoryId && transformedDevices.length > 0) {
                     const categoryIdStr = categoryId.toString();
-                    transformedDevices = transformedDevices.filter(device => 
+                    transformedDevices = transformedDevices.filter(device =>
                         device.device_type && device.device_type.toString() === categoryIdStr
                     );
                 }
-                
+
                 this.rawDevices = transformedDevices;
                 return transformedDevices;
             } catch (err: any) {
@@ -319,9 +327,12 @@ export const useInventoryStore = defineStore('inventory', {
                     purchase_price: payload.purchase_price,
                     purchase_date: payload.purchase_date || null,
                     warranty_expiry: payload.warranty_expiry || null,
+                    warranty_doc_url: payload.warranty_doc_url || null,
+                    invoice_doc_url: payload.invoice_doc_url || null,
+                    photo_url: payload.photo_url || null,
                 };
 
-                Object.keys(apiPayload).forEach(key => apiPayload[key] === undefined && delete apiPayload[key]);
+                Object.keys(apiPayload).forEach(key => (apiPayload as any)[key] === undefined && delete (apiPayload as any)[key]);
 
                 const updatedDevice = await useApi<DeviceDetailApiObject>(`/api/inventory/devices/${id}/`, {
                     method: 'PUT',
@@ -329,15 +340,22 @@ export const useInventoryStore = defineStore('inventory', {
                     credentials: 'include'
                 });
 
-                this.currentDeviceDetail = updatedDevice;
+                // Only update detail if API returned data (avoid blank screen on empty/odd response)
+                if (updatedDevice && typeof updatedDevice === 'object' && updatedDevice.id) {
+                    this.currentDeviceDetail = updatedDevice;
+                }
                 const index = this.rawDevices.findIndex(d => d.id.toString() === id.toString());
-                if (index !== -1) {
-                    this.rawDevices[index] = {
-                        ...this.rawDevices[index],
-                        serial_number: updatedDevice.serial_number,
-                        model_name: updatedDevice.model_name,
-                        status: updatedDevice.status,
-                    };
+                if (index !== -1 && updatedDevice && typeof updatedDevice === 'object' && (updatedDevice as any).id) {
+                    const ud = updatedDevice as any;
+                    const currentDevice = this.rawDevices[index];
+                    if (currentDevice) {
+                        this.rawDevices[index] = {
+                            ...currentDevice,
+                            serial_number: ud.serial_number || currentDevice.serial_number,
+                            model_name: ud.model_name || currentDevice.model_name,
+                            status: ud.status || currentDevice.status,
+                        } as DeviceApiObject;
+                    }
                 }
 
                 return updatedDevice;
@@ -388,28 +406,34 @@ export const useInventoryStore = defineStore('inventory', {
             warranty_expiry?: string;
             notes?: string;
             is_active: boolean;
+            photo?: string | null;
+            warranty_doc?: string | null;
+            invoice_doc?: string | null;
         }) {
             this.error = null;
             const toast = useToast();
             try {
-                const apiPayload = {
+                const apiPayload: Record<string, unknown> = {
                     device_type: payload.device_type,
                     serial_number: payload.serial_number,
                     model_name: payload.model_name,
                     brand: payload.brand,
                     status: payload.status,
                     condition: payload.condition,
-                    employee: payload.employee || null,
-                    purchase_date: payload.purchase_date || null,
-                    purchase_price: payload.purchase_price || null,
-                    warranty_expiry: payload.warranty_expiry || null,
-                    notes: payload.notes || '',
+                    employee: payload.employee ?? null,
+                    purchase_date: payload.purchase_date ?? null,
+                    purchase_price: payload.purchase_price ?? null,
+                    warranty_expiry: payload.warranty_expiry ?? null,
+                    notes: payload.notes ?? '',
                     is_active: payload.is_active,
                 };
+                if (payload.photo != null && payload.photo !== '') apiPayload.photo = payload.photo;
+                if (payload.warranty_doc != null && payload.warranty_doc !== '') apiPayload.warranty_doc = payload.warranty_doc;
+                if (payload.invoice_doc != null && payload.invoice_doc !== '') apiPayload.invoice_doc = payload.invoice_doc;
 
                 const newDevice = await useApi<DeviceDetailApiObject>('/api/inventory/devices/', {
                     method: 'POST',
-                    body: apiPayload,
+                    body: apiPayload as Record<string, unknown>,
                     credentials: 'include'
                 });
 
@@ -425,6 +449,70 @@ export const useInventoryStore = defineStore('inventory', {
                     color: 'error'
                 });
                 throw err;
+            }
+        },
+
+        async uploadDocument(deviceId: string | number, file: File, documentType: string) {
+            this.error = null;
+            const toast = useToast();
+            try {
+                const formData = new FormData();
+                formData.append('doc_type', documentType);
+                formData.append('file', file);
+
+                const response = await useApi(`/api/inventory/devices/${deviceId}/upload-document/`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                toast.add({
+                    title: 'Success',
+                    description: 'Document uploaded successfully',
+                    color: 'success'
+                });
+
+                // Refresh device detail to get updated documents list if applicable
+                await this.fetchDeviceDetail(deviceId, false);
+
+                return response;
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to upload document');
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
+                throw err;
+            }
+        },
+
+        async deleteDocument(deviceId: string | number, docType: string) {
+            this.error = null;
+            const toast = useToast();
+            try {
+                await useApi(`/api/inventory/devices/${deviceId}/delete-document/`, {
+                    method: 'DELETE',
+                    body: { doc_type: docType },
+                    credentials: 'include'
+                });
+
+                toast.add({
+                    title: 'Success',
+                    description: 'Document removed successfully',
+                    color: 'success'
+                });
+
+                await this.fetchDeviceDetail(deviceId, false);
+                return true;
+            } catch (err: any) {
+                this.error = extractErrorMessage(err, 'Failed to delete document');
+                toast.add({
+                    title: 'Error',
+                    description: this.error,
+                    color: 'error'
+                });
+                return false;
             }
         },
     },

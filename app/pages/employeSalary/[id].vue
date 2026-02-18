@@ -159,13 +159,16 @@ if (import.meta.client && salaryData.value) {
     store.setSalaryData(salaryData.value)
 }
 
-// Set salary structure for this employee
-watch(employeeId, (id) => {
-    store.setSalaryStructureForEmployee(id)
-}, { immediate: true })
+// Structure is set from API when fetchSalaryData/updateRecordDetails runs (store.setSalaryStructureFromRecord).
 
-const handleSaveStructure = (structure: SalaryStructure) => {
-    store.updateSalaryStructure(structure)
+const handleSaveStructure = async (structure: SalaryStructure) => {
+    const identifier = activeEmployee?.value?.employee_id ?? String(route.params.id)
+    const success = await store.updateSalaryStructureApi(identifier, structure)
+    if (success) {
+        isEditModalOpen.value = false
+        const toast = useToast()
+        toast.add({ title: 'Saved', description: 'Salary structure updated successfully', color: 'success' })
+    }
 }
 </script>
 

@@ -2,12 +2,12 @@
     <div class="space-y-6 h-full flex flex-col">
         <p class="text-slate-500">Upload and manage policy documents here.</p>
 
-        <div class="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1 w-fit border border-slate-200">
+        <div class="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1 w-full sm:w-fit border border-slate-200 overflow-x-auto no-scrollbar">
             <button
                 v-for="f in FILTER_OPTIONS"
                 :key="f"
                 type="button"
-                class="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all cursor-pointer"
+                class="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all cursor-pointer whitespace-nowrap shrink-0"
                 :class="activeFilter === f
                     ? 'bg-white text-indigo-600 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'"
@@ -25,43 +25,44 @@
             <UIcon name="i-lucide-file-question" class="size-12 text-slate-200 mb-2" />
             <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">No matching policies</p>
         </div>
-    </div>
-    <SettingsModalUploadPolicyModal v-model:open="store.uploadPolicyModalOpen" :policy="policyToEdit" @close="handleModalClose" @success="handleSuccess" class="w-full" />
-    <SettingsModalViewPolicyModal v-model:open="viewModalOpen" :policy="policyToView" @close="policyToView = null" />
+        
+        <SettingsModalUploadPolicyModal v-model:open="store.uploadPolicyModalOpen" :policy="policyToEdit" @close="handleModalClose" @success="handleSuccess" class="w-full" />
+        <SettingsModalViewPolicyModal v-model:open="viewModalOpen" :policy="policyToView" @close="policyToView = null" />
 
     <!-- Delete Confirmation Dialog -->
-    <UIConfirmDialog
-        v-model:open="deleteDialogOpen"
-        title="Delete Policy"
-        :message="`Are you sure you want to delete '${policyToDelete?.name}'? This action cannot be undone.`"
-        confirm-label="Delete"
-        cancel-label="Cancel"
-        confirm-color="error"
-        icon="i-lucide-trash-2"
-        icon-bg="bg-red-100"
-        icon-color="text-red-600"
-        :loading="isDeleting"
-        @confirm="confirmDelete"
-        @cancel="cancelDelete"
-    />
+        <UIConfirmDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete Policy"
+            :message="`Are you sure you want to delete '${policyToDelete?.name}'? This action cannot be undone.`"
+            confirm-label="Delete"
+            cancel-label="Cancel"
+            confirm-color="error"
+            icon="i-lucide-trash-2"
+            icon-bg="bg-red-100"
+            icon-color="text-red-600"
+            :loading="isDeleting"
+            @confirm="confirmDelete"
+            @cancel="cancelDelete"
+        />
 
     <!-- Apply/Unapply Confirmation Dialog -->
-    <UIConfirmDialog
-        v-model:open="applyDialogOpen"
-        :title="policyToToggle?.isApplied ? 'Unapply Policy' : 'Apply Policy'"
-        :message="policyToToggle?.isApplied
-            ? `Are you sure you want to unapply '${policyToToggle?.name}'?`
-            : `Are you sure you want to apply '${policyToToggle?.name}'?`"
-        :confirm-label="policyToToggle?.isApplied ? 'Unapply' : 'Apply'"
-        cancel-label="Cancel"
-        :confirm-color="policyToToggle?.isApplied ? 'warning' : 'primary'"
-        :icon="policyToToggle?.isApplied ? 'i-lucide-x-circle' : 'i-lucide-check-circle'"
-        :icon-bg="policyToToggle?.isApplied ? 'bg-yellow-100' : 'bg-green-100'"
-        :icon-color="policyToToggle?.isApplied ? 'text-yellow-600' : 'text-green-600'"
-        :loading="isApplying"
-        @confirm="confirmToggleApply"
-        @cancel="cancelToggleApply"
-    />
+        <UIConfirmDialog
+            v-model:open="applyDialogOpen"
+            :title="policyToToggle?.isApplied ? 'Unapply Policy' : 'Apply Policy'"
+            :message="policyToToggle?.isApplied
+                ? `Are you sure you want to unapply '${policyToToggle?.name}'?`
+                : `Are you sure you want to apply '${policyToToggle?.name}'?`"
+            :confirm-label="policyToToggle?.isApplied ? 'Unapply' : 'Apply'"
+            cancel-label="Cancel"
+            :confirm-color="policyToToggle?.isApplied ? 'warning' : 'primary'"
+            :icon="policyToToggle?.isApplied ? 'i-lucide-x-circle' : 'i-lucide-check-circle'"
+            :icon-bg="policyToToggle?.isApplied ? 'bg-yellow-100' : 'bg-green-100'"
+            :icon-color="policyToToggle?.isApplied ? 'text-yellow-600' : 'text-green-600'"
+            :loading="isApplying"
+            @confirm="confirmToggleApply"
+            @cancel="cancelToggleApply"
+        />
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -185,7 +186,6 @@ async function confirmDelete() {
     try {
         await store.deletePolicyDocument(policyToDelete.value.id)
         toast.add({ title: `'${policyToDelete.value.name}' deleted successfully`, color: 'success' })
-        policies.value = policies.value.filter(p => p.id !== policyToDelete.value?.id)
         deleteDialogOpen.value = false
         policyToDelete.value = null
     } catch {
