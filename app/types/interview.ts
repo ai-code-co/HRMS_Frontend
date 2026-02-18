@@ -84,6 +84,18 @@ export interface CandidateInterview {
     transcript_url: string | null
 }
 
+export interface AiInterviewReport {
+    id: string
+    session_id: string
+    score: number
+    recommendation: EvaluationRecommendation
+    summary: string
+    matched_skills: string[] | Record<string, string>
+    missing_skills: string[] | Record<string, string>
+    strengths: string[] | Record<string, string>
+    areas_for_improvement: string[] | Record<string, string>
+}
+
 // Full candidate details from detail endpoint
 export interface CandidateDetail {
     id: string
@@ -106,6 +118,7 @@ export interface CandidateDetail {
     documents: CandidateDocument[]
     evaluation: CandidateEvaluation | null
     interview: CandidateInterview | null
+    ai_interview_report: AiInterviewReport | null
 }
 
 // Legacy Invite interface (for backward compatibility)

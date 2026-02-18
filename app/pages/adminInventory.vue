@@ -470,79 +470,88 @@ onUnmounted(() => {
         <div class="flex-1 flex flex-col relative min-w-0">
 
             <div v-if="view === 'list'" class="px-4 md:px-6 max-w-[1600px] mx-auto w-full">
-                <div class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-4 border-b border-slate-100 bg-white/50 backdrop-blur-sm rounded-xl px-6 py-4 sticky top-0 z-20 min-w-0">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800">Inventory Items</h2>
-                        <p class="text-sm text-slate-400">Manage assigned and unassigned devices by category.</p>
-                    </div>
-                    <div class="flex flex-col xl:flex-row xl:flex-nowrap items-stretch xl:items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm w-full xl:w-auto min-w-0">
-                        <div class="flex items-center gap-1 bg-slate-100/60 p-1 rounded-xl border border-slate-200 shadow-sm w-full xl:w-auto">
-                            <UButton v-for="f in ['Assigned', 'Unassigned']" :key="f" size="xs" variant="ghost" :class="[
-                                'px-2 lg:px-6 py-1.5 rounded-lg text-[9px] lg:text-[10px] font-black uppercase transition-all duration-200 flex-1 xl:flex-none min-w-0 justify-center text-center',
-                                activeFilter === f
-                                    ? 'bg-white text-indigo-600 shadow-sm'
-                                    : 'text-slate-400 hover:text-slate-600'
-                            ]" @click="handleFilterChange(f)">
-                                {{ f }}
-                            </UButton>
-                        </div>
-                        <USelect
-                            :model-value="selectedCategoryValue"
-                            @update:model-value="handleCategorySelect"
-                            :items="categoryOptions"
-                            option-attribute="label"
-                            value-attribute="value"
-                            placeholder="Select category"
-                            size="lg"
-                            class="w-full xl:w-[180px] min-w-0 border border-slate-200 rounded-xl shadow-sm"
-                        />
-                        <USelectMenu
-                            :model-value="selectedItemId"
-                            @update:model-value="handleMobileDeviceSelect"
-                            :items="mobileDeviceOptions"
-                            :portal="false"
-                            value-key="value"
-                            option-attribute="label"
-                            placeholder="Select device"
-                            searchable
-                            searchable-placeholder="Search devices..."
-                            size="lg"
-                            class="w-full lg:hidden border border-slate-200 rounded-xl shadow-sm"
-                            :disabled="loadingDevices || inventoryItems.length === 0"
-                        >
-                            <template #item-label="{ item }">
-                                <div class="flex flex-col">
-                                    <span class="font-semibold text-slate-700">{{ item.label }}</span>
-                                    <span class="text-xs text-slate-400 uppercase tracking-wide">{{ item.serialNumber }}</span>
-                                </div>
-                            </template>
-                        </USelectMenu>
-                        <div class="flex flex-col lg:flex-row w-full xl:w-auto items-stretch lg:items-center gap-3">
-                            <UButton 
-                                label="Audit Summary" 
-                                color="primary" 
-                                size="lg"
-                                class="w-full lg:flex-1 xl:flex-none lg:w-auto border border-slate-200 rounded-xl shadow-sm justify-center text-center"
-                                @click="navigateTo('/audit-summary')"
-                            />
-                            <UButton 
-                                label="Add Device" 
-                                color="primary" 
-                                size="lg"
-                                class="w-full lg:flex-1 xl:flex-none lg:w-auto border border-slate-200 rounded-xl shadow-sm justify-center text-center"
-                                @click="isAddDeviceModalOpen = true"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+               <div class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-4 border-b border-slate-100   bg-white/50 backdrop-blur-sm rounded-xl px-6 py-4 sticky top-0 z-20 min-w-0">
+                   <div>
+                       <h2 class="text-2xl font-bold text-slate-800">Inventory Items</h2>
+                       <p class="text-sm text-slate-400">Manage assigned and unassigned devices by category.</p>
+                   </div>
+           
+                   <!-- Corrected Controls Container -->
+                   <div class="flex flex-col xl:flex-row xl:flex-nowrap items-stretch xl:items-center gap-3 bg-white border      border-slate-200 px-4 py-2 rounded-xl shadow-sm w-full xl:w-auto min-w-0">
+                       
+                       <!-- Filter Toggle (Assigned/Unassigned) -->
+                       <div class="flex items-center gap-1 bg-slate-100/60 p-1 rounded-xl border border-slate-200 shadow-sm flex-1 xl:flex-none">
+                           <UButton v-for="f in ['Assigned', 'Unassigned']" :key="f" size="xs" variant="ghost" 
+                               :class="[
+                                   'px-2 lg:px-6 py-1.5 rounded-lg text-[9px] lg:text-[10px] font-black uppercase transition-all duration-200 flex-1 xl:flex-none min-w-0 justify-center text-center',
+                                   activeFilter === f ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                               ]" 
+                               @click="handleFilterChange(f)"
+                           >
+                               {{ f }}
+                           </UButton>
+                       </div>
+           
+                       <!-- Category Select -->
+                       <USelect
+                           :model-value="selectedCategoryValue"
+                           @update:model-value="handleCategorySelect"
+                           :items="categoryOptions"
+                           option-attribute="label"
+                           value-attribute="value"
+                           placeholder="Select category"
+                           size="lg"
+                           class="w-full xl:w-[180px] min-w-0 border border-slate-200 rounded-xl shadow-sm"
+                       />
+           
+                       <!-- Mobile Device Menu -->
+                       <USelectMenu
+                           :model-value="selectedItemId"
+                           @update:model-value="handleMobileDeviceSelect"
+                           :items="mobileDeviceOptions"
+                           :portal="false"
+                           value-key="value"
+                           option-attribute="label"
+                           placeholder="Select device"
+                           searchable
+                           searchable-placeholder="Search devices..."
+                           size="lg"
+                           class="w-full lg:hidden border border-slate-200 rounded-xl shadow-sm"
+                           :disabled="loadingDevices || inventoryItems.length === 0"
+                       >
+                           <template #item-label="{ item }">
+                               <div class="flex flex-col">
+                                   <span class="font-semibold text-slate-700">{{ item.label }}</span>
+                                   <span class="text-xs text-slate-400 uppercase tracking-wide">{{ item.serialNumber }}</span>
+                               </div>
+                           </template>
+                       </USelectMenu>
+                       <div class="flex flex-col lg:flex-row w-full xl:w-auto items-stretch lg:items-center gap-3">
+                           <UButton 
+                               label="Audit Summary" 
+                               color="primary" 
+                               size="lg"
+                               class="w-full lg:flex-1 xl:flex-none lg:w-auto border border-slate-200 rounded-xl shadow-sm justify-center text-center"
+                               @click="navigateTo('/audit-summary')"
+                           />
+                           <UButton 
+                               label="Add Device" 
+                               color="primary" 
+                               size="lg"
+                               class="w-full lg:flex-1 xl:flex-none lg:w-auto border border-slate-200 rounded-xl shadow-sm justify-center text-center"
+                               @click="isAddDeviceModalOpen = true"
+                           />
+                       </div>
+                   </div>
+               </div>
+           </div>
+           
             <main class="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full min-w-0">
                 <DashboardView v-if="view === 'dashboard'" :categories="categories" :total-devices="totalDevices"
                     :loading="loadingDashboard" @select-category="handleSelectCategory"
                     @open-add-modal="isAddModalOpen = true" />
 
-                <div v-else class="flex flex-col lg:flex-row h-full animate-fadeIn gap-6">
+                <div v-else class="flex h-full animate-fadeIn gap-6">
                     <!-- Empty State -->
                     <div v-if="!loadingDevices && inventoryItems.length === 0" class="flex-1 flex items-center justify-center -mt-5">
                         <div class="text-center mb-80">
@@ -557,12 +566,12 @@ onUnmounted(() => {
 
                     <!-- Normal View with Items -->
                     <template v-else>
-                        <div class="hidden lg:block w-full lg:w-80 h-64 lg:h-full shrink-0 overflow-auto custom-scrollbar">
+                        <div class="hidden lg:block w-80 h-full shrink-0 overflow-auto custom-scrollbar">
                             <SidebarList :items="inventoryItems" :selected-id="selectedItemId" :loading="loadingDevices"
                                 @select="handleSelectItem" />
                         </div>
 
-                        <div class="flex-1 min-w-0 overflow-y-auto custom-scrollbar pr-0 lg:pr-2 space-y-6">
+                        <div class="flex-1 min-w-0 overflow-y-auto custom-scrollbar pr-2 space-y-6">
                             <section class="flex flex-col gap-10">
                                 <div class="flex flex-col xl:flex-row gap-6">
                                     <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">

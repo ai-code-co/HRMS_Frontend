@@ -97,7 +97,7 @@
                                     class="bg-slate-50 border border-slate-100 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                                     <div class="flex items-center gap-5">
                                         <div
-                                            class="p-4 bg-white text-emerald-500 rounded-2xl shadow-sm border border-slate-100">
+                                            class="p-4 bg-white text-emerald-500 rounded-2xl shadow-sm border border-slate-100 flex">
                                             <UIcon name="i-heroicons-shield-check" class="w-6 h-6" />
                                         </div>
                                         <div>

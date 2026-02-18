@@ -7,12 +7,13 @@ export interface InterviewApiOptions {
     headers?: Record<string, string>
 }
 
-const INTERVIEW_API_BASE = 'http://localhost:3001'
-
 export default async function useInterviewApi<T = any>(
     path: string,
     options: InterviewApiOptions = {}
 ): Promise<T> {
+    const config = useRuntimeConfig()
+    const baseURL = (config.public.interviewApiBase as string)
+    
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -20,7 +21,7 @@ export default async function useInterviewApi<T = any>(
 
     try {
         return await ofetch<T>(path, {
-            baseURL: INTERVIEW_API_BASE,
+            baseURL,
             method: options.method ?? 'GET',
             headers,
             query: options.params,
