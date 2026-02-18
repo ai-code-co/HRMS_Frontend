@@ -101,12 +101,10 @@ export const useHolidayStore = defineStore('holidays', () => {
         error.value = null
         const toast = useToast()
         try {
-            for (const payload of payloads) {
-                await useApi('/api/holidays/', {
-                    method: 'POST',
-                    body: payload
-                })
-            }
+            await useApi('/api/holidays/bulk-create/', {
+                method: 'POST',
+                body: payloads
+            })
             await fetchHolidays()
             toast.add({
                 title: 'Success',

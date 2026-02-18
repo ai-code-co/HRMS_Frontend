@@ -75,8 +75,6 @@ const handleStatusUpdate = async (status: 'APPROVED' | 'REJECTED' | 'PENDING') =
     }
 }
 
-const hasInterview = computed(() => !!selectedCandidate.value?.interview)
-
 // One-time use: once Approve or Reject is chosen, both buttons are disabled
 const hasDecided = computed(() => {
     const s = selectedCandidate.value?.status
@@ -97,12 +95,69 @@ const hasPostInterviewDecided = computed(() => {
     return false
 })
 
+const decisionStage = computed<'pre' | 'in_progress' | 'post' | 'none'>(() => {
+    const c = selectedCandidate.value
+    if (!c) return 'none'
+    if (!c.interview) return 'pre'
+    const interviewStatus = c.interview.status?.toUpperCase()
+    if (interviewStatus === 'COMPLETED') return 'post'
+    return 'in_progress'
+})
+
+const decisionDisabled = computed(() => {
+    if (updatingStatus.value) return true
+    if (decisionStage.value === 'pre') return hasDecided.value
+    if (decisionStage.value === 'post') return hasPostInterviewDecided.value
+    return true
+})
+
 const getRecommendationColor = (recommendation: string) => {
     const recLower = recommendation.toLowerCase()
     if (recLower.includes('strong')) return 'text-emerald-600'
     if (recLower.includes('good')) return 'text-blue-600'
     if (recLower.includes('partial')) return 'text-amber-600'
     return 'text-red-600'
+}
+
+const toDisplayItems = (value: unknown): string[] => {
+    if (!value) return []
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => {
+                if (typeof item === 'string') return item.trim()
+                if (item && typeof item === 'object') {
+                    const obj = item as Record<string, unknown>
+                    if (typeof obj.skill === 'string') {
+                        const reason = typeof obj.reason === 'string' ? obj.reason.trim() : ''
+                        return reason ? `${obj.skill}: ${reason}` : obj.skill
+                    }
+                    if (typeof obj.header === 'string') {
+                        const detail = typeof obj.detail === 'string' ? obj.detail.trim() : ''
+                        return detail ? `${obj.header}: ${detail}` : obj.header
+                    }
+                    const entries = Object.entries(obj)
+                        .filter(([, val]) => typeof val === 'string' && val.trim().length > 0)
+                        .map(([key, val]) => `${key}: ${String(val).trim()}`)
+                    return entries.join(' | ')
+                }
+                return ''
+            })
+            .filter((item): item is string => item.length > 0)
+    }
+    if (typeof value === 'object') {
+        return Object.entries(value as Record<string, unknown>).map(([key, description]) => {
+            if (typeof description === 'string' && description.trim().length > 0) {
+                return `${key}: ${description}`
+            }
+            return key
+        })
+    }
+    return []
+}
+
+const openExternalLink = (url?: string | null) => {
+    if (!url || !import.meta.client) return
+    window.open(url, '_blank', 'noopener,noreferrer')
 }
 </script>
 
@@ -161,7 +216,7 @@ const getRecommendationColor = (recommendation: string) => {
                                 </div>
                             </div>
                             <UButton v-if="doc.url" icon="i-lucide-download" variant="ghost" size="xs"
-                                @click="window.open(doc.url, '_blank')" />
+                                @click="openExternalLink(doc.url)" />
                         </div>
                     </div>
                 </div>
@@ -248,39 +303,124 @@ const getRecommendationColor = (recommendation: string) => {
                     </div>
                 </div>
 
-                <!-- AI Evaluation Decision (Approve = send interview link, Reject = send rejection email) -->
-                <div v-if="selectedCandidate.evaluation && !selectedCandidate.interview"
+                <!-- AI Interview Report -->
+                <div v-if="selectedCandidate.ai_interview_report"
                     class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">AI Evaluation Decision</h3>
-                    <p class="text-sm text-slate-600 mb-4">
-                        Based on the AI evaluation, approve to send an interview link to the candidate or reject to send a rejection email.
-                    </p>
-                    <div class="mb-4">
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Optional message (included in email)</label>
-                        <UTextarea v-model="customMessage" placeholder="Add a personal note for the candidate (optional)" :rows="2"
-                            class="w-full border-primary-300 focus:border-primary-500 focus:border-2 focus:ring-0 focus:ring-transparent focus:outline-none" color="primary" variant="outline" />
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
-                            :disabled="updatingStatus || hasDecided"
-                            class="cursor-pointer"
-                            @click="handleStatusUpdate('APPROVED')">
-                            Approve — Send interview link
-                        </UButton>
-                        <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
-                            :disabled="updatingStatus || hasDecided"
-                            class="cursor-pointer"
-                            @click="handleStatusUpdate('REJECTED')">
-                            Reject — Send rejection email
-                        </UButton>
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">AI Interview Report</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Score</p>
+                                <p class="text-2xl font-black text-slate-800">{{ selectedCandidate.ai_interview_report.score }}%</p>
+                            </div>
+                            <UBadge
+                                v-if="selectedCandidate.ai_interview_report.recommendation"
+                                :class="getRecommendationColor(selectedCandidate.ai_interview_report.recommendation)"
+                                variant="soft"
+                                size="sm"
+                            >
+                                {{ selectedCandidate.ai_interview_report.recommendation.replace(/_/g, ' ') }}
+                            </UBadge>
+                        </div>
+
+                        <div v-if="selectedCandidate.ai_interview_report.summary">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Summary</p>
+                            <p class="text-sm text-slate-700">{{ selectedCandidate.ai_interview_report.summary }}</p>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.matched_skills).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Matched Skills</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.matched_skills)" :key="`matched-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.missing_skills).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Missing Skills</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.missing_skills)" :key="`missing-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.strengths).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strengths</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.strengths)" :key="`strength-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div v-if="toDisplayItems(selectedCandidate.ai_interview_report.areas_for_improvement).length > 0">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Areas for Improvement</p>
+                            <ul class="list-disc list-inside space-y-3 text-slate-700">
+                                <li v-for="item in toDisplayItems(selectedCandidate.ai_interview_report.areas_for_improvement)" :key="`improve-${item}`" class="text-sm">
+                                    <template v-if="item.includes(': ')">
+                                        <span class="font-bold text-slate-800">{{ item.split(': ')[0] }} :</span>
+                                        <span class="font-normal text-slate-600 mt-0.5 ml-0 pl-1">{{ item.slice(item.indexOf(': ') + 2) }}</span>
+                                    </template>
+                                    <template v-else>
+                                        {{ item }}
+                                    </template>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Interview Information (video above decision) -->
-                <div v-if="selectedCandidate.interview"
+                <!-- Decision + Interview (single card) -->
+                <div v-if="selectedCandidate.evaluation || selectedCandidate.interview"
                     class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-slate-800 mb-4">Interview Information</h3>
-                    <div v-if="selectedCandidate.interview.video_url" class="mb-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Decision & Interview</h3>
+                    <p v-if="decisionStage === 'pre'" class="text-sm text-slate-600 mb-4">
+                        Based on the AI evaluation, approve to send an interview link to the candidate or reject to send a rejection email.
+                    </p>
+                    <p v-else-if="decisionStage === 'in_progress'" class="text-sm text-slate-600 mb-4">
+                        Interview is in progress. You can approve or reject once the interview is completed.
+                    </p>
+                    <p v-else-if="decisionStage === 'post'" class="text-sm text-slate-600 mb-4">
+                        Interview completed. You can approve or reject once.
+                    </p>
+
+                    <div v-if="selectedCandidate.interview" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Status</p>
+                            <UBadge :class="getStatusColor(selectedCandidate.interview.status)" variant="soft" size="sm">
+                                {{ selectedCandidate.interview.status }}
+                            </UBadge>
+                        </div>
+                        <div v-if="selectedCandidate.interview.transcript_url">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Transcript</p>
+                            <UButton icon="i-lucide-file-text" variant="ghost" size="sm"
+                                @click="openExternalLink(selectedCandidate.interview.transcript_url)">
+                                View Transcript
+                            </UButton>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedCandidate.interview?.video_url" class="mb-6">
                         <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Interview recording</p>
                         <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900">
                             <video :src="selectedCandidate.interview.video_url" controls class="w-full h-full object-cover" playsinline />
@@ -295,52 +435,26 @@ const getRecommendationColor = (recommendation: string) => {
                             <a :href="selectedCandidate.interview.video_url" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-medium">open the recording in a new tab</a>.
                         </p>
                     </div>
+
                     <div class="mb-4">
                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Optional message (included in email)</label>
                         <UTextarea v-model="customMessage" placeholder="Add a personal note for the candidate (optional)" :rows="2"
                             class="w-full border-primary-300 focus:border-primary-500 focus:border-2 focus:ring-0 focus:ring-transparent focus:outline-none" color="primary" variant="outline" />
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Status</p>
-                            <UBadge :class="getStatusColor(selectedCandidate.interview.status)" variant="soft"
-                                size="sm">
-                                {{ selectedCandidate.interview.status }}
-                            </UBadge>
-                        </div>
-                        <div v-if="selectedCandidate.interview.duration">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Duration</p>
-                            <!-- <p class="text-sm font-bold text-slate-700">{{ selectedCandidate.interview.duration }}</p> -->
-                        </div>
-                        <div v-if="selectedCandidate.interview.video_url">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Video</p>
-                            <UButton icon="i-lucide-video" variant="ghost" size="sm"
-                                @click="window.open(selectedCandidate.interview.video_url, '_blank')">
-                                View Recording
-                            </UButton>
-                        </div>
-                        <div v-if="selectedCandidate.interview.transcript_url">
-                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Transcript
-                            </p>
-                            <UButton icon="i-lucide-file-text" variant="ghost" size="sm"
-                                @click="window.open(selectedCandidate.interview.transcript_url, '_blank')">
-                                View Transcript
-                            </UButton>
-                        </div>
-                        <div class="flex flex-wrap gap-3 md:col-span-2">
-                            <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
-                                :disabled="updatingStatus || hasPostInterviewDecided"
-                                class="cursor-pointer"
-                                @click="handleStatusUpdate('APPROVED')">
-                                Approve
-                            </UButton>
-                            <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
-                                :disabled="updatingStatus || hasPostInterviewDecided"
-                                class="cursor-pointer"
-                                @click="handleStatusUpdate('REJECTED')">
-                                Reject
-                            </UButton>
-                        </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <UButton color="success" variant="soft" :loading="updatingStatusFor === 'APPROVED'"
+                            :disabled="decisionDisabled"
+                            class="cursor-pointer"
+                            @click="handleStatusUpdate('APPROVED')">
+                            {{ decisionStage === 'pre' ? 'Approve — Send interview link' : 'Approve' }}
+                        </UButton>
+                        <UButton color="error" variant="soft" :loading="updatingStatusFor === 'REJECTED'"
+                            :disabled="decisionDisabled"
+                            class="cursor-pointer"
+                            @click="handleStatusUpdate('REJECTED')">
+                            {{ decisionStage === 'pre' ? 'Reject — Send rejection email' : 'Reject' }}
+                        </UButton>
                     </div>
                 </div>
             </div>

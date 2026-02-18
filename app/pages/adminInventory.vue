@@ -11,6 +11,7 @@ import ItemDetails from '../components/Inventory/ItemDetails.vue';
 import DocumentsCard from '../components/Inventory/DocumentsCard.vue';
 import CommentSection from '../components/Inventory/CommentSection.vue';
 import AddTypeModal from '../components/Inventory/AddTypeModal.vue';
+import AddDeviceModal from '../components/Inventory/AddDeviceModal.vue';
 
 const store = useInventoryStore();
 const {
@@ -35,6 +36,8 @@ const view = computed(() => (route.query.category || route.query.unassigned) ? '
 const selectedCategoryId = computed(() => route.query.category as string | null);
 const selectedItemId = ref<string | undefined>(undefined);
 const isAddModalOpen = ref(false);
+const isAddDeviceModalOpen = ref(false);
+const deviceDocuments = ref<Record<string, { name: string; url: string }>>({});
 const hasInitialized = ref(false);
 
 // 1. Define the active filter based on the query parameter
@@ -56,6 +59,15 @@ const selectedCategoryValue = computed(() => {
     if (catId) return catId;
     const firstCategory = categories.value[0];
     return firstCategory ? firstCategory.id : '';
+});
+
+// Mobile device picker options (shown when sidebar list is hidden)
+const mobileDeviceOptions = computed(() => {
+    return inventoryItems.value.map(item => ({
+        label: item.name,
+        value: item.id,
+        serialNumber: item.serialNumber
+    }));
 });
 
 // Computed property to track filter state for watch
@@ -101,63 +113,143 @@ const handleFilterChange = async (filter: string) => {
 };
 
 
-// Fetch dashboard data and restore URL state if present (SSR-friendly)
-const { data: initialData } = await useAsyncData('admin-inventory-init', async () => {
-    const dashboardData = await store.fetchDashboardSummary();
+// Build a key that includes route query so refresh/direct load with params gets correct data
+const inventoryInitKey = computed(() => {
+    const q = route.query;
+    const parts = ['admin-inventory-init', String(q.category ?? ''), String(q.unassigned ?? ''), String(q.device ?? '')];
+    return parts.join('-');
+});
 
+// Fetch dashboard data and restore URL state if present (SSR-friendly)
+const { data: initialData } = await useAsyncData(
+    inventoryInitKey,
+    async () => {
+        const dashboardData = await store.fetchDashboardSummary();
+
+        const urlCategory = route.query.category as string | undefined;
+        const urlDevice = route.query.device as string | undefined;
+        const isUnassigned = !!route.query.unassigned;
+
+        let devicesData = null;
+        let deviceDetail = null;
+
+        if (isUnassigned) {
+            // Fetch unassigned devices with category filter if present
+            devicesData = await store.fetchUnassignedDevices('', urlCategory, false);
+
+            if (urlDevice) {
+                deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
+            } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
+                deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            }
+        } else if (urlCategory) {
+            // Fetch assigned devices by category
+            devicesData = await store.fetchDevicesByType(urlCategory, false);
+
+            if (urlDevice) {
+                deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
+            } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
+                deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            }
+        }
+
+        return {
+            dashboard: dashboardData,
+            devices: devicesData,
+            detail: deviceDetail,
+            selectedDevice: urlDevice || (devicesData?.[0]?.id?.toString())
+        };
+    }
+);
+
+// Build document map from device detail (API or InventoryItem shape)
+function buildDeviceDocuments(detail: { photo_url?: string | null; warranty_doc_url?: string | null; invoice_doc_url?: string | null } | null): Record<string, { name: string; url: string }> {
+    if (!detail) return {};
+    const docs: Record<string, { name: string; url: string }> = {};
+    if (detail.photo_url) docs['photo'] = { name: 'Photo', url: detail.photo_url };
+    if (detail.warranty_doc_url) docs['warranty_doc'] = { name: 'Warranty Document', url: detail.warranty_doc_url };
+    if (detail.invoice_doc_url) docs['invoice_doc'] = { name: 'Invoice Document', url: detail.invoice_doc_url };
+    return docs;
+}
+
+// Set initial data from SSR / useAsyncData
+function applyInitialData(data: typeof initialData.value) {
+    if (!data) return;
+    if (data.dashboard) {
+        store.setDashboardData(data.dashboard);
+    }
+    if (data.devices) {
+        store.setDevicesData(data.devices);
+    }
+    if (data.detail) {
+        store.setDeviceDetail(data.detail);
+        deviceDocuments.value = buildDeviceDocuments(data.detail);
+    }
+    if (data.selectedDevice) {
+        selectedItemId.value = data.selectedDevice;
+    }
+}
+
+if (import.meta.client) {
+    applyInitialData(initialData.value);
+    hasInitialized.value = true;
+}
+
+// Client-side fallback: when we have URL params but no devices (e.g. refresh or cache miss), re-fetch
+async function ensureListDataFromUrl() {
     const urlCategory = route.query.category as string | undefined;
     const urlDevice = route.query.device as string | undefined;
     const isUnassigned = !!route.query.unassigned;
+    if (!urlCategory && !isUnassigned) return;
+    if (store.rawDevices?.length > 0) return;
+    if (store.loadingDevices) return;
 
-    let devicesData = null;
-    let deviceDetail = null;
+    let devicesData: any[] = [];
+    let detail = null;
+    let selectedDevice: string | undefined = urlDevice;
 
     if (isUnassigned) {
-        // Fetch unassigned devices with category filter if present
-        devicesData = await store.fetchUnassignedDevices('', urlCategory, false);
-
+        devicesData = await store.fetchUnassignedDevices('', urlCategory, true);
         if (urlDevice) {
-            deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
-        } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
-            deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            detail = await store.fetchDeviceDetail(urlDevice, false);
+        } else if (devicesData?.length > 0) {
+            detail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            selectedDevice = devicesData[0].id?.toString();
         }
     } else if (urlCategory) {
-        // Fetch assigned devices by category
-        devicesData = await store.fetchDevicesByType(urlCategory, false);
-
+        devicesData = await store.fetchDevicesByType(urlCategory, true);
         if (urlDevice) {
-            deviceDetail = await store.fetchDeviceDetail(urlDevice, false);
-        } else if (devicesData && devicesData.length > 0 && devicesData[0]) {
-            deviceDetail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            detail = await store.fetchDeviceDetail(urlDevice, false);
+        } else if (devicesData?.length > 0) {
+            detail = await store.fetchDeviceDetail(devicesData[0].id, false);
+            selectedDevice = devicesData[0].id?.toString();
         }
     }
 
-    return {
-        dashboard: dashboardData,
-        devices: devicesData,
-        detail: deviceDetail,
-        selectedDevice: urlDevice || (devicesData?.[0]?.id?.toString())
-    };
-});
-
-// Set initial data from SSR
-if (import.meta.client) {
-    if (initialData.value) {
-        if (initialData.value.dashboard) {
-            store.setDashboardData(initialData.value.dashboard);
-        }
-        if (initialData.value.devices) {
-            store.setDevicesData(initialData.value.devices);
-        }
-        if (initialData.value.detail) {
-            store.setDeviceDetail(initialData.value.detail);
-        }
-        if (initialData.value.selectedDevice) {
-            selectedItemId.value = initialData.value.selectedDevice;
-        }
+    store.setDevicesData(devicesData);
+    if (detail) {
+        store.setDeviceDetail(detail);
+        deviceDocuments.value = buildDeviceDocuments(detail);
     }
-    hasInitialized.value = true;
+    if (selectedDevice) selectedItemId.value = selectedDevice;
 }
+
+onMounted(async () => {
+    if (!import.meta.client) return;
+    await nextTick();
+    const urlCategory = route.query.category as string | undefined;
+    const isUnassigned = !!route.query.unassigned;
+    const hasListParams = urlCategory || isUnassigned;
+    const listEmpty = !store.rawDevices?.length && !store.loadingDevices;
+    if (hasListParams && listEmpty) {
+        await ensureListDataFromUrl();
+    }
+    // Sync documents from store (catches any path where detail was set but deviceDocuments wasn't)
+    const currentDetail = store.currentDeviceDetail;
+    if (currentDetail) {
+        deviceDocuments.value = buildDeviceDocuments(currentDetail);
+    }
+});
 
 // Handle URL changes with loading states
 const navigateToCategory = async (categoryId: string, deviceId?: string) => {
@@ -345,9 +437,25 @@ const handleSelectItem = async (item: InventoryItem) => {
     await store.fetchDeviceDetail(item.id, true);
 };
 
+const handleMobileDeviceSelect = async (value: any) => {
+    const deviceId = typeof value === 'string' ? value : (value?.value || value);
+    if (!deviceId) return;
+
+    const item = inventoryItems.value.find(i => i.id === deviceId);
+    if (!item) return;
+
+    await handleSelectItem(item);
+};
+
 const handleBack = () => {
     router.push({ query: {} });
 };
+
+// Update documents when selected item details change (e.g. user picks another device).
+// No immediate: true so we don't overwrite deviceDocuments before store has settled on initial load.
+watch(selectedDetailItem, (newItem) => {
+    deviceDocuments.value = buildDeviceDocuments(newItem ?? null);
+});
 
 // Cleanup timeout on unmount
 onUnmounted(() => {
@@ -358,48 +466,87 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex h-screen bg-[#F8FAFC] font-sans text-slate-900">
-        <div class="flex-1 flex flex-col relative">
+    <div class="w-full flex bg-[#F8FAFC] font-sans text-slate-900 min-w-0">
+        <div class="flex-1 flex flex-col relative min-w-0">
 
-            <div v-if="view === 'list'" class="px-4 md:px-6">
-                <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 border-b border-slate-100 bg-white/50 backdrop-blur-sm rounded-xl px-6 py-4 sticky top-0 z-20">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800">Inventory Items</h2>
-                        <p class="text-sm text-slate-400">Manage assigned and unassigned devices by category.</p>
-                    </div>
-                    <div class="flex items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm">
-                        <div class="flex items-center gap-1 bg-slate-100/60 p-1 rounded-xl border border-slate-200 shadow-sm">
-                            <UButton v-for="f in ['Assigned', 'Unassigned']" :key="f" size="xs" variant="ghost" :class="[
-                                'px-6 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all duration-200',
-                                activeFilter === f
-                                    ? 'bg-white text-indigo-600 shadow-sm'
-                                    : 'text-slate-400 hover:text-slate-600'
-                            ]" @click="handleFilterChange(f)">
-                                {{ f }}
-                            </UButton>
-                        </div>
-                        <USelect
-                            :model-value="selectedCategoryValue"
-                            @update:model-value="handleCategorySelect"
-                            :items="categoryOptions"
-                            option-attribute="label"
-                            value-attribute="value"
-                            placeholder="Select category"
-                            size="lg"
-                            class="min-w-45 border border-slate-200 rounded-xl shadow-sm"
-                        />
-                        <UButton 
-                            label="Audit Summary" 
-                            color="primary" 
-                            size="lg"
-                            class="border border-slate-200 rounded-xl shadow-sm"
-                            @click="navigateTo('/audit-summary')"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <main class="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full h-screen">
+            <div v-if="view === 'list'" class="px-4 md:px-6 max-w-[1600px] mx-auto w-full">
+               <div class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-4 border-b border-slate-100   bg-white/50 backdrop-blur-sm rounded-xl px-6 py-4 sticky top-0 z-20 min-w-0">
+                   <div>
+                       <h2 class="text-2xl font-bold text-slate-800">Inventory Items</h2>
+                       <p class="text-sm text-slate-400">Manage assigned and unassigned devices by category.</p>
+                   </div>
+           
+                   <!-- Corrected Controls Container -->
+                   <div class="flex flex-col xl:flex-row xl:flex-nowrap items-stretch xl:items-center gap-3 bg-white border      border-slate-200 px-4 py-2 rounded-xl shadow-sm w-full xl:w-auto min-w-0">
+                       
+                       <!-- Filter Toggle (Assigned/Unassigned) -->
+                       <div class="flex items-center gap-1 bg-slate-100/60 p-1 rounded-xl border border-slate-200 shadow-sm flex-1 xl:flex-none">
+                           <UButton v-for="f in ['Assigned', 'Unassigned']" :key="f" size="xs" variant="ghost" 
+                               :class="[
+                                   'px-2 lg:px-6 py-1.5 rounded-lg text-[9px] lg:text-[10px] font-black uppercase transition-all duration-200 flex-1 xl:flex-none min-w-0 justify-center text-center',
+                                   activeFilter === f ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                               ]" 
+                               @click="handleFilterChange(f)"
+                           >
+                               {{ f }}
+                           </UButton>
+                       </div>
+           
+                       <!-- Category Select -->
+                       <USelect
+                           :model-value="selectedCategoryValue"
+                           @update:model-value="handleCategorySelect"
+                           :items="categoryOptions"
+                           option-attribute="label"
+                           value-attribute="value"
+                           placeholder="Select category"
+                           size="lg"
+                           class="w-full xl:w-[180px] min-w-0 border border-slate-200 rounded-xl shadow-sm"
+                       />
+           
+                       <!-- Mobile Device Menu -->
+                       <USelectMenu
+                           :model-value="selectedItemId"
+                           @update:model-value="handleMobileDeviceSelect"
+                           :items="mobileDeviceOptions"
+                           :portal="false"
+                           value-key="value"
+                           option-attribute="label"
+                           placeholder="Select device"
+                           searchable
+                           searchable-placeholder="Search devices..."
+                           size="lg"
+                           class="w-full lg:hidden border border-slate-200 rounded-xl shadow-sm"
+                           :disabled="loadingDevices || inventoryItems.length === 0"
+                       >
+                           <template #item-label="{ item }">
+                               <div class="flex flex-col">
+                                   <span class="font-semibold text-slate-700">{{ item.label }}</span>
+                                   <span class="text-xs text-slate-400 uppercase tracking-wide">{{ item.serialNumber }}</span>
+                               </div>
+                           </template>
+                       </USelectMenu>
+                       <div class="flex flex-col lg:flex-row w-full xl:w-auto items-stretch lg:items-center gap-3">
+                           <UButton 
+                               label="Audit Summary" 
+                               color="primary" 
+                               size="lg"
+                               class="w-full lg:flex-1 xl:flex-none lg:w-auto border border-slate-200 rounded-xl shadow-sm justify-center text-center"
+                               @click="navigateTo('/audit-summary')"
+                           />
+                           <UButton 
+                               label="Add Device" 
+                               color="primary" 
+                               size="lg"
+                               class="w-full lg:flex-1 xl:flex-none lg:w-auto border border-slate-200 rounded-xl shadow-sm justify-center text-center"
+                               @click="isAddDeviceModalOpen = true"
+                           />
+                       </div>
+                   </div>
+               </div>
+           </div>
+           
+            <main class="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full min-w-0">
                 <DashboardView v-if="view === 'dashboard'" :categories="categories" :total-devices="totalDevices"
                     :loading="loadingDashboard" @select-category="handleSelectCategory"
                     @open-add-modal="isAddModalOpen = true" />
@@ -419,18 +566,18 @@ onUnmounted(() => {
 
                     <!-- Normal View with Items -->
                     <template v-else>
-                        <div class="w-80 h-full shrink-0 overflow-auto custom-scrollbar">
+                        <div class="hidden lg:block w-80 h-full shrink-0 overflow-auto custom-scrollbar">
                             <SidebarList :items="inventoryItems" :selected-id="selectedItemId" :loading="loadingDevices"
                                 @select="handleSelectItem" />
                         </div>
 
-                        <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
+                        <div class="flex-1 min-w-0 overflow-y-auto custom-scrollbar pr-2 space-y-6">
                             <section class="flex flex-col gap-10">
                                 <div class="flex flex-col xl:flex-row gap-6">
                                     <div class="flex-1 bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
-                                        <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" />
+                                        <ItemDetails :item="selectedDetailItem" :loading="loadingDetail" :documents="deviceDocuments" @update:documents="deviceDocuments = $event" />
                                     </div>
-                                    <DocumentsCard />
+                                    <DocumentsCard :documents="deviceDocuments" :device-id="selectedItemId" />
                                 </div>
                                 <div class="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 shadow-sm">
                                     <CommentSection :device-id="selectedItemId" class="w-full" />
@@ -444,6 +591,9 @@ onUnmounted(() => {
 
         <Teleport to="body">
             <AddTypeModal v-if="isAddModalOpen" @close="isAddModalOpen = false" />
+            <AddDeviceModal v-if="isAddDeviceModalOpen" :open="isAddDeviceModalOpen"
+                @update:open="isAddDeviceModalOpen = $event" @close="isAddDeviceModalOpen = false"
+                @success="isAddDeviceModalOpen = false; store.fetchDashboardSummary()" />
         </Teleport>
     </div>
 </template>
@@ -483,3 +633,4 @@ onUnmounted(() => {
     animation: fadeIn 0.4s ease-out forwards;
 }
 </style>
+

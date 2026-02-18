@@ -44,7 +44,7 @@
 
                     <!-- CSV Upload Section -->
                     <div>
-                        <UFormField label="Upload CSV File" name="csvFile">
+                        <UFormField label="Upload (.csv file to add multiple holiday)" name="csvFile">
                             <div v-if="!csvFile" class="relative">
                                 <UInput type="file" icon="i-heroicons-paper-clip" accept=".csv" @change="handleCsvUpload"
                                     size="xl" color="secondary" variant="outline" class="cursor-pointer w-full" />
@@ -299,18 +299,22 @@ const deselectAllCsvHolidays = () => {
     selectedCsvHolidays.value = []
 }
 
+function toDuplicateKey(item: { name: string; date: string }) {
+    return `${item.date}::${item.name.trim().toLowerCase()}`
+}
+
 async function onSubmit() {
-    const list: Array<{ name: string; date: string; holiday_type: HolidayType }> = []
+    const rawList: Array<{ name: string; date: string; holiday_type: HolidayType }> = []
     if (hasValidSingle.value) {
-        list.push({
+        rawList.push({
             name: state.value.name.trim(),
             date: formatDateForApi(state.value.date),
             holiday_type: toApiHolidayType(state.value.holiday_type)
         })
     }
-    list.push(...selectedCsvHolidays.value)
+    rawList.push(...selectedCsvHolidays.value)
 
-    if (list.length === 0) {
+    if (rawList.length === 0) {
         toast.add({
             title: 'Error',
             description: 'Add at least one holiday (fill the form above or select from CSV)',
@@ -319,8 +323,29 @@ async function onSubmit() {
         return
     }
 
+    const existingKeys = new Set(
+        holidayStore.holidays.map(h => `${h.fullDate}::${h.name.trim().toLowerCase()}`)
+    )
+    const seen = new Set<string>()
+    const uniqueList = rawList.filter(item => {
+        const key = toDuplicateKey(item)
+        if (existingKeys.has(key)) return false
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+    })
+
+    if (uniqueList.length === 0) {
+        toast.add({
+            title: 'Warning',
+            description: 'All selected holidays are duplicates of existing ones.',
+            color: 'warning'
+        })
+        return
+    }
+
     try {
-        await holidayStore.addHolidays(list)
+        await holidayStore.addHolidays(uniqueList)
         modelOpen.value = false
     } catch {
         // Error handled in store

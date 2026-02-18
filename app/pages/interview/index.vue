@@ -37,7 +37,7 @@
                         <UButton v-for="tab in tabs" :key="tab.key" size="xs" variant="ghost" :class="[
                             'px-3 sm:px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer',
                             activeTab === tab.key ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'
-                        ]" @click="activeTab = tab.key">
+                        ]" @click="handleTabChange(tab.key)">
                             {{ tab.label }}
                         </UButton>
                     </div>
@@ -122,7 +122,7 @@
                         <p class="text-sm font-medium">No interview invites found</p>
                     </div>
 
-                    <div v-else v-for="invite in invites" :key="invite.id"
+                    <div v-else v-for="invite in validInvites" :key="invite.id"
                         class="bg-white border border-slate-200 p-5 rounded-[1.5rem] flex justify-between items-center cursor-pointer transition-all hover:border-indigo-300 hover:shadow-md">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
@@ -181,10 +181,17 @@ const { jobsList: jobs, candidatesList: candidates, invitesList: invites, isLoad
 const validTabs = ['jobs', 'candidates', 'invites'] as const
 const activeTab = ref<'jobs' | 'candidates' | 'invites'>('jobs')
 
+const handleTabChange = async (tab: 'jobs' | 'candidates' | 'invites') => {
+    activeTab.value = tab
+    if (tab === 'invites' && import.meta.client) {
+        await interviewStore.fetchInvites(false)
+    }
+}
+
 // Restore tab from query when navigating back from candidate/job page
-watch(() => route.query.tab, (tab) => {
+watch(() => route.query.tab, async (tab) => {
     if (tab && validTabs.includes(tab as any)) {
-        activeTab.value = tab as 'jobs' | 'candidates' | 'invites'
+        await handleTabChange(tab as 'jobs' | 'candidates' | 'invites')
     }
 }, { immediate: true })
 const hasInitialized = ref(false)
@@ -328,8 +335,8 @@ const getInitials = (name: string) => {
 }
 
 
-const inviteStatusClass = (status: string) => {
-    const statusLower = status.toLowerCase()
+const inviteStatusClass = (status?: string | null) => {
+    const statusLower = status?.toLowerCase?.() || ''
     if (statusLower === 'pending') {
         return 'bg-amber-50 text-amber-600'
     } else if (statusLower === 'used') {
@@ -343,4 +350,8 @@ const inviteStatusClass = (status: string) => {
     }
     return 'bg-slate-50 text-slate-600'
 }
+
+const validInvites = computed(() => {
+    return invites.value.filter(invite => invite.email && invite.created_at)
+})
 </script>

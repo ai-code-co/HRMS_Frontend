@@ -2,12 +2,12 @@
     <div class="space-y-6 h-full flex flex-col">
         <p class="text-slate-500">Upload and manage policy documents here.</p>
 
-        <div class="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1 w-fit border border-slate-200">
+        <div class="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1 w-full sm:w-fit border border-slate-200 overflow-x-auto no-scrollbar">
             <button
                 v-for="f in FILTER_OPTIONS"
                 :key="f"
                 type="button"
-                class="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all cursor-pointer"
+                class="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all cursor-pointer whitespace-nowrap shrink-0"
                 :class="activeFilter === f
                     ? 'bg-white text-indigo-600 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'"
@@ -25,47 +25,49 @@
             <UIcon name="i-lucide-file-question" class="size-12 text-slate-200 mb-2" />
             <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">No matching policies</p>
         </div>
-    </div>
-    <SettingsModalUploadPolicyModal v-model:open="store.uploadPolicyModalOpen" :policy="policyToEdit" @close="handleModalClose" @success="handleSuccess" class="w-full" />
-    <SettingsModalViewPolicyModal v-model:open="viewModalOpen" :policy="policyToView" @close="policyToView = null" />
+        
+        <SettingsModalUploadPolicyModal v-model:open="store.uploadPolicyModalOpen" :policy="policyToEdit" @close="handleModalClose" @success="handleSuccess" class="w-full" />
+        <SettingsModalViewPolicyModal v-model:open="viewModalOpen" :policy="policyToView" @close="policyToView = null" />
 
     <!-- Delete Confirmation Dialog -->
-    <UIConfirmDialog
-        v-model:open="deleteDialogOpen"
-        title="Delete Policy"
-        :message="`Are you sure you want to delete '${policyToDelete?.name}'? This action cannot be undone.`"
-        confirm-label="Delete"
-        cancel-label="Cancel"
-        confirm-color="error"
-        icon="i-lucide-trash-2"
-        icon-bg="bg-red-100"
-        icon-color="text-red-600"
-        :loading="isDeleting"
-        @confirm="confirmDelete"
-        @cancel="cancelDelete"
-    />
+        <UIConfirmDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete Policy"
+            :message="`Are you sure you want to delete '${policyToDelete?.name}'? This action cannot be undone.`"
+            confirm-label="Delete"
+            cancel-label="Cancel"
+            confirm-color="error"
+            icon="i-lucide-trash-2"
+            icon-bg="bg-red-100"
+            icon-color="text-red-600"
+            :loading="isDeleting"
+            @confirm="confirmDelete"
+            @cancel="cancelDelete"
+        />
 
     <!-- Apply/Unapply Confirmation Dialog -->
-    <UIConfirmDialog
-        v-model:open="applyDialogOpen"
-        :title="policyToToggle?.isApplied ? 'Unapply Policy' : 'Apply Policy'"
-        :message="policyToToggle?.isApplied
-            ? `Are you sure you want to unapply '${policyToToggle?.name}'?`
-            : `Are you sure you want to apply '${policyToToggle?.name}'?`"
-        :confirm-label="policyToToggle?.isApplied ? 'Unapply' : 'Apply'"
-        cancel-label="Cancel"
-        :confirm-color="policyToToggle?.isApplied ? 'warning' : 'primary'"
-        :icon="policyToToggle?.isApplied ? 'i-lucide-x-circle' : 'i-lucide-check-circle'"
-        :icon-bg="policyToToggle?.isApplied ? 'bg-yellow-100' : 'bg-green-100'"
-        :icon-color="policyToToggle?.isApplied ? 'text-yellow-600' : 'text-green-600'"
-        :loading="isApplying"
-        @confirm="confirmToggleApply"
-        @cancel="cancelToggleApply"
-    />
+        <UIConfirmDialog
+            v-model:open="applyDialogOpen"
+            :title="policyToToggle?.isApplied ? 'Unapply Policy' : 'Apply Policy'"
+            :message="policyToToggle?.isApplied
+                ? `Are you sure you want to unapply '${policyToToggle?.name}'?`
+                : `Are you sure you want to apply '${policyToToggle?.name}'?`"
+            :confirm-label="policyToToggle?.isApplied ? 'Unapply' : 'Apply'"
+            cancel-label="Cancel"
+            :confirm-color="policyToToggle?.isApplied ? 'warning' : 'primary'"
+            :icon="policyToToggle?.isApplied ? 'i-lucide-x-circle' : 'i-lucide-check-circle'"
+            :icon-bg="policyToToggle?.isApplied ? 'bg-yellow-100' : 'bg-green-100'"
+            :icon-color="policyToToggle?.isApplied ? 'text-yellow-600' : 'text-green-600'"
+            :loading="isApplying"
+            @confirm="confirmToggleApply"
+            @cancel="cancelToggleApply"
+        />
+    </div>
 </template>
 
 <script setup lang="ts">
 import type { PolicyItem } from './PolicyCard.vue'
+import { onMounted } from 'vue'
 
 const store = useSettingsStore()
 const toast = useToast()
@@ -75,31 +77,16 @@ const FILTER_OPTIONS = ['All', 'Policy', 'Guideline', 'FAQ', 'Form', 'Other'] as
 type FilterType = typeof FILTER_OPTIONS[number]
 const activeFilter = ref<FilterType>('All')
 
-const VISIBILITY_MAP: Record<string, PolicyItem['visibility']> = {
-    policy: 'Policy',
-    guideline: 'Guideline',
-    faq: 'FAQ',
-    form: 'Form',
-    other: 'Other'
-}
 
-// Demo data - TODO: Replace with API call
-const policies = ref<PolicyItem[]>([
-    { id: '1', name: 'Leave Policy', docType: 'policy', visibility: 'Policy', date: 'Jan 05', day: 'Monday', isApplied: true, link: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
-    { id: '2', name: 'Code of Conduct', docType: 'guideline', visibility: 'Guideline', date: 'Feb 12', day: 'Wednesday', isApplied: true, link: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
-    { id: '3', name: 'HR Handbook', docType: 'policy', visibility: 'Policy', date: 'Mar 21', day: 'Friday', isApplied: false, link: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
-    { id: '4', name: 'Privacy Policy', docType: 'policy', visibility: 'Policy', date: 'Apr 18', day: 'Thursday', isApplied: true, link: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
-    { id: '5', name: 'Expense Reimbursement FAQ', docType: 'faq', visibility: 'FAQ', date: 'May 09', day: 'Saturday', isApplied: false, link: 'https://example.com/expense-faq' },
-    { id: '6', name: 'Travel & Expense Policy', docType: 'policy', visibility: 'Policy', date: 'Jun 14', day: 'Friday', isApplied: true, link: 'https://example.com/travel' },
-    { id: '7', name: 'Remote Work Guidelines', docType: 'guideline', visibility: 'Guideline', date: 'Jul 02', day: 'Tuesday', isApplied: false, link: 'https://example.com/remote-work' },
-    { id: '8', name: 'Security Awareness FAQ', docType: 'faq', visibility: 'Policy', date: 'Aug 19', day: 'Monday', isApplied: true, link: 'https://example.com/security-faq' },
-    { id: '9', name: 'IT Asset Form', docType: 'form', visibility: 'Form', date: 'Sep 07', day: 'Thursday', isApplied: false, link: 'https://forms.example.com/it-asset' },
-    { id: '10', name: 'Vendor Onboarding Checklist', docType: 'other', visibility: 'Other', date: 'Oct 23', day: 'Wednesday', isApplied: true, link: 'https://example.com/vendor-checklist' },
-])
+const policies = computed<PolicyItem[]>(() => store.policies as PolicyItem[])
 
 const filteredPolicies = computed(() => {
     if (activeFilter.value === 'All') return policies.value
     return policies.value.filter(p => p.docType.toLowerCase() === activeFilter.value.toLowerCase())
+})
+
+onMounted(() => {
+    store.fetchPolicyDocuments()
 })
 
 // View modal state
@@ -128,25 +115,7 @@ function handleSuccess(data?: { name: string; link?: string; docType: string }) 
         policyToEdit.value = null
         return
     }
-
-    if (policyToEdit.value) {
-        const index = policies.value.findIndex(p => p.id === policyToEdit.value?.id)
-        if (index !== -1) {
-            const current = policies.value[index]!
-            policies.value[index] = { ...current, name: data.name, link: data.link, docType: data.docType, visibility: VISIBILITY_MAP[data.docType] || 'Policy' }
-        }
-    } else {
-        policies.value.unshift({
-            id: String(Date.now()),
-            name: data.name,
-            link: data.link,
-            docType: data.docType,
-            visibility: VISIBILITY_MAP[data.docType] || 'Policy',
-            date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit' }),
-            day: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-            isApplied: false
-        })
-    }
+    store.fetchPolicyDocuments()
     policyToEdit.value = null
 }
 
@@ -165,13 +134,17 @@ async function confirmToggleApply() {
 
     isApplying.value = true
     try {
-        await new Promise(resolve => setTimeout(resolve, 600)) // TODO: Replace with API call
-        const policyItem = policies.value.find(p => p.id === policyToToggle.value?.id)
+        const target = policyToToggle.value
+        if (target.isApplied) {
+            await store.unapplyPolicyDocument(target.id)
+        } else {
+            await store.applyPolicyDocument(target.id)
+        }
+        const policyItem = policies.value.find(p => p.id === target.id)
         if (policyItem) {
-            policyItem.isApplied = !policyItem.isApplied
             toast.add({
                 title: `Policy ${policyItem.isApplied ? 'Applied' : 'Unapplied'}`,
-                description: `'${policyToToggle.value.name}' has been ${policyItem.isApplied ? 'applied' : 'unapplied'}.`,
+                description: `'${target.name}' has been ${policyItem.isApplied ? 'applied' : 'unapplied'}.`,
                 color: policyItem.isApplied ? 'success' : 'warning'
             })
         }
@@ -211,9 +184,8 @@ async function confirmDelete() {
 
     isDeleting.value = true
     try {
-        await new Promise(resolve => setTimeout(resolve, 600)) // TODO: Replace with API call
+        await store.deletePolicyDocument(policyToDelete.value.id)
         toast.add({ title: `'${policyToDelete.value.name}' deleted successfully`, color: 'success' })
-        policies.value = policies.value.filter(p => p.id !== policyToDelete.value?.id)
         deleteDialogOpen.value = false
         policyToDelete.value = null
     } catch {

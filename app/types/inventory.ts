@@ -48,6 +48,9 @@ export interface InventoryItem {
   devicetypeName?: string;
   assignedTo?: string;
   designation?: string;
+  photo_url?: string;
+  warranty_doc_url?: string;
+  invoice_doc_url?: string;
 }
 
 // --- NEW: Device List API Types ---
@@ -125,5 +128,8 @@ export interface DeviceDetailApiObject {
   is_assigned: boolean;
   created_at: string;
   updated_at: string;
+  photo_url?: string;
+  warranty_doc_url?: string;
+  invoice_doc_url?: string;
 }
 

@@ -4,7 +4,7 @@
         <div v-if="error"
             class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 md:p-10 text-center space-y-6">
             <div class="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
-                <UIcon name="i-lucide-link-off" class="size-8 text-red-600" />
+                <UIcon name="i-lucide-link-2-off" class="size-8 text-red-600" />
             </div>
             <div>
                 <p class="text-[10px] font-bold uppercase text-slate-500 tracking-widest mb-1">Link unavailable</p>
@@ -85,24 +85,42 @@
                             Live
                         </span>
                     </div>
-                    <p class="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Question {{ questionNumber }}</p>
+                    <p
+                        v-if="isQuestionVisible || awaitingFinalSubmit"
+                        class="text-[10px] font-bold uppercase text-slate-500 tracking-widest"
+                    >
+                        Question {{ questionNumber }}
+                    </p>
                 </div>
                 <div class="space-y-2">
                     <div class="flex items-center justify-between gap-2 flex-wrap">
-                        <p class="text-[10px] font-bold uppercase text-indigo-600 tracking-widest">Current question</p>
+                        <p
+                            v-if="isQuestionVisible || awaitingFinalSubmit"
+                            class="text-[10px] font-bold uppercase text-indigo-600 tracking-widest"
+                        >
+                            Current question
+                        </p>
                         <UButton
-                            v-if="currentQuestion?.question_text"
+                            v-if="isQuestionVisible && currentQuestion?.question_text"
                             icon="i-lucide-volume-2"
                             variant="ghost"
                             size="xs"
                             color="primary"
                             class="cursor-pointer shrink-0"
+                            :loading="loadingNextQuestion"
+                            :disabled="loadingNextQuestion || submitting"
                             @click="speakQuestion(currentQuestion.question_text)"
                         >
                             Play question
                         </UButton>
                     </div>
-                    <p class="text-lg font-bold text-slate-800 leading-relaxed">{{ currentQuestion?.question_text }}</p>
+                    <p class="text-lg font-bold text-slate-800 leading-relaxed">
+                        {{
+                            awaitingFinalSubmit
+                                ? 'All questions are completed. Submit your interview when ready.'
+                                : (isQuestionVisible ? currentQuestion?.question_text : '')
+                        }}
+                    </p>
                 </div>
 
                 <!-- Video feed with REC indicator (no transcript overlay) -->
@@ -126,8 +144,38 @@
 
                 <!-- Your answer: record / submit -->
                 <div class="border-t border-slate-100 pt-6 space-y-4">
-                    <p class="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Your answer</p>
-                    <div v-if="!recording && !audioBlob" class="space-y-3">
+                    <p
+                        v-if="isQuestionVisible || awaitingFinalSubmit"
+                        class="text-[10px] font-bold uppercase text-slate-500 tracking-widest"
+                    >
+                        Your answer
+                    </p>
+                    <div v-if="awaitingFinalSubmit" class="space-y-3">
+                        <p class="text-sm font-medium text-slate-700">All questions answered. Click below to finish and submit.</p>
+                        <UButton
+                            size="xl"
+                            block
+                            color="primary"
+                            :loading="submitting"
+                            class="rounded-xl cursor-pointer"
+                            @click="finalizeInterviewSubmission"
+                        >
+                            Stop recording and submit interview
+                        </UButton>
+                    </div>
+                    <div v-else-if="loadingNextQuestion" class="space-y-3">
+                        <UButton
+                            size="xl"
+                            color="primary"
+                            block
+                            loading
+                            disabled
+                            class="rounded-xl cursor-not-allowed"
+                        >
+                            Loading...
+                        </UButton>
+                    </div>
+                    <div v-else-if="!recording" class="space-y-3">
                         <UButton
                             icon="i-lucide-mic"
                             size="xl"
@@ -140,39 +188,26 @@
                             Start recording your answer
                         </UButton>
                     </div>
-                    <div v-else-if="recording"
+                    <div v-else
                         class="flex flex-col gap-4 p-4 rounded-xl bg-red-50 border border-red-100">
                         <div class="flex items-center gap-2 text-red-600">
                             <span class="relative flex h-3 w-3">
                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                                 <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
                             </span>
-                            <span class="text-sm font-bold">Recording...</span>
+                            <span class="text-sm font-bold">Click next when your answer is complete.</span>
                         </div>
                         <UButton
                             size="xl"
-                            color="error"
-                            variant="soft"
-                            block
-                            icon="i-lucide-square"
-                            class="rounded-xl cursor-pointer"
-                            @click="stopRecording"
-                        >
-                            Stop recording
-                        </UButton>
-                    </div>
-                    <div v-else-if="audioBlob"
-                        class="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                        <p class="text-sm font-medium text-slate-700">Recording ready. Submit your answer.</p>
-                        <UButton
-                            size="xl"
-                            block
                             color="primary"
-                            :loading="submitting"
+                            block
+                            icon="i-lucide-arrow-right"
                             class="rounded-xl cursor-pointer"
-                            @click="submitAnswer"
+                            :loading="submitting || loadingNextQuestion"
+                            :disabled="submitting || loadingNextQuestion"
+                            @click="handleNextQuestion"
                         >
-                            Submit answer
+                            Next question
                         </UButton>
                     </div>
                 </div>
@@ -242,13 +277,19 @@ const lastQuestionId = ref<string | null>(null)
 const done = ref(false)
 const recording = ref(false)
 const mediaRecorder = ref<MediaRecorder | null>(null)
-const audioBlob = ref<Blob | null>(null)
+const questionAudioChunks = ref<BlobPart[]>([])
+const fullSessionRecorder = ref<MediaRecorder | null>(null)
+const fullSessionChunks = ref<BlobPart[]>([])
 const submitting = ref(false)
+const loadingNextQuestion = ref(false)
 const liveTranscript = ref('')
 const speechRecognition = ref<SpeechRecognition | null>(null)
+const awaitingFinalSubmit = ref(false)
+const isQuestionVisible = ref(false)
 
 /** Speak the question aloud using the browser's text-to-speech (Web Speech API). */
 function speakQuestion(text: string) {
+    if (loadingNextQuestion.value || submitting.value) return
     if (typeof window === 'undefined' || !('speechSynthesis' in window) || !text?.trim()) return
     window.speechSynthesis.cancel()
     const utterance = new SpeechSynthesisUtterance(text.trim())
@@ -319,8 +360,9 @@ async function handleStart() {
         if (res?.session) {
             session.value = { ...session.value!, ...res.session }
         }
-        step.value = 'question'
+        startFullSessionRecording()
         await fetchNextQuestion()
+        step.value = 'question'
     } catch (err: any) {
         toast.add({
             title: 'Error',
@@ -332,7 +374,63 @@ async function handleStart() {
     }
 }
 
-async function fetchNextQuestion() {
+function createFullSessionRecorder(stream: MediaStream): MediaRecorder {
+    if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+        return new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8,opus' })
+    }
+    if (MediaRecorder.isTypeSupported('video/webm')) {
+        return new MediaRecorder(stream, { mimeType: 'video/webm' })
+    }
+    return new MediaRecorder(stream)
+}
+
+function startFullSessionRecording() {
+    if (!localStream.value || fullSessionRecorder.value) return
+    try {
+        fullSessionChunks.value = []
+        const recorder = createFullSessionRecorder(localStream.value)
+        recorder.ondataavailable = (event: BlobEvent) => {
+            if (event.data && event.data.size > 0) {
+                fullSessionChunks.value.push(event.data)
+            }
+        }
+        recorder.start(1000)
+        fullSessionRecorder.value = recorder
+    } catch (err) {
+        console.error('Failed to start full-session recording:', err)
+    }
+}
+
+function stopFullSessionRecording(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+        const recorder = fullSessionRecorder.value
+        if (!recorder) {
+            resolve(null)
+            return
+        }
+
+        recorder.onstop = () => {
+            const blob = fullSessionChunks.value.length > 0
+                ? new Blob(fullSessionChunks.value, { type: recorder.mimeType || 'video/webm' })
+                : null
+            fullSessionChunks.value = []
+            resolve(blob)
+        }
+
+        if (recorder.state !== 'inactive') {
+            recorder.stop()
+        } else {
+            const blob = fullSessionChunks.value.length > 0
+                ? new Blob(fullSessionChunks.value, { type: recorder.mimeType || 'video/webm' })
+                : null
+            fullSessionChunks.value = []
+            resolve(blob)
+        }
+        fullSessionRecorder.value = null
+    })
+}
+
+async function fetchNextQuestion(autoStartRecording = false) {
     if (!session.value?.job_id) return
     try {
         const res = await useInterviewApi<{ question: Question | null; done: boolean }>('/api/interview/question', {
@@ -344,19 +442,19 @@ async function fetchNextQuestion() {
         })
         if (res.done || !res.question) {
             done.value = true
-            await completeInterview()
-            localStream.value?.getTracks().forEach((t) => t.stop())
-            localStream.value = null
-            step.value = 'complete'
+            awaitingFinalSubmit.value = true
+            currentQuestion.value = null
+            isQuestionVisible.value = false
             return
         }
         currentQuestion.value = res.question
         lastQuestionId.value = res.question.id
         questionNumber.value += 1
-        audioBlob.value = null
+        awaitingFinalSubmit.value = false
+        isQuestionVisible.value = false
         liveTranscript.value = ''
-        if (res.question?.question_text) {
-            speakQuestion(res.question.question_text)
+        if (autoStartRecording) {
+            startRecording()
         }
     } catch (err: any) {
         toast.add({
@@ -381,16 +479,17 @@ function startRecording() {
     liveTranscript.value = ''
     const audioStream = new MediaStream(audioTracks)
     const recorder = new MediaRecorder(audioStream)
-    const chunks: BlobPart[] = []
+    questionAudioChunks.value = []
     recorder.ondataavailable = (e) => {
-        if (e.data.size) chunks.push(e.data)
-    }
-    recorder.onstop = () => {
-        audioBlob.value = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' })
+        if (e.data.size) questionAudioChunks.value.push(e.data)
     }
     recorder.start()
     mediaRecorder.value = recorder
     recording.value = true
+    isQuestionVisible.value = true
+    if (currentQuestion.value?.question_text) {
+        speakQuestion(currentQuestion.value.question_text)
+    }
 
     const SpeechRecognitionAPI = typeof window !== 'undefined' && (window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognition }).webkitSpeechRecognition)
     if (SpeechRecognitionAPI) {
@@ -421,7 +520,7 @@ function startRecording() {
     }
 }
 
-function stopRecording() {
+function stopSpeechRecognition() {
     if (speechRecognition.value) {
         try {
             speechRecognition.value.stop()
@@ -430,26 +529,48 @@ function stopRecording() {
         }
         speechRecognition.value = null
     }
-    if (mediaRecorder.value && recording.value) {
-        mediaRecorder.value.stop()
-        mediaRecorder.value = null
-        recording.value = false
-    }
 }
 
-function clearRecording() {
-    audioBlob.value = null
-    liveTranscript.value = ''
+function stopQuestionRecording(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+        const recorder = mediaRecorder.value
+        if (!recorder) {
+            resolve(null)
+            return
+        }
+
+        recorder.onstop = () => {
+            const blob = questionAudioChunks.value.length
+                ? new Blob(questionAudioChunks.value, { type: recorder.mimeType || 'audio/webm' })
+                : null
+            questionAudioChunks.value = []
+            mediaRecorder.value = null
+            recording.value = false
+            resolve(blob)
+        }
+
+        if (recorder.state !== 'inactive') {
+            recorder.stop()
+        } else {
+            const blob = questionAudioChunks.value.length
+                ? new Blob(questionAudioChunks.value, { type: recorder.mimeType || 'audio/webm' })
+                : null
+            questionAudioChunks.value = []
+            mediaRecorder.value = null
+            recording.value = false
+            resolve(blob)
+        }
+    })
 }
 
-async function submitAnswer() {
-    if (!session.value?.id || !currentQuestion.value?.id || !audioBlob.value) return
+async function submitAnswer(answerBlob: Blob) {
+    if (!session.value?.id || !currentQuestion.value?.id) return
     submitting.value = true
     try {
         const formData = new FormData()
         formData.append('session_id', session.value.id)
         formData.append('question_id', currentQuestion.value.id)
-        formData.append('audio_chunk', audioBlob.value, 'answer.webm')
+        formData.append('audio_chunk', answerBlob, 'answer.webm')
 
         // Backend transcribes with Whisper and returns the transcript
         const response = await $fetch<{ success: boolean; transcript: string }>('/api/interview/answer', {
@@ -472,8 +593,6 @@ async function submitAnswer() {
         if (response?.transcript) {
             liveTranscript.value = response.transcript
         }
-
-        await fetchNextQuestion()
     } catch (err: any) {
         toast.add({
             title: 'Error',
@@ -488,19 +607,76 @@ async function submitAnswer() {
 async function completeInterview() {
     if (!session.value?.id) return
     try {
-        // 1. Complete the interview session
+        // 1. Upload full interview video
+        const fullSessionBlob = await stopFullSessionRecording()
+        if (fullSessionBlob) {
+            await uploadFullVideo(fullSessionBlob)
+        }
+
+        // 2. Complete the interview session
         await useInterviewApi('/api/interview/complete', {
             method: 'POST',
             body: { session_id: session.value.id },
         })
 
-        // 2. Generate and upload transcript PDF
+        // 3. Generate and upload transcript file
         if (allTranscripts.value.length > 0) {
             await uploadTranscriptPdf()
         }
     } catch {
         // Non-fatal
     }
+}
+
+async function handleNextQuestion() {
+    if (!recording.value || submitting.value || loadingNextQuestion.value) return
+    loadingNextQuestion.value = true
+    stopSpeechRecognition()
+    try {
+        const answerBlob = await stopQuestionRecording()
+        if (!answerBlob) {
+            toast.add({
+                title: 'Error',
+                description: 'No audio recorded for this answer.',
+                color: 'error',
+            })
+            return
+        }
+        await submitAnswer(answerBlob)
+        await fetchNextQuestion(true)
+    } finally {
+        loadingNextQuestion.value = false
+    }
+}
+
+async function finalizeInterviewSubmission() {
+    if (!session.value?.id || submitting.value) return
+    submitting.value = true
+    try {
+        stopSpeechRecognition()
+        if (recording.value) {
+            await stopQuestionRecording()
+        }
+        await completeInterview()
+        localStream.value?.getTracks().forEach((t) => t.stop())
+        localStream.value = null
+        step.value = 'complete'
+    } finally {
+        submitting.value = false
+    }
+}
+
+async function uploadFullVideo(videoBlob: Blob) {
+    if (!session.value?.id) return
+    const formData = new FormData()
+    formData.append('session_id', session.value.id)
+    formData.append('video', videoBlob, `full_session_${session.value.id}.webm`)
+
+    await $fetch('/api/interview/upload-full-video', {
+        baseURL: INTERVIEW_API_BASE,
+        method: 'POST',
+        body: formData,
+    })
 }
 
 // Generate a simple PDF from transcripts and upload to backend
@@ -570,6 +746,25 @@ watch(
 )
 
 onBeforeUnmount(() => {
+    stopSpeechRecognition()
+    if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
+        try {
+            mediaRecorder.value.stop()
+        } catch {
+            // ignore stop errors on teardown
+        }
+    }
+    mediaRecorder.value = null
+    questionAudioChunks.value = []
+    if (fullSessionRecorder.value && fullSessionRecorder.value.state !== 'inactive') {
+        try {
+            fullSessionRecorder.value.stop()
+        } catch {
+            // ignore stop errors on teardown
+        }
+    }
+    fullSessionRecorder.value = null
+    fullSessionChunks.value = []
     localStream.value?.getTracks().forEach((t) => t.stop())
     localStream.value = null
 })

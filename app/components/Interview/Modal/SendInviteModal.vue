@@ -4,7 +4,13 @@
         <template #header>
             <div class="flex items-center justify-between w-full">
                 <h3 class="text-lg font-semibold text-slate-800">Send Invite</h3>
-                <UButton icon="i-heroicons-x-mark" variant="ghost" class="rounded-full cursor-pointer" @click="close" />
+                <UButton
+                    icon="i-heroicons-x-mark"
+                    variant="ghost"
+                    class="rounded-full cursor-pointer"
+                    type="button"
+                    @click="close"
+                />
             </div>
         </template>
 
@@ -115,11 +121,12 @@ import type { FormSubmitEvent } from '#ui/types'
 import { useInterviewStore } from '~/stores/interview'
 import type { InvitePayload } from '~/types/interview'
 
-const props = defineProps<{ open: boolean }>()
-const emit = defineEmits(['update:open', 'close'])
+const emit = defineEmits(['close'])
 
 const interviewStore = useInterviewStore()
 const toast = useToast()
+
+const modelOpen = defineModel<boolean>('open', { default: false })
 
 const emailFields = ref<string[]>([''])
 const emailErrors = ref<Record<number, boolean>>({})
@@ -136,11 +143,6 @@ const inviteSchema = z.object({
 })
 
 type InviteFormSchema = z.output<typeof inviteSchema>
-
-const modelOpen = computed({
-    get: () => props.open,
-    set: (value: boolean) => emit('update:open', value)
-})
 
 // Get all valid emails
 const getAllValidEmails = (): string[] => {
@@ -275,7 +277,7 @@ const deselectAllCsvEmails = () => {
     selectedCsvEmails.value = []
 }
 
-watch(() => props.open, (isOpen) => {
+watch(modelOpen, (isOpen) => {
     if (!isOpen) {
         // Reset form when modal closes
         emailFields.value = ['']
@@ -313,7 +315,7 @@ async function onSubmit(event: FormSubmitEvent<any>) {
         }
 
         await interviewStore.createInvite(payload)
-        modelOpen.value = false
+        close()
     } catch (err: any) {
         // Error is already handled in the store
     }

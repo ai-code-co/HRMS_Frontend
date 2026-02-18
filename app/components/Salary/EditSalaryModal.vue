@@ -44,6 +44,14 @@
                                     </template>
                                 </UInput>
                             </UFormField>
+                            <UFormField label="Medical Allowance" name="medicalAllowance">
+                                <UInput v-model="state.medicalAllowance" type="number" size="xl" placeholder="0"
+                                    color="secondary" variant="outline">
+                                    <template #leading>
+                                        <span class="text-emerald-500 font-semibold">₹</span>
+                                    </template>
+                                </UInput>
+                            </UFormField>
                             <UFormField label="Conveyance" name="conveyance">
                                 <UInput v-model="state.conveyance" type="number" size="xl" placeholder="0"
                                     color="secondary" variant="outline">
@@ -164,7 +172,7 @@ watch(() => props.open, (isOpen) => {
 
 const currentGross = computed(() =>
     (state.value.basic || 0) + (state.value.hra || 0) +
-    (state.value.conveyance || 0) + (state.value.special || 0)
+    (state.value.medicalAllowance || 0) + (state.value.conveyance || 0) + (state.value.special || 0)
 )
 
 const currentDeductions = computed(() =>
@@ -176,6 +184,6 @@ const currentNet = computed(() => currentGross.value - currentDeductions.value)
 
 const onSubmit = () => {
     emit('save', { ...state.value })
-    modelOpen.value = false
+    // Parent closes modal after successful API update
 }
 </script>
