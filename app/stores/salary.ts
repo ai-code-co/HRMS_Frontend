@@ -145,9 +145,10 @@ export const useSalaryStore = defineStore('salary', {
                     params.userid = userId
                 }
                 const response = await useApi(`api/payroll/user-salary-info/`, { params });
-                this.annualCtc = response.data.annual_ctc;
+                this.annualCtc = response.data?.annual_ctc ?? 0;
 
-                this.records = response.data.payslip_months.map((m: any) => ({
+                const payslipMonths = response.data?.payslip_months
+                this.records = Array.isArray(payslipMonths) ? payslipMonths.map((m: any) => ({
                     id: m.id.toString(),
                     month: m.month_name,
                     year: m.year,
@@ -161,9 +162,9 @@ export const useSalaryStore = defineStore('salary', {
                     accNumber: '',
                     earnings: [],
                     deductions_list: []
-                }));
+                })) : [];
 
-                if (response.data.selected_payslip) {
+                if (response.data?.selected_payslip) {
                     this.updateRecordDetails(response.data.selected_payslip);
                     this.selectedRecordId = response.data.selected_payslip.id.toString();
                 }
@@ -226,8 +227,8 @@ export const useSalaryStore = defineStore('salary', {
                 deductions: parseFloat(data.total_deductions),
                 bankName: data.bank_details?.bank_name || 'N/A',
                 accNumber: data.bank_details?.masked_account_number || 'N/A',
-                earnings: data.earnings_breakdown,
-                deductions_list: data.deductions_breakdown
+                earnings: Array.isArray(data.earnings_breakdown) ? data.earnings_breakdown : [],
+                deductions_list: Array.isArray(data.deductions_breakdown) ? data.deductions_breakdown : []
             };
             this.setSalaryStructureFromRecord(this.records[index] as SalaryRecord);
         },

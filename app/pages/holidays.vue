@@ -8,13 +8,11 @@ const { isSuperUser } = useRoleAccess()
 const addHolidayModalOpen = ref(false)
 const { holidays, nextHoliday } = storeToRefs(holidayStore)
 
-const { data: holidaysData } = await useAsyncData('holidays', () => {
-    return holidayStore.fetchHolidays()
-})
+const { data: holidaysData } = await useAsyncData('holidays', () => holidayStore.fetchHolidays(), { server: false })
 
-if (import.meta.client && holidaysData.value) {
-    holidayStore.setHolidays(holidaysData.value)
-}
+watch(holidaysData, (val) => {
+    if (val?.length !== undefined) holidayStore.setHolidays(val)
+}, { immediate: true })
 
 type VisibilityFilter = 'all' | 'public' | 'restricted'
 const filter = ref<VisibilityFilter>('all')
