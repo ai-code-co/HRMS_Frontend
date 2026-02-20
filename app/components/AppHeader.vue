@@ -10,7 +10,7 @@
 
     <template #right>
       <div class="flex items-center gap-3">
-        <div v-if="isSuperUser" class="mr-4">
+        <div v-if="canViewEmployeeSwitcher" class="mr-4">
           <UPopover v-model:open="isStaffSearchOpen" :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
             class="rounded-xl">
             <div>
@@ -121,7 +121,10 @@ import { getAccessibleNavItems } from '~/utils/roleConfig'
 
 const router = useRouter()
 const { user } = useAuth()
-const { isSuperUser } = useRoleAccess()
+const { isSuperUser, isManager } = useRoleAccess()
+
+// Managers can also view the employee switcher (shows only their subordinates)
+const canViewEmployeeSwitcher = computed(() => isSuperUser.value || isManager.value)
 
 // Employee context for viewing other employees
 const {
@@ -136,9 +139,9 @@ const {
 // Local state for dropdown
 const isStaffSearchOpen = ref(false)
 
-// Fetch employee list on mount (only for superusers)
+// Fetch employee list on mount (Admin/HR: all employees; Manager: subordinates only)
 onMounted(() => {
-  if (isSuperUser.value) {
+  if (canViewEmployeeSwitcher.value) {
     fetchEmployeeLookupList()
   }
 })

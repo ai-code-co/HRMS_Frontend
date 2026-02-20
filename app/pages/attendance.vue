@@ -4,7 +4,7 @@
         <main class="flex-1 overflow-y-auto relative">
             <div class="hidden sm:grid grid-cols-7 sticky top-0 z-10 border-b border-slate-200">
                 <div v-for="d in attendanceStore.weekdays" :key="d"
-                    class="py-3 text-center text-[10px] font-bold text-slate-400 bg-slate-50">
+                    class="py-3 text-center text-[10px] font-bold text-slate-500 bg-slate-50">
                     {{ d }}
                 </div>
             </div>

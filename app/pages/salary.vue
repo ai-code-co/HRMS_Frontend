@@ -37,7 +37,7 @@
                                     </div>
                                     <div class="flex items-center gap-4">
                                         <div class="hidden sm:flex flex-col items-end">
-                                            <p class="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                                 NET PAYABLE
                                             </p>
                                             <p class="text-2xl font-black text-indigo-600">

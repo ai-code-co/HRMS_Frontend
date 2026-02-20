@@ -15,7 +15,7 @@ const legendColorMap: Record<string, string> = {
 
 <template>
     <section class="bg-white border border-slate-100 rounded-2xl px-5 py-8 md:p-8 shadow-sm">
-        <h3 class="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-8 text-center">
+        <h3 class="text-sm font-black text-slate-500 uppercase tracking-[0.2em] mb-8 text-center">
             {{ title }}
         </h3>
 
@@ -29,7 +29,7 @@ const legendColorMap: Record<string, string> = {
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center">
                 <span class="text-3xl font-black text-slate-800">{{ total }}</span>
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ sub }}</span>
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{{ sub }}</span>
             </div>
         </div>
 

@@ -311,7 +311,7 @@ const uploadDocument = async () => {
 
                 <div class="min-w-0 h-60 rounded-xl border border-slate-200 bg-white p-4 flex flex-col overflow-hidden">
                     <div class="mb-3 flex shrink-0 min-w-0 items-center justify-between gap-2">
-                        <p class="text-sm font-semibold text-slate-700">Required Documents</p>
+                        <p class="text-sm font-semibold text-slate-700">Documents</p>
                     </div>
                     <div class="min-h-0 min-w-0 flex-1 space-y-2 overflow-y-auto rounded-b-lg pl-0.5 pr-2 pb-2 pt-0.5">
                         <button v-for="(docType, index) in documentTypeOptions" :key="docType.value" type="button"

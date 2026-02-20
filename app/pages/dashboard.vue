@@ -13,7 +13,7 @@
                     <h1 class="text-3xl font-black text-slate-800 tracking-tight">
                         {{ currentRole === 'admin' ? 'Organization Insights' : `Welcome back, ${userName} !` }}
                     </h1>
-                    <p class="text-sm font-medium text-slate-400 mt-1">
+                    <p class="text-sm font-medium text-slate-500 mt-1">
                         {{ currentRole === 'admin'
                             ? "Here's what's happening in Nebula today."
                             : dashboardStore.performanceWidget?.message }}

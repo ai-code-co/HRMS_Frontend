@@ -112,8 +112,8 @@ const handleFileChange = async (event: Event) => {
                         </div>
                     </div>
 
-                    <p class="text-lg font-bold text-slate-400">{{ role }}</p>
-                    <p class="text-[10px] font-black text-slate-200 uppercase tracking-widest mt-1">
+                    <p class="text-lg font-bold text-slate-500">{{ role }}</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                         Emp ID: {{ empId }}
                     </p>
                 </div>
@@ -121,7 +121,7 @@ const handleFileChange = async (event: Event) => {
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8">
                 <div v-for="(info, i) in profileInfo" :key="i" class="flex flex-col gap-0.5">
-                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         {{ info.label }}
                     </span>
                     <span class="text-sm font-bold text-slate-700 truncate">
