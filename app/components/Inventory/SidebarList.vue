@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Search, Filter } from 'lucide-vue-next';
+import { Search } from 'lucide-vue-next';
 import type { InventoryItem } from '../../types/inventory';
 
 const props = defineProps<{
@@ -44,10 +44,9 @@ const filteredItems = computed(() => {
             type="text" 
             placeholder="Search..." 
             v-model="searchQuery"
-            class="w-full bg-slate-50 border-none rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold focus:ring-1 focus:ring-indigo-100 focus:outline-none" 
+            class="w-full bg-slate-100 border-none rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold focus:ring-1 focus:ring-indigo-100 focus:outline-none" 
           />
        </div>
-       <button class="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:text-indigo-600 transition-colors"><Filter :size="16" /></button>
     </div>
     
     <div class="flex-1 overflow-y-auto custom-scrollbar">

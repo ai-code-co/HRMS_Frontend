@@ -473,7 +473,7 @@ onUnmounted(() => {
                <div class="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-4 border-b border-slate-100   bg-white/50 backdrop-blur-sm rounded-xl px-6 py-4 sticky top-0 z-20 min-w-0">
                    <div>
                        <h2 class="text-2xl font-bold text-slate-800">Inventory Items</h2>
-                       <p class="text-sm text-slate-400">Manage assigned and unassigned devices by category.</p>
+                       <p class="text-sm text-slate-500">Manage assigned and unassigned devices by category.</p>
                    </div>
            
                    <!-- Corrected Controls Container -->

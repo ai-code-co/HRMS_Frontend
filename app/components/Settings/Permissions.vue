@@ -30,7 +30,10 @@
             <div class="bg-primary-50 border border-primary-200 rounded-2xl p-3 flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <UAvatar :src="store.selectedEmployee.avatar" size="lg" />
-                    <h4 class="text-xl font-black">{{ store.selectedEmployee.name }}</h4>
+                    <div class="flex flex-col">
+                        <h4 class="text-xl font-black">{{ store.selectedEmployee.name }}</h4>
+                        <p class="text-xs text-slate-500">{{ store.selectedEmployee.designation }}</p>
+                    </div>
                 </div>
                 <UButton color="primary" variant="ghost" icon="i-heroicons-x-mark"
                     @click="store.selectedEmployeeId = null" class="rounded-full cursor-pointer" />

@@ -22,7 +22,7 @@
                     <!-- Earnings Section -->
                     <div class="space-y-4">
                         <div class="flex items-center gap-2 pb-2 border-b border-emerald-100">
-                            <UIcon name="i-lucide-plus-circle" class="w-4 h-4 text-emerald-500" />
+                            <UIcon name="i-lucide-plus-circle" class="w-4 h-4 text-emerald-500 cursor-pointer" />
                             <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest">
                                 Earnings / Credits
                             </h4>

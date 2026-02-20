@@ -7,7 +7,7 @@ defineProps<{ holiday: Holiday }>()
 </script>
 
 <template>
-    <div class="relative bg-indigo-600 rounded-3xl p-6 text-white flex flex-col md:flex-row gap-6">
+    <div class="relative bg-indigo-600 rounded-3xl p-6 text-white flex sm:flex-row gap-6">
         <div class="flex-1">
             <span class="text-[8px] uppercase tracking-widest font-black">Next Holiday</span>
             <h2 class="text-3xl font-black mt-2">{{ holiday.name }}</h2>

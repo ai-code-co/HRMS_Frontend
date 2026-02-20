@@ -44,7 +44,7 @@ const isAddDeviceModalOpen = ref(false);
         </p>
       </div>
       <div class="flex items-center gap-3">
-        <UButton icon="i-lucide-plus" size="lg"
+        <UButton icon="i-lucide-plus" size="md"
           class="hidden sm:flex rounded-lg cursor-pointer" @click="isAddDeviceModalOpen = true"
           title="Add Device" />
       </div>

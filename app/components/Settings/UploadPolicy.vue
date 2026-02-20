@@ -167,14 +167,6 @@ const policyToDelete = ref<PolicyItem | null>(null)
 const isDeleting = ref(false)
 
 function openDeleteConfirm(policy: PolicyItem) {
-    if (policy.isApplied) {
-        toast.add({
-            title: 'Cannot delete applied policy',
-            description: 'Unapply the policy first, then you can delete it.',
-            color: 'error'
-        })
-        return
-    }
     policyToDelete.value = policy
     deleteDialogOpen.value = true
 }

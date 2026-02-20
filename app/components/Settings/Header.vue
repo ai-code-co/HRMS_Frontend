@@ -11,7 +11,7 @@
             <template v-if="store.activeMenu === 'uploadPolicy'">
                 <UButton
                     icon="i-lucide-plus"
-                    size="lg"
+                    size="md"
                     class="rounded-lg cursor-pointer"
                     title="Add policy document"
                     @click="store.uploadPolicyModalOpen = true"
@@ -37,7 +37,7 @@ import { useSettingsStore } from '~/stores/settings'
 const store = useSettingsStore()
 
 const headerTitle = computed(() => {
-    if (store.activeMenu === 'uploadPolicy') return 'Upload Policy'
+    if (store.activeMenu === 'uploadPolicy') return 'Policy'
     return store.activeMenu.replace('-', ' ')
 })
 </script>
