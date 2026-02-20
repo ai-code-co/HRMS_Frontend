@@ -3,13 +3,13 @@
         <p class="text-slate-400 font-bold animate-pulse">Loading Inventory...</p>
     </div>
 
-    <div v-else-if="selectedItem" class="flex flex-col bg-[#F8FAFC]">
+    <div v-else-if="selectedItem" class="flex flex-col bg-[#F8FAFC] overflow-visible">
         <header class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
                     <h1 class="text-2xl font-black text-slate-800 tracking-tight">My Inventory</h1>
                 </div>
-                <p class="text-xs font-bold text-slate-400">Manage and track devices assigned to you.</p>
+                <p class="text-xs font-bold text-slate-500">Manage and track devices assigned to you.</p>
             </div>
 
             <div class="w-full sm:w-80">
@@ -19,7 +19,7 @@
         </header>
 
         <main class="flex-1 flex flex-col lg:flex-row gap-8 overflow-hidden px-4">
-            <aside class="w-full lg:w-96 space-y-4 overflow-y-auto shrink-0 custom-scrollbar sidebar-height">
+            <aside class="w-full lg:w-96 min-w-0 space-y-4 overflow-y-auto shrink-0 custom-scrollbar sidebar-height">
                 <button v-for="item in filteredItems" :key="item.id" @click="selectItem(item.id)" :class="[
                     'w-full text-left p-6 bg-white rounded-3xl border-2 transition-all duration-300 relative group overflow-hidden cursor-pointer',
                     selectedId === item.id ? 'border-primary-500 shadow-xl shadow-primary-100/50' : 'border-slate-50 hover:border-primary-100 shadow-sm'
@@ -35,11 +35,11 @@
                             <div class="flex items-start justify-between mb-1">
                                 <h3 class="font-black text-slate-800 text-sm truncate pr-2">{{ item.name }}</h3>
                                 <span
-                                    :class="['text-[9px] font-black uppercase tracking-widest', item.status === 'Good' ? 'text-emerald-500' : 'text-rose-500']">
+                                    :class="['text-[9px] font-black uppercase tracking-widest', item.status === 'Good' || item.status === 'Excellent' ? 'text-emerald-500' : 'text-rose-500']">
                                     {{ item.status }}
                                 </span>
                             </div>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ item.assetId }}
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ item.assetId }}
                             </p>
                         </div>
                     </div>
@@ -47,7 +47,7 @@
             </aside>
 
             <section
-                class="flex-1 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col mb-4 overflow-y-auto">
+                class="flex-1 min-w-0 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col mb-4 overflow-y-auto">
                 <div class="flex-1 p-2 md:p-8">
                     <Transition name="fade-slide" mode="out-in">
                         <div :key="selectedItem.id" class="space-y-12">
@@ -63,7 +63,7 @@
                                         </UBadge>
                                     </div>
                                 </div>
-                                <UBadge :color="selectedItem.status === 'Good' ? 'success' : 'error'" variant="subtle"
+                                <UBadge :color="selectedItem.status === 'Good' || selectedItem.status === 'Excellent' ? 'success' : 'error'" variant="subtle"
                                     class="font-black">
                                     {{ selectedItem.status }}
                                 </UBadge>

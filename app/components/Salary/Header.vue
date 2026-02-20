@@ -7,7 +7,7 @@
                     Salary Credits
                 </h2>
             </div>
-            <p class="text-sm text-slate-400">
+            <p class="text-sm text-slate-500">
                 Earnings history and payslips.
             </p>
         </div>

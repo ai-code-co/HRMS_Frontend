@@ -47,11 +47,7 @@ const closePolicyModal = () => {
 
 <template>
     <section class="w-full max-w-5xl space-y-4">
-        <div class="flex items-center justify-between">
-            <div>
-                <h4 class="text-lg font-bold text-slate-800">Applied Policies</h4>
-                <p class="text-xs text-slate-500">Policies applied to your account.</p>
-            </div>
+        <div class="flex items-center justify-end">
             <span class="text-xs text-slate-400">{{ policies.length }} total</span>
         </div>
 

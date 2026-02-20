@@ -34,7 +34,7 @@
                         <p class="text-xs font-black text-slate-700">
                             ₹{{ record.netPaid.toLocaleString() }}
                         </p>
-                        <p class="text-[10px] font-medium text-slate-300">
+                        <p class="text-[10px] font-medium text-slate-400">
                             {{ record.paymentDate }}
                         </p>
                     </div>

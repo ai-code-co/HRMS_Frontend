@@ -4,7 +4,7 @@
             <div class="flex justify-between items-end">
                 <div>
                     <h2 class="text-2xl font-bold">Leave Overview</h2>
-                    <p class="text-sm text-slate-400">Manage your allocations</p>
+                    <p class="text-sm text-slate-500">Manage your allocations</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <!-- Employee Leave Overview Button (Admin/HR only) -->

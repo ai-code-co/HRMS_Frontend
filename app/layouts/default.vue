@@ -32,7 +32,7 @@ const showSidebar = computed(() => {
     </Transition>
 
     <AppSidebar v-if="showSidebar" />
-    <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+    <div class="flex-1 flex flex-col min-h-0 transition-all duration-300">
 
       <AppHeader v-if="showSidebar" />
       <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">

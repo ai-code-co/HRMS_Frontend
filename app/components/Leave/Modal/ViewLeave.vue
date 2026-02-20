@@ -11,8 +11,6 @@
                     </div>
                     <div>
                         <h3 class="text-xl font-bold text-slate-900">Leave Details</h3>
-                        <p class="text-xs text-slate-500 font-medium tracking-wide uppercase">ID: #LV-{{ leave?.id }}
-                        </p>
                     </div>
                 </div>
                 <UButton color="secondary" variant="ghost" icon="i-heroicons-x-mark-20-solid"
