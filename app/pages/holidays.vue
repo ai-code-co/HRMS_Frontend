@@ -37,7 +37,7 @@ const filteredHolidays = computed(() =>
                 <h1 class="hidden md:block text-2xl font-black text-slate-800 tracking-tight">Holiday Calendar 2026</h1>
             </div>
 
-            <UButton v-if="isSuperUser" icon="i-lucide-plus" color="primary" size="md" label="Add Holiday" class="cursor-pointer"
+            <UButton v-if="isSuperUser" icon="i-lucide-plus" color="primary" size="md" class="cursor-pointer"
                 @click="addHolidayModalOpen = true">
             </UButton>
         </div>

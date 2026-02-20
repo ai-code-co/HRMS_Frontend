@@ -31,9 +31,16 @@ const DOC_TYPE_ICONS: Record<string, string> = {
 
 const icon = computed(() => DOC_TYPE_ICONS[props.policy.docType] ?? 'i-lucide-file')
 
+const deleteTooltipText = 'Unapply policy before deleting'
+
 const menuItems = computed(() => [[
     { label: 'Edit', onSelect: () => emit('edit', props.policy) },
-    { label: 'Delete', onSelect: () => emit('delete', props.policy) },
+    {
+        label: 'Delete',
+        slot: 'delete',
+        disabled: props.policy.isApplied,
+        onSelect: () => emit('delete', props.policy),
+    },
     { label: props.policy.isApplied ? 'Unapply Policy' : 'Apply Policy', onSelect: () => emit('toggle-apply', props.policy) },
 ]])
 
@@ -55,6 +62,15 @@ const menuItems = computed(() => [[
                 <div @click.stop>
                     <UDropdownMenu :key="`menu-${policy.id}`" :items="menuItems" :ui="{ content: 'w-40' }">
                         <UButton icon="i-lucide-more-vertical" variant="ghost" color="primary" size="xs" class="rounded-full cursor-pointer" />
+                        <template #delete>
+                            <span
+                                class="flex items-center gap-2 w-full"
+                                :class="{ 'cursor-not-allowed': policy.isApplied }"
+                                :title="policy.isApplied ? deleteTooltipText : undefined"
+                            >
+                                <span>Delete</span>
+                            </span>
+                        </template>
                     </UDropdownMenu>
                 </div>
             </div>

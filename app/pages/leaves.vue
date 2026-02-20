@@ -15,7 +15,7 @@
                     <UButton v-if="isSuperUser && !isViewingOther" icon="i-lucide-inbox"
                         :label="`Pending (${pendingLeaveCount})`" size="lg" color="warning" variant="soft"
                         class="hidden sm:flex rounded-lg cursor-pointer" @click="isPendingModalOpen = true" />
-                    <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="lg"
+                    <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="md"
                         class="hidden sm:flex rounded-lg cursor-pointer" @click="isApplyModalOpen = true"
                         title="Apply Leave" />
                 </div>
@@ -32,7 +32,7 @@
                         {{ pendingLeaveCount }}
                     </UBadge>
                 </UButton>
-                <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="xl"
+                <UButton v-if="!isViewingOther" icon="i-lucide-plus" size="md"
                     class="sm:hidden fixed bottom-6 right-6 rounded-full shadow-lg z-50"
                     @click="isApplyModalOpen = true" />
             </div>

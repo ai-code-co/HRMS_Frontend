@@ -108,7 +108,7 @@ function getMenuItems(entry: { type: string; key: string; doc: { name: string; u
 <template>
   <div class="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-6 shrink-0 w-full xl:w-72">
     <h4 class="text-base font-black text-slate-800 tracking-tight">Documents</h4>
-    <div class="space-y-4">
+    <div class="space-y-1">
       <div
         v-for="(entry, i) in documentList"
         :key="entry.type"
@@ -117,7 +117,7 @@ function getMenuItems(entry: { type: string; key: string; doc: { name: string; u
         <div class="flex items-center gap-4">
           <span
             class="w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center border"
-            :class="entry.doc ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'"
+            :class="entry.doc ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-100'"
           >
             {{ i + 1 }}
           </span>
@@ -144,7 +144,7 @@ function getMenuItems(entry: { type: string; key: string; doc: { name: string; u
               aria-label="Document actions"
             />
           </UDropdownMenu>
-          <div v-else class="p-1.5 text-slate-300">
+          <div v-else class="p-1.5 text-slate-400">
             <UIcon name="i-heroicons-ellipsis-vertical" class="w-4 h-4" />
           </div>
         </div>

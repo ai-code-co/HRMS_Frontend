@@ -21,7 +21,7 @@
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <label class="text-sm font-medium text-slate-700">Email Addresses</label>
-                            <UButton icon="i-lucide-plus" size="xs" variant="ghost" color="primary"
+                            <UButton icon="i-lucide-plus" size="md" variant="ghost" color="primary"
                                 @click="addEmailField" class="cursor-pointer">
                                 Add Email
                             </UButton>
